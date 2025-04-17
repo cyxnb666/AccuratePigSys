@@ -46,11 +46,19 @@
           @change="handleTableChange" show-size-changer show-quick-jumper />
       </div>
     </div>
+
+    <tenant-dialog
+      v-model="dialogVisible"
+      :is-edit="isEdit"
+      :record="currentRecord"
+      @success="handleDialogSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import TenantDialog from './components/TenantDialog.vue';
 
 // 搜索表单
 const searchForm = reactive({
@@ -145,14 +153,6 @@ const handleReset = () => {
   searchForm.tenantCode = '';
 };
 
-const handleAdd = () => {
-  console.log('添加租户');
-};
-
-const handleEdit = (record) => {
-  console.log('编辑租户:', record);
-};
-
 const handleDelete = (record) => {
   console.log('删除租户:', record);
 };
@@ -160,6 +160,47 @@ const handleDelete = (record) => {
 const handleTableChange = (page) => {
   pagination.current = page;
   // 加载当前页数据
+};
+
+const dialogVisible = ref(false);
+const isEdit = ref(false);
+const currentRecord = ref({});
+
+// 点击"新增租户"按钮
+const handleAdd = () => {
+  isEdit.value = false;
+  currentRecord.value = {};
+  dialogVisible.value = true;
+};
+
+// 点击"编辑"按钮
+const handleEdit = (record) => {
+  isEdit.value = true;
+  currentRecord.value = {
+    tenantName: record.name,
+    tenantCode: record.code,
+    tenantAccount: record.code, // 假设账号与编码相同
+    tenantPassword: '', // 编辑时不显示密码
+    administrativeArea: record.area || '四川',
+    status: record.status,
+    remark: record.remark
+  };
+  dialogVisible.value = true;
+};
+
+// 对话框提交成功回调
+const handleDialogSuccess = (data) => {
+  if (isEdit.value) {
+    // 处理编辑成功逻辑
+    console.log('编辑租户成功:', data);
+    // 可以在这里刷新数据或更新本地数据
+    handleSearch();
+  } else {
+    // 处理新增成功逻辑
+    console.log('新增租户成功:', data);
+    // 可以在这里刷新数据
+    handleSearch();
+  }
 };
 </script>
 
