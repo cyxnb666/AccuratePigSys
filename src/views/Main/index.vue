@@ -1,0 +1,211 @@
+<template>
+  <div class="mainView">
+    <!-- 顶部导航栏和菜单在同一行 -->
+    <div class="app-header">
+      <div class="header-left">
+        <div class="logo">保行生猪精准核验系统</div>
+      </div>
+      
+      <!-- 水平菜单 -->
+      <div class="app-menu">
+        <a-menu mode="horizontal" v-model:selectedKeys="state.selectedKeys" @click="clickMenu">
+          <a-menu-item key="dashboard">
+            <template #icon>
+              <dashboard-outlined />
+            </template>
+            精准核验大屏
+          </a-menu-item>
+          <a-menu-item key="tenant">
+            <template #icon>
+              <team-outlined />
+            </template>
+            租户管理
+          </a-menu-item>
+          <a-menu-item key="district">
+            <template #icon>
+              <apartment-outlined />
+            </template>
+            行政区划管理
+          </a-menu-item>
+          <a-menu-item key="user">
+            <template #icon>
+              <user-outlined />
+            </template>
+            用户管理
+          </a-menu-item>
+          <a-menu-item key="scene">
+            <template #icon>
+              <environment-outlined />
+            </template>
+            界限场景管理
+          </a-menu-item>
+          <a-menu-item key="review">
+            <template #icon>
+              <file-done-outlined />
+            </template>
+            存档上报审核
+          </a-menu-item>
+          <a-menu-item key="archive">
+            <template #icon>
+              <file-text-outlined />
+            </template>
+            存档清单
+          </a-menu-item>
+          <a-menu-item key="warning">
+            <template #icon>
+              <warning-outlined />
+            </template>
+            界线预警
+          </a-menu-item>
+        </a-menu>
+      </div>
+      
+      <div class="header-right">
+        <a-dropdown>
+          <a class="ant-dropdown-link" @click.prevent>
+            管理员 <down-outlined />
+          </a>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item>
+                <a href="javascript:;" @click="changePassword">修改密码</a>
+              </a-menu-item>
+              <a-menu-item>
+                <a href="javascript:;" @click="outLogin">退出登录</a>
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="app-content">
+      <router-view></router-view>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { reactive, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { 
+  DownOutlined, 
+  DashboardOutlined, 
+  TeamOutlined, 
+  ApartmentOutlined, 
+  UserOutlined,
+  EnvironmentOutlined,
+  FileDoneOutlined,
+  FileTextOutlined,
+  WarningOutlined
+} from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
+
+const router = useRouter();
+const route = useRoute();
+
+const state = reactive({
+  selectedKeys: ['tenant']
+});
+
+// 监听路由变化，更新选中的菜单项
+watch(
+  () => route.path,
+  (path) => {
+    const pathParts = path.split('/');
+    if (pathParts.length > 1) {
+      state.selectedKeys = [pathParts[1]];
+    }
+  },
+  { immediate: true }
+);
+
+// 菜单点击处理
+const clickMenu = (menuInfo) => {
+  router.push(`/${menuInfo.key}`);
+};
+
+// 修改密码
+const changePassword = () => {
+  message.info('修改密码功能待实现');
+};
+
+// 退出登录
+const outLogin = () => {
+  sessionStorage.clear();
+  router.push('/login');
+};
+</script>
+
+<style lang="scss" scoped>
+.mainView {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .app-header {
+    display: flex;
+    align-items: center;
+    height: 64px;
+    padding: 0 24px;
+    background-color: #5276E5;
+    color: white;
+    
+    .header-left {
+      .logo {
+        font-size: 18px;
+        font-weight: bold;
+        margin-right: 20px;
+        white-space: nowrap;
+      }
+    }
+    
+    .app-menu {
+      flex: 1;
+      
+      :deep(.ant-menu) {
+        background-color: transparent;
+        border-bottom: none;
+        
+        &.ant-menu-horizontal {
+          .ant-menu-item {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0 4px;
+            
+            &:hover {
+              color: white;
+              background-color: rgba(255, 255, 255, 0.1);
+            }
+            
+            &.ant-menu-item-selected {
+              color: white;
+              background-color: rgba(255, 255, 255, 0.15);
+              
+              &::after {
+                border-bottom: 2px solid white;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    .header-right {
+      margin-left: 20px;
+      
+      .ant-dropdown-link {
+        color: white;
+        cursor: pointer;
+      }
+    }
+  }
+  
+  .app-content {
+    flex: 1;
+    padding: 16px;
+    background-color: #f0f2f5;
+    overflow: auto;
+  }
+}
+</style>
