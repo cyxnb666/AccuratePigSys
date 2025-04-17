@@ -1,7 +1,7 @@
 <template>
     <a-modal :title="isEdit ? '编辑租户' : '新增租户'" v-model:open="dialogVisible" :destroyOnClose="true" :maskClosable="false"
         width="800px" class="tenant-dialog" :footer="null">
-        <a-form :model="formData" ref="formRef" :rules="rules" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
+        <a-form :model="formData" ref="formRef" :rules="rules" layout="vertical">
             <a-row :gutter="16">
                 <a-col :span="12">
                     <a-form-item label="租户名称" name="tenantName">
@@ -48,7 +48,7 @@
 
             <a-row>
                 <a-col :span="24">
-                    <a-form-item label="备注" name="remark" :label-col="{ span: 3 }" :wrapper-col="{ span: 21 }">
+                    <a-form-item label="备注" name="remark">
                         <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" />
                     </a-form-item>
                 </a-col>
