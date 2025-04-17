@@ -74,8 +74,7 @@ html, body {
   }
 }
 
-.ant-btn, .ant-input-affix-wrapper, .ant-select-single .ant-select-selector, 
-.ant-input-number, .ant-picker {
+.ant-input, .ant-picker, .ant-select-single .ant-select-selector, .ant-input-affix-wrapper{
   border-radius: 2px;
 }
 </style>
