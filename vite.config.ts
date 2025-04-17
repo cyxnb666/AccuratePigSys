@@ -17,9 +17,9 @@ export default defineConfig({
     resolve: {
         alias
     },
-    base: '/test_web/',
+    base: '/AccuratePigSys_web/',
     build: {
-        outDir: 'test_web'
+        outDir: 'AccuratePigSys_web'
     },
     css: {
         preprocessorOptions: {
