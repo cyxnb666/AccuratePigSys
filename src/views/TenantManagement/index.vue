@@ -60,6 +60,9 @@
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
 import TenantDialog from './components/TenantDialog.vue';
 
+const dialogVisible = ref(false);
+const isEdit = ref(false);
+const currentRecord = ref({});
 // 搜索表单
 const searchForm = reactive({
   tenantName: '',
@@ -162,10 +165,6 @@ const handleTableChange = (page) => {
   // 加载当前页数据
 };
 
-const dialogVisible = ref(false);
-const isEdit = ref(false);
-const currentRecord = ref({});
-
 // 点击"新增租户"按钮
 const handleAdd = () => {
   isEdit.value = false;
@@ -181,7 +180,7 @@ const handleEdit = (record) => {
     tenantCode: record.code,
     tenantAccount: record.code, // 假设账号与编码相同
     tenantPassword: '', // 编辑时不显示密码
-    administrativeArea: record.area || '四川',
+    administrativeArea: record.area,
     status: record.status,
     remark: record.remark
   };
