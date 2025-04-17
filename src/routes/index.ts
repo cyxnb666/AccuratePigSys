@@ -1,4 +1,14 @@
 import { RouteRecordRaw, createRouter, createWebHashHistory } from "vue-router";
+import { 
+  DashboardOutlined, 
+  TeamOutlined, 
+  ApartmentOutlined, 
+  UserOutlined,
+  EnvironmentOutlined,
+  FileDoneOutlined,
+  FileTextOutlined,
+  WarningOutlined
+} from '@ant-design/icons-vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -8,6 +18,7 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/',
+        name: 'Main',
         component: () => import('@/views/Main/index.vue'),
         children: [
             {
@@ -16,7 +27,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Dashboard/index.vue'),
                 meta: {
                     title: '精准核验大屏',
-                    icon: 'dashboard'
+                    icon: DashboardOutlined  // 直接使用组件
                 }
             },
             {
@@ -25,7 +36,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/TenantManagement/index.vue'),
                 meta: {
                     title: '租户管理',
-                    icon: 'team'
+                    icon: TeamOutlined
                 }
             },
             {
@@ -34,7 +45,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/DistrictManagement/index.vue'),
                 meta: {
                     title: '行政区划管理',
-                    icon: 'apartment'
+                    icon: ApartmentOutlined
                 }
             },
             {
@@ -43,7 +54,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Error/404.vue'),
                 meta: {
                     title: '用户管理',
-                    icon: 'user'
+                    icon: UserOutlined
                 }
             },
             {
@@ -52,7 +63,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Error/404.vue'),
                 meta: {
                     title: '界限场景管理',
-                    icon: 'environment'
+                    icon: EnvironmentOutlined
                 }
             },
             {
@@ -61,7 +72,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Error/404.vue'),
                 meta: {
                     title: '存档上报审核',
-                    icon: 'file-done'
+                    icon: FileDoneOutlined
                 }
             },
             {
@@ -70,7 +81,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Error/404.vue'),
                 meta: {
                     title: '存档清单',
-                    icon: 'file-text'
+                    icon: FileTextOutlined
                 }
             },
             {
@@ -79,7 +90,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Error/404.vue'),
                 meta: {
                     title: '界线预警',
-                    icon: 'warning'
+                    icon: WarningOutlined
                 }
             }
         ]

@@ -6,56 +6,14 @@
         <div class="logo">保行生猪精准核验系统</div>
       </div>
       
-      <!-- 水平菜单 -->
+      <!-- 水平菜单 - 动态生成 -->
       <div class="app-menu">
         <a-menu mode="horizontal" v-model:selectedKeys="state.selectedKeys" @click="clickMenu">
-          <a-menu-item key="dashboard">
+          <a-menu-item v-for="item in menuItems" :key="item.name">
             <template #icon>
-              <dashboard-outlined />
+              <component :is="item.meta?.icon" v-if="item.meta?.icon" />
             </template>
-            精准核验大屏
-          </a-menu-item>
-          <a-menu-item key="tenant">
-            <template #icon>
-              <team-outlined />
-            </template>
-            租户管理
-          </a-menu-item>
-          <a-menu-item key="district">
-            <template #icon>
-              <apartment-outlined />
-            </template>
-            行政区划管理
-          </a-menu-item>
-          <a-menu-item key="user">
-            <template #icon>
-              <user-outlined />
-            </template>
-            用户管理
-          </a-menu-item>
-          <a-menu-item key="scene">
-            <template #icon>
-              <environment-outlined />
-            </template>
-            界限场景管理
-          </a-menu-item>
-          <a-menu-item key="review">
-            <template #icon>
-              <file-done-outlined />
-            </template>
-            存档上报审核
-          </a-menu-item>
-          <a-menu-item key="archive">
-            <template #icon>
-              <file-text-outlined />
-            </template>
-            存档清单
-          </a-menu-item>
-          <a-menu-item key="warning">
-            <template #icon>
-              <warning-outlined />
-            </template>
-            界线预警
+            {{ item.meta?.title }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -87,19 +45,9 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, watch } from 'vue';
+import { reactive, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { 
-  DownOutlined, 
-  DashboardOutlined, 
-  TeamOutlined, 
-  ApartmentOutlined, 
-  UserOutlined,
-  EnvironmentOutlined,
-  FileDoneOutlined,
-  FileTextOutlined,
-  WarningOutlined
-} from '@ant-design/icons-vue';
+import { DownOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 
 const router = useRouter();
@@ -107,6 +55,16 @@ const route = useRoute();
 
 const state = reactive({
   selectedKeys: ['tenant']
+});
+
+// 直接从路由配置获取菜单项
+const menuItems = computed(() => {
+  // 查找主路由
+  const mainRoute = router.options.routes.find(route => route.path === '/');
+  if (!mainRoute || !mainRoute.children) return [];
+  
+  // 返回所有子路由作为菜单项
+  return mainRoute.children;
 });
 
 // 监听路由变化，更新选中的菜单项
@@ -143,7 +101,7 @@ const outLogin = () => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  
+
   .app-header {
     display: flex;
     align-items: center;
@@ -151,7 +109,7 @@ const outLogin = () => {
     padding: 0 24px;
     background-color: #5276E5;
     color: white;
-    
+
     .header-left {
       .logo {
         font-size: 18px;
@@ -160,28 +118,28 @@ const outLogin = () => {
         white-space: nowrap;
       }
     }
-    
+
     .app-menu {
       flex: 1;
-      
+
       :deep(.ant-menu) {
         background-color: transparent;
         border-bottom: none;
-        
+
         &.ant-menu-horizontal {
           .ant-menu-item {
             color: rgba(255, 255, 255, 0.8);
             margin: 0 4px;
-            
+
             &:hover {
               color: white;
               background-color: rgba(255, 255, 255, 0.1);
             }
-            
+
             &.ant-menu-item-selected {
               color: white;
               background-color: rgba(255, 255, 255, 0.15);
-              
+
               &::after {
                 border-bottom: 2px solid white;
               }
@@ -190,17 +148,17 @@ const outLogin = () => {
         }
       }
     }
-    
+
     .header-right {
       margin-left: 20px;
-      
+
       .ant-dropdown-link {
         color: white;
         cursor: pointer;
       }
     }
   }
-  
+
   .app-content {
     flex: 1;
     padding: 16px;
