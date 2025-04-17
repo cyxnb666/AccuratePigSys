@@ -31,7 +31,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: 'district',
                 name: 'district',
-                component: () => import('@/views/Error/404.vue'),
+                component: () => import('@/views/DistrictManagement/index.vue'),
                 meta: {
                     title: '行政区划管理',
                     icon: 'apartment'
