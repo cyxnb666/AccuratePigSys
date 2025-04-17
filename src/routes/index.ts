@@ -27,7 +27,7 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/Dashboard/index.vue'),
                 meta: {
                     title: '精准核验大屏',
-                    icon: DashboardOutlined  // 直接使用组件
+                    icon: DashboardOutlined
                 }
             },
             {
@@ -51,18 +51,18 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: 'user',
                 name: 'user',
-                component: () => import('@/views/Error/404.vue'),
+                component: () => import('@/views/UserManagement/index.vue'),
                 meta: {
                     title: '用户管理',
                     icon: UserOutlined
                 }
             },
             {
-                path: 'scene',
-                name: 'scene',
-                component: () => import('@/views/Error/404.vue'),
+                path: 'farm',
+                name: 'farm',
+                component: () => import('@/views/FarmManagement/index.vue'),
                 meta: {
-                    title: '界限场景管理',
+                    title: '养殖场管理',
                     icon: EnvironmentOutlined
                 }
             },
