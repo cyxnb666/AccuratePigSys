@@ -95,6 +95,15 @@ const routes: Array<RouteRecordRaw> = [
                 }
             },
             {
+                path: 'archive/details/:id',
+                name: 'archiveDetails',
+                component: () => import('@/views/InventoryList/components/InventoryDetails.vue'),
+                meta: {
+                    title: '存栏详情',
+                    hideInMenu: true
+                }
+            },
+            {
                 path: 'warning',
                 name: 'warning',
                 // component: () => import('@/views/Error/404.vue'),

@@ -49,6 +49,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const districtTreeData = [
     {
@@ -195,7 +198,7 @@ const handleDownload = () => {
 };
 
 const viewDetails = (record) => {
-    message.info(`查看养殖场详情: ${record.farmName}`);
+    router.push(`/archive/details/${record.id}`);
 };
 
 onMounted(() => {

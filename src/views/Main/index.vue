@@ -61,8 +61,8 @@ const menuItems = computed(() => {
   const mainRoute = router.options.routes.find(route => route.path === '/');
   if (!mainRoute || !mainRoute.children) return [];
   
-  // 返回所有子路由作为菜单项
-  return mainRoute.children;
+  // 返回所有子路由作为菜单项，但过滤掉hideInMenu为true的项
+  return mainRoute.children.filter(route => !route.meta?.hideInMenu);
 });
 
 // 监听路由变化，更新选中的菜单项
