@@ -88,7 +88,7 @@ defineProps({
 
                 .label {
                     color: #666;
-                    width: 120px;
+                    width: 150px;
                     text-align: right;
                     padding-right: 16px;
                 }

@@ -1,7 +1,7 @@
 <template>
     <div class="inventory-details">
         <!-- 面包屑导航 -->
-        <div class="detail-card">
+        <div class="bread-detail-card">
             <div class="breadcrumb">
                 <a-breadcrumb>
                     <a-breadcrumb-item>
@@ -243,7 +243,6 @@ loadData();
 
 <style lang="scss" scoped>
 .inventory-details {
-    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -251,7 +250,7 @@ loadData();
     height: 100%;
 
     .breadcrumb {
-        padding: 8px 0;
+        // padding: 8px 0;
     }
 
     .content-section,
@@ -261,11 +260,17 @@ loadData();
         gap: 16px;
     }
 
+    .bread-detail-card {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        padding: 6px;
+    }
     .detail-card {
         background-color: white;
         border-radius: 4px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        padding: 16px;
+        padding: 12px;
     }
 
     .charts-row {
