@@ -1,23 +1,24 @@
 <template>
     <div class="inventory-details">
         <!-- 面包屑导航 -->
-        <div class="breadcrumb">
-            <a-breadcrumb>
-                <a-breadcrumb-item>
-                    <a @click="goBack">
-                        <left-outlined /> 返回
-                    </a>
-                </a-breadcrumb-item>
-                <a-breadcrumb-item>存栏详情</a-breadcrumb-item>
-            </a-breadcrumb>
+        <div class="detail-card">
+            <div class="breadcrumb">
+                <a-breadcrumb>
+                    <a-breadcrumb-item>
+                        <a @click="goBack">
+                            <left-outlined /> 返回
+                        </a>
+                    </a-breadcrumb-item>
+                    <a-breadcrumb-item>存栏详情</a-breadcrumb-item>
+                </a-breadcrumb>
+            </div>
         </div>
 
         <div class="content-section">
-            <!-- 养殖场基础信息和异常预警（同一个card中） -->
             <div class="detail-card">
                 <a-row :gutter="24">
-                    <!-- 养殖场基础信息 -->
-                    <a-col :span="12">
+                    <a-col :span="10">
+                        <!-- 养殖场基础信息 -->
                         <div class="info-section">
                             <div class="section-header">
                                 <div class="title">养殖场基础信息</div>
@@ -28,6 +29,8 @@
                                         <span class="label">行政区划:</span>
                                         <span class="value">{{ farmInfo.district }}</span>
                                     </div>
+                                </div>
+                                <div class="info-row">
                                     <div class="info-item">
                                         <span class="label">养殖场名称:</span>
                                         <span class="value">{{ farmInfo.farmName }}</span>
@@ -38,6 +41,8 @@
                                         <span class="label">养殖场地址:</span>
                                         <span class="value">{{ farmInfo.address }}</span>
                                     </div>
+                                </div>
+                                <div class="info-row">
                                     <div class="info-item">
                                         <span class="label">养殖场主要联系人:</span>
                                         <span class="value">{{ farmInfo.contactPerson }} {{ farmInfo.contactPhone
@@ -46,11 +51,9 @@
                                 </div>
                             </div>
                         </div>
-                    </a-col>
 
-                    <!-- 异常预警 -->
-                    <a-col :span="12">
-                        <div class="info-section">
+                        <!-- 异常预警 -->
+                        <div class="info-section" style="margin-top: 20px;">
                             <div class="section-header">
                                 <div class="title">异常预警</div>
                                 <div class="more-link">
@@ -64,36 +67,36 @@
                             </div>
                         </div>
                     </a-col>
-                </a-row>
-            </div>
 
-            <!-- 养殖场存栏情况与上报情况 -->
-            <a-row :gutter="16" class="charts-row">
-                <a-col :span="8">
-                    <div class="detail-card">
-                        <div class="card-header">
-                            <div class="title">养殖场存栏情况</div>
-                            <div class="sub-title">存栏总数：220</div>
-                        </div>
-                        <div class="chart-container">
-                            <div id="inventory-pie-chart" class="chart"></div>
-                        </div>
-                    </div>
-                </a-col>
-                <a-col :span="16">
-                    <div class="detail-card">
-                        <div class="card-header">
-                            <div class="title">存栏上报情况</div>
-                            <div class="date-selector">
-                                <a-range-picker v-model:value="dateRange" :disabledDate="disableFutureDates" />
+                    <!-- 右侧：养殖场存栏情况 -->
+                    <a-col :span="7">
+                        <div class="info-section">
+                            <div class="section-header">
+                                <div class="title">养殖场存栏情况</div>
+                                <div class="sub-title">存栏总数：220</div>
+                            </div>
+                            <div class="chart-container">
+                                <div id="inventory-pie-chart" class="chart"></div>
                             </div>
                         </div>
-                        <div class="chart-container">
-                            <div id="report-bar-chart" class="chart"></div>
+                    </a-col>
+
+                    <!-- 最右侧：上报情况 -->
+                    <a-col :span="7">
+                        <div class="info-section">
+                            <div class="section-header">
+                                <div class="title">存栏上报情况</div>
+                                <div class="date-selector">
+                                    <a-range-picker v-model:value="dateRange" :disabledDate="disableFutureDates" />
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <div id="report-bar-chart" class="chart"></div>
+                            </div>
                         </div>
-                    </div>
-                </a-col>
-            </a-row>
+                    </a-col>
+                </a-row>
+            </div>
 
             <!-- 养殖区存栏量变化趋势图 -->
             <div class="detail-card">
@@ -404,10 +407,16 @@ const initPieChart = () => {
                 },
                 label: {
                     show: true,
-                    position: 'inside',
+                    position: 'outside', // 外部
                     formatter: '{c}\n{d}%',
                     fontSize: 14,
-                    color: '#fff'
+                },
+                // 标签引导线配置
+                labelLine: {
+                    show: true,
+                    length: 15,
+                    length2: 20,
+                    smooth: false
                 },
                 emphasis: {
                     label: {
