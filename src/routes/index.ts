@@ -69,7 +69,7 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: 'review',
                 name: 'review',
-                component: () => import('@/views/Error/404.vue'),
+                component: () => import('@/views/Review/index.vue'),
                 meta: {
                     title: '存档上报审核',
                     icon: FileDoneOutlined
@@ -89,7 +89,7 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'warning',
                 component: () => import('@/views/Error/404.vue'),
                 meta: {
-                    title: '界线预警',
+                    title: '异常预警',
                     icon: WarningOutlined
                 }
             }
