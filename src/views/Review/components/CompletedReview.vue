@@ -78,7 +78,7 @@ const searchForm = reactive({
 });
 
 // 表格高度 - 调整为固定高度
-const tableHeight = ref('calc(80vh - 230px)');
+const tableHeight = ref('calc(80vh - 210px)');
 
 // 更新表格列
 const columns = [
@@ -194,7 +194,7 @@ const districtTreeData = [
 // 更新模拟数据以匹配新列
 const generateData = () => {
     const data = [];
-    for (let i = 1; i <= 1; i++) {
+    for (let i = 1; i <= 0; i++) {
         data.push({
             id: i,
             index: i,

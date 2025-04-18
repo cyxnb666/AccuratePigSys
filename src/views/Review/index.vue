@@ -31,7 +31,7 @@ const activeKey = ref('pending');
         height: 100%;
 
         :deep(.ant-tabs-content) {
-            height: calc(100% - 46px);
+            height: calc(100%);
 
             .ant-tabs-tabpane {
                 height: 100%;
