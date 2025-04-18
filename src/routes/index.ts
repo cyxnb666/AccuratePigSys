@@ -90,7 +90,7 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'archive',
                 component: () => import('@/views/InventoryList/index.vue'),
                 meta: {
-                    title: '存档清单',
+                    title: '存栏清单',
                     icon: FileTextOutlined
                 }
             },
