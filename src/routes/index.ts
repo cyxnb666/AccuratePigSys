@@ -6,6 +6,7 @@ import {
   UserOutlined,
   EnvironmentOutlined,
   FileDoneOutlined,
+  FolderOutlined,
   FileTextOutlined,
   WarningOutlined
 } from '@ant-design/icons-vue';
@@ -76,9 +77,18 @@ const routes: Array<RouteRecordRaw> = [
                 }
             },
             {
+                path: 'needchange',
+                name: 'needchange',
+                component: () => import('@/views/Error/404.vue'),
+                meta: {
+                    title: '上报提醒',
+                    icon: FolderOutlined
+                }
+            },
+            {
                 path: 'archive',
                 name: 'archive',
-                component: () => import('@/views/Error/404.vue'),
+                component: () => import('@/views/InventoryList/index.vue'),
                 meta: {
                     title: '存档清单',
                     icon: FileTextOutlined

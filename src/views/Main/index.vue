@@ -1,12 +1,10 @@
 <template>
   <div class="mainView">
-    <!-- 顶部导航栏和菜单在同一行 -->
     <div class="app-header">
       <div class="header-left">
         <div class="logo">保行生猪精准核验系统</div>
       </div>
       
-      <!-- 水平菜单 - 动态生成 -->
       <div class="app-menu">
         <a-menu mode="horizontal" v-model:selectedKeys="state.selectedKeys" @click="clickMenu">
           <a-menu-item v-for="item in menuItems" :key="item.name">
