@@ -85,7 +85,7 @@
                         <div class="card-header">
                             <div class="title">存栏上报情况</div>
                             <div class="date-selector">
-                                <a-range-picker v-model:value="dateRange" />
+                                <a-range-picker v-model:value="dateRange" :disabledDate="disableFutureDates" />
                             </div>
                         </div>
                         <div class="chart-container">
@@ -95,12 +95,12 @@
                 </a-col>
             </a-row>
 
-            <!-- 月度变化趋势图 -->
+            <!-- 养殖区存栏量变化趋势图 -->
             <div class="detail-card">
                 <div class="card-header">
                     <div class="title">养殖区存栏量变化趋势</div>
                     <div class="date-selector">
-                        <a-range-picker v-model:value="trendDateRange" />
+                        <a-range-picker v-model:value="trendDateRange" :disabledDate="disableFutureDates" />
                     </div>
                 </div>
                 <div class="chart-container">
@@ -113,7 +113,7 @@
                 <div class="card-header">
                     <div class="title">养殖场存栏量月度变化趋势</div>
                     <div class="date-selector">
-                        <a-range-picker v-model:value="mixedChartDateRange" />
+                        <a-range-picker v-model:value="mixedChartDateRange" picker="month" />
                     </div>
                 </div>
                 <div class="chart-container">
@@ -183,6 +183,7 @@ import { useRouter, useRoute } from 'vue-router';
 import * as echarts from 'echarts';
 import { message } from 'ant-design-vue';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
+import dayjs from 'dayjs';
 
 const router = useRouter();
 const route = useRoute();
@@ -199,6 +200,9 @@ const goBack = () => {
 const dateRange = ref<any>([]);
 const trendDateRange = ref<any>([]);
 const mixedChartDateRange = ref<any>([]);
+const disableFutureDates = (current) => {
+    return current && current.isAfter(dayjs(), 'day');
+};
 
 // 活动标签页
 const activeTabKey = ref('1');
