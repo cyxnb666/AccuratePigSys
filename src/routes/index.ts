@@ -77,9 +77,9 @@ const routes: Array<RouteRecordRaw> = [
                 }
             },
             {
-                path: 'needchange',
-                name: 'needchange',
-                component: () => import('@/views/Error/404.vue'),
+                path: 'Report',
+                name: 'Report',
+                component: () => import('@/views/ReportReminder/index.vue'),
                 meta: {
                     title: '上报提醒',
                     icon: FolderOutlined
@@ -97,7 +97,8 @@ const routes: Array<RouteRecordRaw> = [
             {
                 path: 'warning',
                 name: 'warning',
-                component: () => import('@/views/Error/404.vue'),
+                // component: () => import('@/views/Error/404.vue'),
+                component: () => import('@/views/Warning/index.vue'),
                 meta: {
                     title: '异常预警',
                     icon: WarningOutlined

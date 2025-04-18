@@ -162,7 +162,7 @@ const districtTreeData = [
 // 更新模拟数据以匹配新列
 const generateData = () => {
     const data = [];
-    for (let i = 1; i <= 0; i++) {
+    for (let i = 1; i <= 10; i++) {
         data.push({
             id: i,
             index: i,

@@ -1,5 +1,5 @@
 <template>
-    <div class="completed-review">
+    <div class="abnormal-warning">
         <!-- 搜索表单 -->
         <div class="search-form">
             <a-form layout="inline">
@@ -13,23 +13,15 @@
                         </a-form-item>
                     </a-col>
                     <a-col>
-                        <a-form-item label="养殖场名称:">
+                        <a-form-item label="养殖场:">
                             <a-input placeholder="请输入养殖场名称" v-model:value="searchForm.farmName" />
                         </a-form-item>
                     </a-col>
                     <a-col>
-                        <a-form-item label="上报日期:">
-                            <a-range-picker v-model:value="searchForm.reportDate" />
+                        <a-form-item label="上报时间:">
+                            <a-range-picker v-model:value="searchForm.reportTimeRange" />
                         </a-form-item>
                     </a-col>
-                    <!-- <a-col>
-                        <a-form-item label="审核结果:">
-                            <a-select v-model:value="searchForm.reviewResult" placeholder="全部" style="min-width: 120px">
-                                <a-select-option value="通过">通过</a-select-option>
-                                <a-select-option value="驳回">驳回</a-select-option>
-                            </a-select>
-                        </a-form-item>
-                    </a-col> -->
                     <a-col>
                         <a-form-item>
                             <a-button type="primary" @click="handleSearch">查 询</a-button>
@@ -45,13 +37,13 @@
             <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
                 :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'reviewResult'">
-                        <a-tag :color="record.reviewResult === '通过' ? 'success' : 'error'">
-                            {{ record.reviewResult }}
-                        </a-tag>
+                    <template v-if="column.key === 'deviationRate'">
+                        <span :style="{ color: getDeviationColor(record.deviationRate) }">
+                            {{ record.deviationRate }}%
+                        </span>
                     </template>
                     <template v-if="column.key === 'action'">
-                        <a-button type="link" @click="handleDetail(record)">详情</a-button>
+                        <a-button type="link" @click="viewDetails(record)">详情</a-button>
                     </template>
                 </template>
             </a-table>
@@ -73,26 +65,19 @@ import { message } from 'ant-design-vue';
 const searchForm = reactive({
     district: undefined,
     farmName: '',
-    reportDate: [],
-    reviewResult: undefined
+    reportTimeRange: []
 });
 
-// 表格高度 - 调整为固定高度
-const tableHeight = ref('calc(80vh - 210px)');
+// 表格高度
+const tableHeight = ref('calc(80vh - 150px)');
 
-// 更新表格列
+// 表格列
 const columns = [
     {
         title: '序号',
         dataIndex: 'index',
         key: 'index',
         width: 80,
-        align: 'center'
-    },
-    {
-        title: '任务号',
-        dataIndex: 'taskId',
-        key: 'taskId',
         align: 'center'
     },
     {
@@ -108,58 +93,33 @@ const columns = [
         align: 'center'
     },
     {
-        title: '上报用户',
-        dataIndex: 'reportUser',
-        key: 'reportUser',
-        align: 'center'
-    },
-    {
-        title: '育肥猪',
-        dataIndex: 'fatteningPigs',
-        key: 'fatteningPigs',
-        align: 'center'
-    },
-    {
-        title: '仔猪',
-        dataIndex: 'piglets',
-        key: 'piglets',
-        align: 'center'
-    },
-    {
-        title: '母猪',
-        dataIndex: 'sows',
-        key: 'sows',
-        align: 'center'
-    },
-    {
         title: '上报时间',
         dataIndex: 'reportTime',
         key: 'reportTime',
         align: 'center'
     },
     {
-        title: '审核人',
-        dataIndex: 'reviewer',
-        key: 'reviewer',
+        title: '上报总数',
+        dataIndex: 'totalReported',
+        key: 'totalReported',
         align: 'center'
     },
     {
-        title: '审核结果',
-        dataIndex: 'reviewResult',
-        key: 'reviewResult',
+        title: '人工审核数量',
+        dataIndex: 'manualReviewCount',
+        key: 'manualReviewCount',
         align: 'center'
     },
     {
-        title: '审核时间',
-        dataIndex: 'reviewTime',
-        key: 'reviewTime',
+        title: '偏差率',
+        dataIndex: 'deviationRate',
+        key: 'deviationRate',
         align: 'center'
     },
     {
         title: '操作',
         key: 'action',
-        align: 'center',
-        width: 80
+        align: 'center'
     }
 ];
 
@@ -186,29 +146,61 @@ const districtTreeData = [
                         key: 'sichuan-chengdu-jinjiang',
                     }
                 ]
+            },
+            {
+                title: '绵阳市',
+                value: 'mianyang',
+                key: 'sichuan-mianyang',
+            }
+        ]
+    },
+    {
+        title: '重庆市',
+        value: 'chongqing',
+        key: 'chongqing',
+        children: [
+            {
+                title: '渝中区',
+                value: 'yuzhong',
+                key: 'chongqing-yuzhong',
+            },
+            {
+                title: '江北区',
+                value: 'jiangbei',
+                key: 'chongqing-jiangbei',
             }
         ]
     }
 ];
 
-// 更新模拟数据以匹配新列
+// 获取偏差率颜色
+const getDeviationColor = (rate) => {
+    const numRate = parseFloat(rate);
+    if (numRate > 15) return '#FF4D4F'; // 红色 - 高偏差
+    if (numRate > 8) return '#FAAD14';  // 黄色 - 中偏差
+    return '#52C41A';                   // 绿色 - 低偏差
+};
+
+// 模拟数据
 const generateData = () => {
     const data = [];
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 15; i++) {
+        // 生成随机的偏差率，介于0-20%之间
+        const deviationRate = (Math.random() * 20).toFixed(2);
+        const totalReported = 500 + i * 20;
+
+        // 根据偏差率计算人工审核数量
+        const manualReviewCount = Math.round(totalReported * (1 - parseFloat(deviationRate) / 100));
+
         data.push({
             id: i,
             index: i,
-            taskId: `Task-${2025040000 + i}`,
-            district: '四川省成都市武侯区',
-            farmName: `测试养殖场 ${i}`,
-            reportUser: `用户${i}`,
-            fatteningPigs: 300 + i * 10,
-            piglets: 150 + i * 5,
-            sows: 50 + i * 2,
-            reportTime: '2025-04-10 10:30:00',
-            reviewer: '管理员',
-            reviewResult: i % 2 === 0 ? '通过' : '驳回',
-            reviewTime: '2025-04-15 14:30:00'
+            district: '四川省成都市' + (i % 2 === 0 ? '武侯区' : '锦江区'),
+            farmName: `养殖场 ${i}`,
+            reportTime: `2025-04-${10 + i % 20}`,
+            totalReported: totalReported,
+            manualReviewCount: manualReviewCount,
+            deviationRate: deviationRate
         });
     }
     return data;
@@ -221,52 +213,56 @@ const dataSource = ref(generateData());
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 5
+    total: 15
 });
 
 // 方法
 const handleSearch = () => {
     console.log('搜索条件:', searchForm);
     pagination.current = 1;
+    // 实际项目中这里应该调用API进行搜索
 };
 
 const handleReset = () => {
     searchForm.district = undefined;
     searchForm.farmName = '';
-    searchForm.reportDate = [];
-    searchForm.reviewResult = undefined;
+    searchForm.reportTimeRange = [];
 };
 
-const handleDetail = (record) => {
-    message.info(`查看养殖场详情: ${record.farmName}`);
+const viewDetails = (record) => {
+    message.info(`查看养殖场 ${record.farmName} 的异常预警详情`);
 };
 
 const handleTableChange = (page) => {
     pagination.current = page;
+    // 加载当前页数据
 };
 </script>
 
 <style lang="scss" scoped>
-.completed-review {
-    height: 100%;
+.abnormal-warning {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    height: 100%;
 
     .search-form {
         padding: 16px;
         background-color: white;
         border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .data-table {
         background-color: white;
         border-radius: 4px;
-        // padding: 16px;
-        flex: 1;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         display: flex;
         flex-direction: column;
+        flex: 1;
 
+        /* 确保表格能够撑满容器 */
         :deep(.ant-table-wrapper) {
             flex: 1;
 

@@ -23,14 +23,23 @@
                         <a-button style="margin-left: 8px" @click="handleDownload">下载清单</a-button>
                     </div>
 
-                    <a-table :columns="columns" :data-source="tableData" :pagination="pagination" bordered row-key="id"
-                        :scroll="{ y: tableHeight }">
-                        <template #bodyCell="{ column, record }">
-                            <template v-if="column.key === 'action'">
-                                <a-button type="link" @click="viewDetails(record)">详情</a-button>
+                    <div class="data-table">
+                        <a-table :columns="columns" :data-source="tableData" :pagination="false" bordered row-key="id"
+                            :scroll="{ y: tableHeight }">
+                            <template #bodyCell="{ column, record }">
+                                <template v-if="column.key === 'action'">
+                                    <a-button type="link" @click="viewDetails(record)">详情</a-button>
+                                </template>
                             </template>
-                        </template>
-                    </a-table>
+                        </a-table>
+
+                        <!-- 分页 -->
+                        <div class="pagination">
+                            <a-pagination v-model:current="pagination.current" :total="pagination.total"
+                                :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer
+                                show-quick-jumper />
+                        </div>
+                    </div>
                 </div>
             </a-col>
         </a-row>
@@ -135,9 +144,13 @@ const pagination = reactive({
     showQuickJumper: true
 });
 
+const handleTableChange = (page) => {
+    pagination.current = page;
+};
+
 const generateMockData = (district = '四川省') => {
     const data = [];
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 100; i++) {
         data.push({
             id: i,
             index: i,
@@ -226,18 +239,28 @@ onMounted(() => {
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        .ant-table-wrapper {
+        .data-table {
             background-color: white;
             border-radius: 4px;
             padding: 16px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
             flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            .ant-table-wrapper {
+                flex: 1;
+            }
+
+            .pagination {
+                margin-top: 16px;
+                text-align: right;
+            }
         }
     }
 }
 
-:deep(.ant-table-wrapper) {
-    .ant-table-thead>tr>th {
+:deep(.ant-table-wrapper) {  .ant-table-thead>tr>th {
         background-color: #F3F5F9;
         font-weight: 500;
     }
