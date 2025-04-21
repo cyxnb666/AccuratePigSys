@@ -102,30 +102,27 @@
                                         <a-tabs v-model:activeKey="activeSubTab">
                                             <a-tab-pane key="fattening" tab="育肥区">
                                                 <div class="count-row">
-                                                    <div class="count-item">
-                                                        <span class="label">上报数量：</span>
-                                                        <span class="value">{{ currentArea.fatteningData.reportCount
-                                                            }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">AI点数：</span>
-                                                        <span class="value">{{ currentArea.fatteningData.aiCount
-                                                        }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">审核员点数：</span>
-                                                        <a-input-number v-if="!isViewMode"
-                                                            v-model:value="currentArea.fatteningData.reviewerCount"
-                                                            :min="0" style="width: 120px" />
-                                                        <span v-else class="value">{{
-                                                            currentArea.fatteningData.reviewerCount }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">上次上报数量：</span>
-                                                        <span class="value">{{ currentArea.fatteningData.lastReportCount
-                                                            }}</span>
-                                                    </div>
-                                                </div>
+    <div class="count-item">
+        <span class="label">上报数量：</span>
+        <span class="value">{{ currentArea.fatteningData.reportCount }}</span>
+    </div>
+    <div class="count-item">
+        <span class="label">AI点数：</span>
+        <span class="value">{{ currentArea.fatteningData.aiCount }}</span>
+    </div>
+    <div class="count-item">
+        <span class="label">审核员点数：</span>
+        <a-input-number v-if="!isViewMode" v-model:value="currentArea.fatteningData.reviewerCount" :min="0" style="width: 120px" />
+        <span v-else class="value">{{ currentArea.fatteningData.reviewerCount }}</span>
+    </div>
+    <div class="count-item">
+        <span class="label">上次上报数量：</span>
+        <span class="value">{{ currentArea.fatteningData.lastReportCount }}</span>
+    </div>
+    <div class="count-item">
+        <a-button type="primary" size="small" @click="goToDetailedComparison">详细对比</a-button>
+    </div>
+</div>
 
                                                 <!-- 视频展示区域 -->
                                                 <div class="video-container">
@@ -574,10 +571,19 @@ const deathRecords = ref([
     }
 ]);
 
-// Method to view death registration details
 const viewDeathDetail = (record) => {
     message.info(`查看死亡登记详情: ${record.time}`);
     // 后续开发详情功能
+};
+
+const goToDetailedComparison = () => {
+    router.push({
+        path: `/review/super-detail/${props.recordId}`,
+        query: { 
+            area: currentAreaIndex.value,
+            tab: activeSubTab.value
+        }
+    });
 };
 
 // 返回上一页
