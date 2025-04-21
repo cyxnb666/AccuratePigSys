@@ -105,12 +105,12 @@
                                                     <div class="count-item">
                                                         <span class="label">上报数量：</span>
                                                         <span class="value">{{ currentArea.fatteningData.reportCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">AI点数：</span>
                                                         <span class="value">{{ currentArea.fatteningData.aiCount
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">审核员点数：</span>
@@ -123,7 +123,7 @@
                                                     <div class="count-item">
                                                         <span class="label">上次上报数量：</span>
                                                         <span class="value">{{ currentArea.fatteningData.lastReportCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                 </div>
 
@@ -160,7 +160,7 @@
                                                     <div class="count-item">
                                                         <span class="label">上报数量：</span>
                                                         <span class="value">{{ currentArea.pigletsData.reportCount
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">AI点数：</span>
@@ -173,12 +173,12 @@
                                                             :min="0" style="width: 120px" />
                                                         <span v-else class="value">{{
                                                             currentArea.pigletsData.reviewerCount
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">上次上报数量：</span>
                                                         <span class="value">{{ currentArea.pigletsData.lastReportCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                 </div>
 
@@ -215,7 +215,7 @@
                                                     <div class="count-item">
                                                         <span class="label">上报数量：</span>
                                                         <span class="value">{{ currentArea.sowsData.reportCount
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">AI点数：</span>
@@ -227,12 +227,12 @@
                                                             v-model:value="currentArea.sowsData.reviewerCount" :min="0"
                                                             style="width: 120px" />
                                                         <span v-else class="value">{{ currentArea.sowsData.reviewerCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">上次上报数量：</span>
                                                         <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                 </div>
 
@@ -270,9 +270,33 @@
                         </a-tab-pane>
 
                         <a-tab-pane key="movement" tab="出栏/补栏/死亡登记">
-                            <!-- 出栏/补栏/死亡登记等功能待开发 -->
-                            <div class="placeholder-message">
-                                出栏/补栏/死亡登记相关功能正在开发中...
+                            <!-- 出栏登记 -->
+                            <div class="registration-section">
+                                <div class="section-title">出栏登记</div>
+                                <a-table :columns="outboundColumns" :data-source="outboundRecords" :pagination="false"
+                                    bordered size="small">
+                                </a-table>
+                            </div>
+
+                            <!-- 补栏登记 -->
+                            <div class="registration-section">
+                                <div class="section-title">补栏登记</div>
+                                <a-table :columns="inboundColumns" :data-source="inboundRecords" :pagination="false"
+                                    bordered size="small">
+                                </a-table>
+                            </div>
+
+                            <!-- 死亡登记 -->
+                            <div class="registration-section">
+                                <div class="section-title">死亡登记</div>
+                                <a-table :columns="deathColumns" :data-source="deathRecords" :pagination="false"
+                                    bordered size="small">
+                                    <template #bodyCell="{ column, record }">
+                                        <template v-if="column.key === 'action'">
+                                            <a-button type="link" @click="viewDeathDetail(record)">详情</a-button>
+                                        </template>
+                                    </template>
+                                </a-table>
                             </div>
                         </a-tab-pane>
                     </a-tabs>
@@ -303,7 +327,7 @@
                         </div>
                         <div class="review-option-item">
                             <span class="review-label">应计存栏数:</span>
-                            <span class="review-value">{{ calculateTotalInventory() }}</span>
+                            <span class="review-value">{{ reviewData.expectedInventory }}</span>
                         </div>
                     </div>
                 </div>
@@ -446,7 +470,8 @@ const currentArea = computed(() => farmAreas[currentAreaIndex.value]);
 // 审核数据
 const reviewData = reactive({
     result: props.isViewMode ? 1 : null,  // 1通过, 0不通过
-    comment: ''
+    comment: '',
+    expectedInventory: 12
 });
 
 // 计算审核员点数总和
@@ -465,6 +490,94 @@ const calculateTotalInventory = () => {
     // 示例：简单使用审核员总点数作为应计存栏数
     // 实际逻辑可能需要基于其他因素计算
     return calculateTotalReviewerCount();
+};
+
+// In the script setup section
+
+// Column definitions for outbound records
+const outboundColumns = [
+    { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
+    { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'fatteningPigs', key: 'fatteningPigs', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'piglets', key: 'piglets', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sows', key: 'sows', align: 'center' }
+];
+
+// Column definitions for inbound records
+const inboundColumns = [
+    { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
+    { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'fatteningPigs', key: 'fatteningPigs', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'piglets', key: 'piglets', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sows', key: 'sows', align: 'center' }
+];
+
+// Column definitions for death records
+const deathColumns = [
+    { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
+    { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'fatteningPigs', key: 'fatteningPigs', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'piglets', key: 'piglets', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sows', key: 'sows', align: 'center' },
+    { title: '操作', key: 'action', align: 'center' }
+];
+
+// Sample data for outbound records
+const outboundRecords = ref([
+    {
+        key: '1',
+        time: '2025-04-15',
+        reportTime: '2025-04-15 14:30:00',
+        fatteningPigs: 52,
+        piglets: 1,
+        sows: 1
+    }
+]);
+
+// Sample data for inbound records
+const inboundRecords = ref([
+    {
+        key: '1',
+        time: '2025-04-14',
+        reportTime: '2025-04-14 10:15:00',
+        fatteningPigs: 1,
+        piglets: 1,
+        sows: 1
+    }
+]);
+
+// Sample data for death records
+const deathRecords = ref([
+    {
+        key: '1',
+        time: '2025-04-13',
+        reportTime: '2025-04-13 09:20:00',
+        fatteningPigs: 2,
+        piglets: 0,
+        sows: 0
+    },
+    {
+        key: '2',
+        time: '2025-04-12',
+        reportTime: '2025-04-12 16:45:00',
+        fatteningPigs: 2,
+        piglets: 0,
+        sows: 2
+    },
+    {
+        key: '3',
+        time: '2025-04-11',
+        reportTime: '2025-04-11 11:30:00',
+        fatteningPigs: 2,
+        piglets: 0,
+        sows: 0
+    }
+]);
+
+// Method to view death registration details
+const viewDeathDetail = (record) => {
+    message.info(`查看死亡登记详情: ${record.time}`);
+    // 后续开发详情功能
 };
 
 // 返回上一页
@@ -826,6 +939,31 @@ loadData();
         display: flex;
         justify-content: flex-end;
         white-space: nowrap;
+    }
+
+    .registration-section {
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 12px;
+        color: #333;
+        position: relative;
+        padding-left: 10px;
+    }
+
+    .section-title:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 16px;
+        background-color: #5276E5;
+        border-radius: 2px;
     }
 }
 </style>
