@@ -19,11 +19,13 @@
                 <a-row :gutter="24">
                     <a-col :span="10">
                         <!-- 养殖场基础信息 -->
-                        <farm-basic-info :farm-info="farmInfo" />
+                        <div class="info-card">
+                            <farm-basic-info :farm-info="farmInfo" />
 
-                        <!-- 异常预警 -->
-                        <div style="margin-top: 20px;">
-                            <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+                            <!-- 异常预警 -->
+                            <div style="margin-top: 20px;">
+                                <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+                            </div>
                         </div>
                     </a-col>
 
@@ -33,7 +35,7 @@
                     </a-col>
 
                     <!-- 最右侧：上报情况 -->
-                    <a-col :span="7">
+                    <a-col :span="7" style="padding-left: 24px;">
                         <report-status-bar :report-data="reportData" v-model:date-range="dateRange" />
                     </a-col>
                 </a-row>
@@ -249,6 +251,13 @@ loadData();
     background-color: #f0f2f5;
     height: 100%;
 
+    .info-card {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+        padding: 16px;
+    }
+
     .breadcrumb {
         // padding: 8px 0;
     }
@@ -266,6 +275,7 @@ loadData();
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         padding: 6px;
     }
+
     .detail-card {
         background-color: white;
         border-radius: 4px;

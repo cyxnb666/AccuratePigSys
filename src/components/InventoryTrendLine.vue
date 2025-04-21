@@ -68,12 +68,15 @@ const initChart = () => {
             trigger: 'axis'
         },
         legend: {
-            data: props.trendData.series.map(item => item.name)
+            data: props.trendData.series.map(item => item.name),
+            top: 'bottom',
+            // padding: [20, 0, 0, 0]
         },
         grid: {
             left: '3%',
             right: '4%',
-            bottom: '3%',
+            top: '5%',
+            bottom: '15%',
             containLabel: true
         },
         xAxis: {

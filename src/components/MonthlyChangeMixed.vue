@@ -69,12 +69,14 @@ const initChart = () => {
             }
         },
         legend: {
-            data: props.mixedData.series.map(item => item.name)
+            data: props.mixedData.series.map(item => item.name),
+            top: 'bottom',
         },
         grid: {
             left: '3%',
             right: '4%',
-            bottom: '3%',
+            top: '5%',
+            bottom: '15%',
             containLabel: true
         },
         xAxis: [
