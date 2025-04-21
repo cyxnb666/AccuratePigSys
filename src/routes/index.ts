@@ -1,14 +1,14 @@
 import { RouteRecordRaw, createRouter, createWebHashHistory } from "vue-router";
-import { 
-  DashboardOutlined, 
-  TeamOutlined, 
-  ApartmentOutlined, 
-  UserOutlined,
-  EnvironmentOutlined,
-  FileDoneOutlined,
-  FolderOutlined,
-  FileTextOutlined,
-  WarningOutlined
+import {
+    DashboardOutlined,
+    TeamOutlined,
+    ApartmentOutlined,
+    UserOutlined,
+    EnvironmentOutlined,
+    FileDoneOutlined,
+    FolderOutlined,
+    FileTextOutlined,
+    WarningOutlined
 } from '@ant-design/icons-vue';
 
 const routes: Array<RouteRecordRaw> = [
@@ -109,6 +109,34 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import('@/views/FarmManagement/components/FarmEdit.vue'),
                 meta: {
                     title: '新增/编辑养殖场',
+                    hideInMenu: true
+                }
+            },
+            // 待审核详情路由
+            {
+                path: 'review/pending-detail/:id',
+                name: 'reviewPendingDetail',
+                component: () => import('@/views/Review/details/ReviewDetail.vue'),
+                props: (route) => ({
+                    isViewMode: false,
+                    recordId: route.params.id
+                }),
+                meta: {
+                    title: '审核任务',
+                    hideInMenu: true
+                }
+            },
+            // 已审核详情路由
+            {
+                path: 'review/completed-detail/:id',
+                name: 'reviewCompletedDetail',
+                component: () => import('@/views/Review/details/ReviewDetail.vue'),
+                props: (route) => ({
+                    isViewMode: true,
+                    recordId: route.params.id
+                }),
+                meta: {
+                    title: '审核详情',
                     hideInMenu: true
                 }
             },

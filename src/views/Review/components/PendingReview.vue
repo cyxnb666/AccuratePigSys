@@ -49,12 +49,19 @@
                     :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer show-quick-jumper />
             </div>
         </div>
+
+        <review-detail :record-id="currentRecordId" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
+import ReviewDetail from '../details/ReviewDetail.vue';
+
+const currentRecordId = ref('');
+const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
@@ -202,7 +209,7 @@ const handleReset = () => {
 };
 
 const handleReview = (record) => {
-    message.success(`开始审核养殖场: ${record.farmName}`);
+    router.push(`/review/pending-detail/${record.id}`);
 };
 
 const handleTableChange = (page) => {
