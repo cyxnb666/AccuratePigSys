@@ -16,293 +16,315 @@
 
         <!-- 内容区域 -->
         <div class="content-container">
-            <!-- 基础信息部分 -->
-            <div class="info-section">
-                <div class="section-header">
-                    <div class="title">基础信息</div>
+            <div class="scrollable-content">
+                <!-- 基础信息部分 -->
+                <div class="info-section">
+                    <div class="section-header">
+                        <div class="title">基础信息</div>
+                    </div>
+
+                    <a-form layout="horizontal" :model="basicInfo">
+                        <a-row :gutter="24">
+                            <a-col :span="8">
+                                <a-form-item label="行政区划:">
+                                    <a-input v-model:value="basicInfo.district" readonly />
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="8">
+                                <a-form-item label="养殖场名称:">
+                                    <a-input v-model:value="basicInfo.farmName" readonly />
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="8">
+                                <a-form-item label="养殖场地址:">
+                                    <a-input v-model:value="basicInfo.address" readonly />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="24">
+                            <a-col :span="8">
+                                <a-form-item label="上报用户:">
+                                    <a-input v-model:value="basicInfo.reportUser" readonly />
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="8">
+                                <a-form-item label="上报时间:">
+                                    <a-input v-model:value="basicInfo.reportTime" readonly />
+                                </a-form-item>
+                            </a-col>
+                            <a-col :span="8">
+                                <a-form-item label="上报点数总数:">
+                                    <a-input v-model:value="basicInfo.totalReportCount" readonly />
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                        <a-row :gutter="24">
+                            <a-col :span="8">
+                                <a-form-item label="AI点数总数:">
+                                    <a-input v-model:value="basicInfo.aiTotalCount" readonly />
+                                    <span class="deviation-warning" v-if="showDeviation">
+                                        (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
+                                    </span>
+                                </a-form-item>
+                            </a-col>
+                        </a-row>
+                    </a-form>
                 </div>
 
-                <a-form layout="horizontal" :model="basicInfo">
-                    <a-row :gutter="24">
-                        <a-col :span="8">
-                            <a-form-item label="行政区划:">
-                                <a-input v-model:value="basicInfo.district" readonly />
-                            </a-form-item>
-                        </a-col>
-                        <a-col :span="8">
-                            <a-form-item label="养殖场名称:">
-                                <a-input v-model:value="basicInfo.farmName" readonly />
-                            </a-form-item>
-                        </a-col>
-                        <a-col :span="8">
-                            <a-form-item label="养殖场地址:">
-                                <a-input v-model:value="basicInfo.address" readonly />
-                            </a-form-item>
-                        </a-col>
-                    </a-row>
-                    <a-row :gutter="24">
-                        <a-col :span="8">
-                            <a-form-item label="上报用户:">
-                                <a-input v-model:value="basicInfo.reportUser" readonly />
-                            </a-form-item>
-                        </a-col>
-                        <a-col :span="8">
-                            <a-form-item label="上报时间:">
-                                <a-input v-model:value="basicInfo.reportTime" readonly />
-                            </a-form-item>
-                        </a-col>
-                        <a-col :span="8">
-                            <a-form-item label="上报点数总数:">
-                                <a-input v-model:value="basicInfo.totalReportCount" readonly />
-                            </a-form-item>
-                        </a-col>
-                    </a-row>
-                    <a-row :gutter="24">
-                        <a-col :span="8">
-                            <a-form-item label="AI点数总数:">
-                                <a-input v-model:value="basicInfo.aiTotalCount" readonly />
-                                <span class="deviation-warning" v-if="showDeviation">
-                                    (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
-                                </span>
-                            </a-form-item>
-                        </a-col>
-                    </a-row>
-                </a-form>
-            </div>
+                <!-- 存栏信息部分 -->
+                <div class="inventory-section">
+                    <div class="section-header">
+                        <div class="title">存栏信息</div>
+                    </div>
 
-            <!-- 存栏信息部分 -->
-            <div class="inventory-section">
-                <div class="section-header">
-                    <div class="title">存栏信息</div>
-                </div>
+                    <a-tabs v-model:activeKey="activeMainTab">
+                        <a-tab-pane key="inventory" tab="存栏上报">
+                            <!-- 养殖区域选择和展示 -->
+                            <div class="price-points-section">
+                                <!-- 左侧导航栏 -->
+                                <div class="sidebar-navigation">
+                                    <div class="navigation-header">养殖区域列表</div>
+                                    <div class="navigation-list">
+                                        <div v-for="(area, index) in farmAreas" :key="index"
+                                            :class="['navigation-item', currentAreaIndex === index ? 'active' : '']"
+                                            @click="currentAreaIndex = index">
+                                            {{ area.name }}
+                                        </div>
+                                    </div>
+                                </div>
 
-                <a-tabs v-model:activeKey="activeMainTab">
-                    <a-tab-pane key="inventory" tab="存栏上报">
-                        <!-- 养殖区域选择和展示 -->
-                        <div class="price-points-section">
-                            <!-- 左侧导航栏 -->
-                            <div class="sidebar-navigation">
-                                <div class="navigation-header">养殖区域列表</div>
-                                <div class="navigation-list">
-                                    <div v-for="(area, index) in farmAreas" :key="index"
-                                        :class="['navigation-item', currentAreaIndex === index ? 'active' : '']"
-                                        @click="currentAreaIndex = index">
-                                        {{ area.name }}
+                                <!-- 右侧内容区域 -->
+                                <div class="point-content">
+                                    <div class="price-point-header">{{ currentArea.name }}</div>
+
+                                    <div class="price-point-details">
+                                        <!-- 育肥区/仔猪区/母猪区子标签 -->
+                                        <a-tabs v-model:activeKey="activeSubTab">
+                                            <a-tab-pane key="fattening" tab="育肥区">
+                                                <div class="count-row">
+                                                    <div class="count-item">
+                                                        <span class="label">上报数量：</span>
+                                                        <span class="value">{{ currentArea.fatteningData.reportCount
+                                                        }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">AI点数：</span>
+                                                        <span class="value">{{ currentArea.fatteningData.aiCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">审核员点数：</span>
+                                                        <a-input-number v-if="!isViewMode"
+                                                            v-model:value="currentArea.fatteningData.reviewerCount"
+                                                            :min="0" style="width: 120px" />
+                                                        <span v-else class="value">{{
+                                                            currentArea.fatteningData.reviewerCount }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">上次上报数量：</span>
+                                                        <span class="value">{{ currentArea.fatteningData.lastReportCount
+                                                        }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 视频展示区域 -->
+                                                <div class="video-container">
+                                                    <div class="video-placeholder">
+                                                        <!-- 实际项目中替换为真实视频 -->
+                                                        <div class="placeholder-text">上报拍摄视频</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 轨迹图展示 -->
+                                                <div class="track-section">
+                                                    <div class="track-title">视频拍摄轨迹图</div>
+                                                    <div class="track-container">
+                                                        <div class="track-item">
+                                                            <div class="track-header">传感器轨迹</div>
+                                                            <div class="track-content sensor-track">
+                                                                <!-- 传感器轨迹图占位符 -->
+                                                            </div>
+                                                        </div>
+                                                        <div class="track-item">
+                                                            <div class="track-header">GPS轨迹</div>
+                                                            <div class="track-content gps-track">
+                                                                <!-- GPS轨迹图占位符 -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a-tab-pane>
+
+                                            <a-tab-pane key="piglets" tab="仔猪区">
+                                                <div class="count-row">
+                                                    <div class="count-item">
+                                                        <span class="label">上报数量：</span>
+                                                        <span class="value">{{ currentArea.pigletsData.reportCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">AI点数：</span>
+                                                        <span class="value">{{ currentArea.pigletsData.aiCount }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">审核员点数：</span>
+                                                        <a-input-number v-if="!isViewMode"
+                                                            v-model:value="currentArea.pigletsData.reviewerCount"
+                                                            :min="0" style="width: 120px" />
+                                                        <span v-else class="value">{{
+                                                            currentArea.pigletsData.reviewerCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">上次上报数量：</span>
+                                                        <span class="value">{{ currentArea.pigletsData.lastReportCount
+                                                        }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 视频展示区域 -->
+                                                <div class="video-container">
+                                                    <div class="video-placeholder">
+                                                        <!-- 实际项目中替换为真实视频 -->
+                                                        <div class="placeholder-text">上报拍摄视频</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 轨迹图展示 -->
+                                                <div class="track-section">
+                                                    <div class="track-title">视频拍摄轨迹图</div>
+                                                    <div class="track-container">
+                                                        <div class="track-item">
+                                                            <div class="track-header">传感器轨迹</div>
+                                                            <div class="track-content sensor-track">
+                                                                <!-- 传感器轨迹图占位符 -->
+                                                            </div>
+                                                        </div>
+                                                        <div class="track-item">
+                                                            <div class="track-header">GPS轨迹</div>
+                                                            <div class="track-content gps-track">
+                                                                <!-- GPS轨迹图占位符 -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a-tab-pane>
+
+                                            <a-tab-pane key="sows" tab="母猪区">
+                                                <div class="count-row">
+                                                    <div class="count-item">
+                                                        <span class="label">上报数量：</span>
+                                                        <span class="value">{{ currentArea.sowsData.reportCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">AI点数：</span>
+                                                        <span class="value">{{ currentArea.sowsData.aiCount }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">审核员点数：</span>
+                                                        <a-input-number v-if="!isViewMode"
+                                                            v-model:value="currentArea.sowsData.reviewerCount" :min="0"
+                                                            style="width: 120px" />
+                                                        <span v-else class="value">{{ currentArea.sowsData.reviewerCount
+                                                        }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">上次上报数量：</span>
+                                                        <span class="value">{{ currentArea.sowsData.lastReportCount
+                                                        }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 视频展示区域 -->
+                                                <div class="video-container">
+                                                    <div class="video-placeholder">
+                                                        <!-- 实际项目中替换为真实视频 -->
+                                                        <div class="placeholder-text">上报拍摄视频</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 轨迹图展示 -->
+                                                <div class="track-section">
+                                                    <div class="track-title">视频拍摄轨迹图</div>
+                                                    <div class="track-container">
+                                                        <div class="track-item">
+                                                            <div class="track-header">传感器轨迹</div>
+                                                            <div class="track-content sensor-track">
+                                                                <!-- 传感器轨迹图占位符 -->
+                                                            </div>
+                                                        </div>
+                                                        <div class="track-item">
+                                                            <div class="track-header">GPS轨迹</div>
+                                                            <div class="track-content gps-track">
+                                                                <!-- GPS轨迹图占位符 -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a-tab-pane>
+                                        </a-tabs>
                                     </div>
                                 </div>
                             </div>
+                        </a-tab-pane>
 
-                            <!-- 右侧内容区域 -->
-                            <div class="point-content">
-                                <div class="price-point-header">{{ currentArea.name }}</div>
-
-                                <div class="price-point-details">
-                                    <!-- 育肥区/仔猪区/母猪区子标签 -->
-                                    <a-tabs v-model:activeKey="activeSubTab">
-                                        <a-tab-pane key="fattening" tab="育肥区">
-                                            <div class="count-row">
-                                                <div class="count-item">
-                                                    <span class="label">上报数量：</span>
-                                                    <span class="value">{{ currentArea.fatteningData.reportCount
-                                                        }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">AI点数：</span>
-                                                    <span class="value">{{ currentArea.fatteningData.aiCount }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">审核员点数：</span>
-                                                    <a-input-number v-if="!isViewMode"
-                                                        v-model:value="currentArea.fatteningData.reviewerCount" :min="0"
-                                                        style="width: 120px" />
-                                                    <span v-else class="value">{{
-                                                        currentArea.fatteningData.reviewerCount }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">上次上报数量：</span>
-                                                    <span class="value">{{ currentArea.fatteningData.lastReportCount
-                                                        }}</span>
-                                                </div>
-                                            </div>
-
-                                            <!-- 视频展示区域 -->
-                                            <div class="video-container">
-                                                <div class="video-placeholder">
-                                                    <!-- 实际项目中替换为真实视频 -->
-                                                    <div class="placeholder-text">上报拍摄视频</div>
-                                                </div>
-                                            </div>
-
-                                            <!-- 轨迹图展示 -->
-                                            <div class="track-section">
-                                                <div class="track-title">视频拍摄轨迹图</div>
-                                                <div class="track-container">
-                                                    <div class="track-item">
-                                                        <div class="track-header">传感器轨迹</div>
-                                                        <div class="track-content sensor-track">
-                                                            <!-- 传感器轨迹图占位符 -->
-                                                        </div>
-                                                    </div>
-                                                    <div class="track-item">
-                                                        <div class="track-header">GPS轨迹</div>
-                                                        <div class="track-content gps-track">
-                                                            <!-- GPS轨迹图占位符 -->
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a-tab-pane>
-
-                                        <a-tab-pane key="piglets" tab="仔猪区">
-                                            <div class="count-row">
-                                                <div class="count-item">
-                                                    <span class="label">上报数量：</span>
-                                                    <span class="value">{{ currentArea.pigletsData.reportCount }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">AI点数：</span>
-                                                    <span class="value">{{ currentArea.pigletsData.aiCount }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">审核员点数：</span>
-                                                    <a-input-number v-if="!isViewMode"
-                                                        v-model:value="currentArea.pigletsData.reviewerCount" :min="0"
-                                                        style="width: 120px" />
-                                                    <span v-else class="value">{{ currentArea.pigletsData.reviewerCount
-                                                        }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">上次上报数量：</span>
-                                                    <span class="value">{{ currentArea.pigletsData.lastReportCount
-                                                        }}</span>
-                                                </div>
-                                            </div>
-
-                                            <!-- 视频展示区域 -->
-                                            <div class="video-container">
-                                                <div class="video-placeholder">
-                                                    <!-- 实际项目中替换为真实视频 -->
-                                                    <div class="placeholder-text">上报拍摄视频</div>
-                                                </div>
-                                            </div>
-
-                                            <!-- 轨迹图展示 -->
-                                            <div class="track-section">
-                                                <div class="track-title">视频拍摄轨迹图</div>
-                                                <div class="track-container">
-                                                    <div class="track-item">
-                                                        <div class="track-header">传感器轨迹</div>
-                                                        <div class="track-content sensor-track">
-                                                            <!-- 传感器轨迹图占位符 -->
-                                                        </div>
-                                                    </div>
-                                                    <div class="track-item">
-                                                        <div class="track-header">GPS轨迹</div>
-                                                        <div class="track-content gps-track">
-                                                            <!-- GPS轨迹图占位符 -->
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a-tab-pane>
-
-                                        <a-tab-pane key="sows" tab="母猪区">
-                                            <div class="count-row">
-                                                <div class="count-item">
-                                                    <span class="label">上报数量：</span>
-                                                    <span class="value">{{ currentArea.sowsData.reportCount }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">AI点数：</span>
-                                                    <span class="value">{{ currentArea.sowsData.aiCount }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">审核员点数：</span>
-                                                    <a-input-number v-if="!isViewMode"
-                                                        v-model:value="currentArea.sowsData.reviewerCount" :min="0"
-                                                        style="width: 120px" />
-                                                    <span v-else class="value">{{ currentArea.sowsData.reviewerCount
-                                                        }}</span>
-                                                </div>
-                                                <div class="count-item">
-                                                    <span class="label">上次上报数量：</span>
-                                                    <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                        }}</span>
-                                                </div>
-                                            </div>
-
-                                            <!-- 视频展示区域 -->
-                                            <div class="video-container">
-                                                <div class="video-placeholder">
-                                                    <!-- 实际项目中替换为真实视频 -->
-                                                    <div class="placeholder-text">上报拍摄视频</div>
-                                                </div>
-                                            </div>
-
-                                            <!-- 轨迹图展示 -->
-                                            <div class="track-section">
-                                                <div class="track-title">视频拍摄轨迹图</div>
-                                                <div class="track-container">
-                                                    <div class="track-item">
-                                                        <div class="track-header">传感器轨迹</div>
-                                                        <div class="track-content sensor-track">
-                                                            <!-- 传感器轨迹图占位符 -->
-                                                        </div>
-                                                    </div>
-                                                    <div class="track-item">
-                                                        <div class="track-header">GPS轨迹</div>
-                                                        <div class="track-content gps-track">
-                                                            <!-- GPS轨迹图占位符 -->
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a-tab-pane>
-                                    </a-tabs>
-                                </div>
+                        <a-tab-pane key="movement" tab="出栏/补栏/死亡登记">
+                            <!-- 出栏/补栏/死亡登记等功能待开发 -->
+                            <div class="placeholder-message">
+                                出栏/补栏/死亡登记相关功能正在开发中...
                             </div>
-                        </div>
-                    </a-tab-pane>
+                        </a-tab-pane>
+                    </a-tabs>
+                </div>
 
-                    <a-tab-pane key="movement" tab="出栏/补栏/死亡登记">
-                        <!-- 出栏/补栏/死亡登记等功能待开发 -->
-                        <div class="placeholder-message">
-                            出栏/补栏/死亡登记相关功能正在开发中...
+                <!-- 底部空白区域，确保内容不被底部按钮遮挡 -->
+                <div class="bottom-spacer"></div>
+            </div>
+
+            <!-- 底部操作栏 -->
+            <div class="form-actions">
+                <div class="review-row">
+                    <div class="row-title">
+                        <div class="title">审核信息</div>
+                    </div>
+                    <div class="review-top-options">
+                        <div class="review-option-item">
+                            <span class="review-label">审核意见:</span>
+                            <a-radio-group v-model:value="reviewData.result" :disabled="isViewMode">
+                                <a-radio :value="1">审核通过</a-radio>
+                                <a-radio :value="0">审核不通过</a-radio>
+                            </a-radio-group>
                         </div>
-                    </a-tab-pane>
-                </a-tabs>
+                        <div class="review-option-item">
+                            <span class="review-label">审核员点数:</span>
+                            <span class="review-value">{{ calculateTotalReviewerCount() }}</span>
+                            <span class="review-note">(根据审核员填写的各区域点数自动计算)</span>
+                        </div>
+                        <div class="review-option-item">
+                            <span class="review-label">应计存栏数:</span>
+                            <span class="review-value">{{ calculateTotalInventory() }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-bottom-row">
+                    <div class="comment-section">
+                        <span class="review-label">审核备注:</span>
+                        <a-textarea v-model:value="reviewData.comment" :disabled="isViewMode" placeholder="请输入审核备注信息"
+                            :rows="1" :maxlength="200" show-count />
+                    </div>
+                    <div class="action-buttons">
+                        <a-button @click="goBack">返回</a-button>
+                        <a-button v-if="!isViewMode" type="primary" @click="submitReview"
+                            style="margin-left: 16px;">完成审核</a-button>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <!-- 固定底部操作栏 -->
-        <!-- <div class="form-actions">
-            <div class="review-options">
-                <div class="review-option-item">
-                    <span class="review-label">审核意见:</span>
-                    <a-radio-group v-model:value="reviewData.result" :disabled="isViewMode">
-                        <a-radio :value="1">审核通过</a-radio>
-                        <a-radio :value="0">审核不通过</a-radio>
-                    </a-radio-group>
-                </div>
-                <div class="review-option-item">
-                    <span class="review-label">审核员点数:</span>
-                    <span class="review-value">{{ calculateTotalReviewerCount() }}</span>
-                    <span class="review-note">(根据审核员填写的各区域点数自动计算)</span>
-                </div>
-                <div class="review-option-item">
-                    <span class="review-label">应计存栏数:</span>
-                    <span class="review-value">{{ calculateTotalInventory() }}</span>
-                </div>
-            </div>
-
-            <div class="action-buttons">
-                <a-button @click="goBack">返回</a-button>
-                <a-button v-if="!isViewMode" type="primary" @click="submitReview"
-                    style="margin-left: 16px;">完成审核</a-button>
-            </div>
-        </div> -->
     </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
@@ -496,8 +518,6 @@ loadData();
     display: flex;
     flex-direction: column;
     height: 100%;
-    position: relative;
-    padding-bottom: 80px; // 为底部操作栏留出空间
 
     .bread-detail-card {
         background-color: white;
@@ -511,9 +531,19 @@ loadData();
         background-color: white;
         border-radius: 4px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .scrollable-content {
         flex: 1;
         padding: 20px;
         overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
     }
 
     .section-header {
@@ -702,23 +732,50 @@ loadData();
         background-color: #f9f9f9;
     }
 
-    .form-actions {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: #fff;
-        box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05);
-        padding: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 100;
+    .bottom-spacer {
+        height: 60px;
     }
 
-    .review-options {
+    .form-actions {
+        padding: 16px;
+        background-color: #f8f8f8;
+        border-top: 1px solid #e8e8e8;
+        position: sticky;
+        bottom: 0;
+    }
+
+    .review-row {
+        margin-bottom: 12px;
+    }
+
+    .row-title {
+        margin-bottom: 8px;
+
+        .title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            position: relative;
+            padding-left: 10px;
+
+            &:before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 4px;
+                height: 16px;
+                background-color: #5276E5;
+                border-radius: 2px;
+            }
+        }
+    }
+
+    .review-top-options {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 24px;
     }
 
@@ -727,9 +784,31 @@ loadData();
         align-items: center;
     }
 
+    .review-bottom-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .comment-section {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        margin-right: 20px;
+
+        .review-label {
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        :deep(.ant-input) {
+            flex: 1;
+        }
+    }
+
     .review-label {
-        margin-right: 8px;
         font-weight: 500;
+        margin-right: 10px;
     }
 
     .review-value {
@@ -745,6 +824,8 @@ loadData();
 
     .action-buttons {
         display: flex;
+        justify-content: flex-end;
+        white-space: nowrap;
     }
 }
 </style>

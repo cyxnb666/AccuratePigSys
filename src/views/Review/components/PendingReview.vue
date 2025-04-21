@@ -49,8 +49,6 @@
                     :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer show-quick-jumper />
             </div>
         </div>
-
-        <review-detail :record-id="currentRecordId" />
     </div>
 </template>
 
@@ -58,9 +56,7 @@
 import { ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
-import ReviewDetail from '../details/ReviewDetail.vue';
 
-const currentRecordId = ref('');
 const router = useRouter();
 
 // 搜索表单
@@ -209,7 +205,10 @@ const handleReset = () => {
 };
 
 const handleReview = (record) => {
-    router.push(`/review/pending-detail/${record.id}`);
+    router.push({
+        path: `/review/detail/${record.id}`,
+        query: { viewMode: 'false' }
+    });
 };
 
 const handleTableChange = (page) => {

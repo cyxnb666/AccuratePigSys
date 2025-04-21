@@ -68,6 +68,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { message } from 'ant-design-vue';
+import { useRouter, useRoute } from 'vue-router';
+
+const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
@@ -238,7 +241,10 @@ const handleReset = () => {
 };
 
 const handleDetail = (record) => {
-    message.info(`查看养殖场详情: ${record.farmName}`);
+    router.push({
+        path: `/review/detail/${record.id}`,
+        query: { viewMode: 'true' }
+    });
 };
 
 const handleTableChange = (page) => {
