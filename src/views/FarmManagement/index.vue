@@ -56,7 +56,9 @@
 import { ref, reactive } from 'vue';
 import ReportTaskDialog from './components/ReportTaskDialog.vue';
 import { message } from 'ant-design-vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const reportTaskDialogVisible = ref(false);
 const currentRecord = ref({});
 
@@ -203,13 +205,12 @@ const handleReset = () => {
   searchForm.farmName = '';
 };
 
-// 这些方法保留为占位符，实际功能暂不实现
 const handleAdd = () => {
-  message.info('新增养殖场功能暂未实现');
+  router.push('/farm/edit');
 };
 
 const handleEdit = (record) => {
-  message.info('编辑养殖场功能暂未实现');
+  router.push(`/farm/edit?id=${record.id}`);
 };
 
 const handleReportConfig = (record) => {
