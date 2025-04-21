@@ -38,7 +38,7 @@
                 :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'action'">
-                        <a-button type="primary" @click="handleReview(record)">审核</a-button>
+                        <a-button type="link" @click="handleReview(record)">审核</a-button>
                     </template>
                 </template>
             </a-table>
