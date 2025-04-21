@@ -72,7 +72,7 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'review',
                 component: () => import('@/views/Review/index.vue'),
                 meta: {
-                    title: '存档上报审核',
+                    title: '存栏上报审核',
                     icon: FileDoneOutlined
                 }
             },
