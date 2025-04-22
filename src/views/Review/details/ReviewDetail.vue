@@ -17,58 +17,66 @@
         <!-- 内容区域 -->
         <div class="content-container">
             <div class="scrollable-content">
+
                 <!-- 基础信息部分 -->
                 <div class="info-section">
                     <div class="section-header">
                         <div class="title">基础信息</div>
                     </div>
 
-                    <a-form layout="horizontal" :model="basicInfo">
-                        <a-row :gutter="24">
-                            <a-col :span="8">
-                                <a-form-item label="行政区划:">
-                                    <a-input v-model:value="basicInfo.district" readonly />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :span="8">
-                                <a-form-item label="养殖场名称:">
-                                    <a-input v-model:value="basicInfo.farmName" readonly />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :span="8">
-                                <a-form-item label="养殖场地址:">
-                                    <a-input v-model:value="basicInfo.address" readonly />
-                                </a-form-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="24">
-                            <a-col :span="8">
-                                <a-form-item label="上报用户:">
-                                    <a-input v-model:value="basicInfo.reportUser" readonly />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :span="8">
-                                <a-form-item label="上报时间:">
-                                    <a-input v-model:value="basicInfo.reportTime" readonly />
-                                </a-form-item>
-                            </a-col>
-                            <a-col :span="8">
-                                <a-form-item label="上报点数总数:">
-                                    <a-input v-model:value="basicInfo.totalReportCount" readonly />
-                                </a-form-item>
-                            </a-col>
-                        </a-row>
-                        <a-row :gutter="24">
-                            <a-col :span="8">
-                                <a-form-item label="AI点数总数:">
-                                    <a-input v-model:value="basicInfo.aiTotalCount" readonly />
-                                    <span class="deviation-warning" v-if="showDeviation">
-                                        (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
-                                    </span>
-                                </a-form-item>
-                            </a-col>
-                        </a-row>
-                    </a-form>
+                    <a-row :gutter="24" class="info-row">
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">行政区划:</span>
+                                <span class="value">{{ basicInfo.district }}</span>
+                            </div>
+                        </a-col>
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">养殖场名称:</span>
+                                <span class="value">{{ basicInfo.farmName }}</span>
+                            </div>
+                        </a-col>
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">养殖场地址:</span>
+                                <span class="value">{{ basicInfo.address }}</span>
+                            </div>
+                        </a-col>
+                    </a-row>
+
+                    <a-row :gutter="24" class="info-row">
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">上报用户:</span>
+                                <span class="value">{{ basicInfo.reportUser }}</span>
+                            </div>
+                        </a-col>
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">上报时间:</span>
+                                <span class="value">{{ basicInfo.reportTime }}</span>
+                            </div>
+                        </a-col>
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">上报点数总数:</span>
+                                <span class="value">{{ basicInfo.totalReportCount }}</span>
+                            </div>
+                        </a-col>
+                    </a-row>
+
+                    <a-row :gutter="24" class="info-row">
+                        <a-col :span="8">
+                            <div class="info-item">
+                                <span class="label">AI点数总数:</span>
+                                <span class="value">{{ basicInfo.aiTotalCount }}</span>
+                                <span class="deviation-warning">
+                                    (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
+                                </span>
+                            </div>
+                        </a-col>
+                    </a-row>
                 </div>
 
                 <!-- 存栏信息部分 -->
@@ -341,6 +349,10 @@
                             <span class="review-label">应计存栏数:</span>
                             <span class="review-value">{{ reviewData.expectedInventory }}</span>
                         </div>
+                        <div class="review-option-item">
+                            <span class="review-label">上报点数总数:</span>
+                            <span class="review-value">{{ basicInfo.totalReportCount }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -358,6 +370,8 @@
                 </div>
             </div>
         </div>
+        <death-detail-dialog v-model="deathDetailVisible" :record="currentDeathRecord" :is-view-mode="props.isViewMode"
+            @confirm="handleDeathDetailConfirm" />
     </div>
 </template>
 
@@ -367,6 +381,10 @@ import { ref, reactive, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
+import DeathDetailDialog from './DeathDetailDialog.vue';
+
+const deathDetailVisible = ref(false);
+const currentDeathRecord = ref(null);
 
 const props = defineProps({
     isViewMode: {
@@ -587,8 +605,13 @@ const deathRecords = ref([
 ]);
 
 const viewDeathDetail = (record) => {
-    message.info(`查看死亡登记详情: ${record.time}`);
-    // 后续开发详情功能
+    currentDeathRecord.value = record;
+    deathDetailVisible.value = true;
+};
+
+const handleDeathDetailConfirm = (reviewData) => {
+    console.log('Review data for death record:', reviewData);
+    message.success('死亡登记审核已保存');
 };
 
 const goToDetailedComparison = (tabType: string) => {
@@ -708,6 +731,29 @@ loadData();
 
     .info-section {
         margin-bottom: 24px;
+    }
+
+    .info-row {
+        margin-bottom: 12px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+
+        .label {
+            color: #666;
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+
+        .value {
+            color: #333;
+        }
     }
 
     .deviation-warning {
@@ -879,7 +925,7 @@ loadData();
     }
 
     .review-row {
-        margin-bottom: 16px; // 增加底部间距
+        margin-bottom: 16px;
     }
 
     .row-title {
@@ -927,7 +973,7 @@ loadData();
     .comment-section {
         display: flex;
         align-items: center;
-        flex: 0 1 800px; // 改为最大宽度800px，看情况改
+        flex: 0 1 800px;
         margin-right: 20px;
 
         .review-label {
@@ -941,7 +987,7 @@ loadData();
 
         :deep(.ant-input-textarea) {
             width: 100%;
-            max-width: 800px; // 设置最大宽度
+            max-width: 800px;
         }
 
         :deep(.ant-input-textarea-show-count) {
@@ -973,7 +1019,7 @@ loadData();
         display: flex;
         justify-content: flex-end;
         white-space: nowrap;
-        align-self: flex-end; // 将按钮对齐到底部
+        align-self: flex-end;
     }
 
     .registration-section {
