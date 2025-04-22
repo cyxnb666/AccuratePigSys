@@ -125,21 +125,20 @@ const routes: Array<RouteRecordRaw> = [
                     hideInMenu: true
                 }
             },
-            // Add this to the children array in routes/index.ts
-{
-    path: 'review/super-detail/:id',
-    name: 'superDetail',
-    component: () => import('@/views/Review/details/SuperDetail.vue'),
-    props: (route) => ({
-        recordId: route.params.id,
-        areaIndex: parseInt(route.query.area as string) || 0,
-        tabKey: route.query.tab as string || 'fattening'
-    }),
-    meta: {
-        title: '详细对比',
-        hideInMenu: true
-    }
-},
+            {
+                path: 'review/super-detail/:id',
+                name: 'superDetail',
+                component: () => import('@/views/Review/details/SuperDetail.vue'),
+                props: (route) => ({
+                    recordId: route.params.id,
+                    areaIndex: parseInt(route.query.area as string) || 0,
+                    tabKey: route.query.tab as string || 'fattening'
+                }),
+                meta: {
+                    title: '详细对比',
+                    hideInMenu: true
+                }
+            },
             {
                 path: 'warning',
                 name: 'warning',
