@@ -60,6 +60,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { message } from 'ant-design-vue';
+import { useRouter, useRoute } from 'vue-router';
+
+const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
@@ -230,7 +233,10 @@ const handleReset = () => {
 };
 
 const viewDetails = (record) => {
-    message.info(`查看养殖场 ${record.farmName} 的异常预警详情`);
+    router.push({
+        path: `/review/detail/${record.id}`,
+        query: { viewMode: 'true' }
+    });
 };
 
 const handleTableChange = (page) => {

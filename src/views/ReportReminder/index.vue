@@ -50,6 +50,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { message } from 'ant-design-vue';
+import { useRouter, useRoute } from 'vue-router';
+
+const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
@@ -210,7 +213,7 @@ const handleReset = () => {
 };
 
 const viewReminderDetails = (record) => {
-    message.info(`查看养殖场 ${record.farmName} 的提醒记录`);
+    router.push(`/Report/detail/${record.id}`);
 };
 
 const handleTableChange = (page) => {

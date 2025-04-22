@@ -86,6 +86,15 @@ const routes: Array<RouteRecordRaw> = [
                 }
             },
             {
+                path: 'Report/detail/:id',
+                name: 'reportDetail',
+                component: () => import('@/views/ReportReminder/components/ReminderDetail.vue'),
+                meta: {
+                    title: '提醒记录详情',
+                    hideInMenu: true
+                }
+            },
+            {
                 path: 'archive',
                 name: 'archive',
                 component: () => import('@/views/InventoryList/index.vue'),
