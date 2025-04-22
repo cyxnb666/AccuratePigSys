@@ -36,19 +36,19 @@
             <a-row :gutter="16">
                 <a-col :span="12">
                     <a-form-item label="经度" name="longitude">
-                        <a-input v-model:value="formData.longitude" placeholder="请输入经度" />
+                        <a-input v-model:value="formData.longitude" placeholder="请输入经度" @change="handleLngLatChange" />
                     </a-form-item>
                 </a-col>
                 <a-col :span="12">
                     <a-form-item label="纬度" name="latitude">
-                        <a-input v-model:value="formData.latitude" placeholder="请输入纬度" />
+                        <a-input v-model:value="formData.latitude" placeholder="请输入纬度" @change="handleLngLatChange" />
                     </a-form-item>
                 </a-col>
             </a-row>
 
             <!-- 地图区域 -->
             <div class="map-container">
-                <div class="map-placeholder"></div>
+                <map-component ref="mapRef" @updatePosition="handlePositionUpdate" />
             </div>
 
             <!-- 底部按钮 -->
@@ -64,6 +64,9 @@
 <script lang="ts" setup>
 import { ref, reactive, defineProps, defineEmits, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
+import MapComponent from './MapComponent.vue';
+
+const mapRef = ref();
 
 const props = defineProps({
     modelValue: {
@@ -159,23 +162,63 @@ const rules = {
     latitude: [{ required: true, message: '请输入纬度', trigger: 'blur' }]
 };
 
-// 当编辑模式且有记录时，填充表单数据
+const handlePositionUpdate = (position: { longitude: number; latitude: number; address: string }) => {
+    formData.longitude = position.longitude.toFixed(6);
+    formData.latitude = position.latitude.toFixed(6);
+    // 可以根据需要更新地址信息
+};
+
+// 处理经纬度输入变化
+const handleLngLatChange = () => {
+    const lng = parseFloat(formData.longitude);
+    const lat = parseFloat(formData.latitude);
+
+    if (!isNaN(lng) && !isNaN(lat)) {
+        mapRef.value?.updateMapPosition(lng, lat);
+    }
+};
+
 watch(
     () => [props.modelValue, props.record],
     ([visible, record]) => {
         if (visible && props.isEdit && record) {
-            // 编辑时填充表单数据
             Object.keys(formData).forEach(key => {
                 if (record[key] !== undefined) {
                     formData[key] = record[key];
                 }
             });
+
+            // 如果存在经纬度，更新地图显示
+            const lng = parseFloat(record.longitude);
+            const lat = parseFloat(record.latitude);
+            if (!isNaN(lng) && !isNaN(lat)) {
+                setTimeout(() => {
+                    mapRef.value?.updateMapPosition(lng, lat);
+                }, 100);
+            }
         } else if (visible && !props.isEdit) {
-            // 新增时重置表单
             resetForm();
         }
     }
 );
+
+// 当编辑模式且有记录时，填充表单数据
+// watch(
+//     () => [props.modelValue, props.record],
+//     ([visible, record]) => {
+//         if (visible && props.isEdit && record) {
+//             // 编辑时填充表单数据
+//             Object.keys(formData).forEach(key => {
+//                 if (record[key] !== undefined) {
+//                     formData[key] = record[key];
+//                 }
+//             });
+//         } else if (visible && !props.isEdit) {
+//             // 新增时重置表单
+//             resetForm();
+//         }
+//     }
+// );
 
 const resetForm = () => {
     Object.keys(formData).forEach(key => {
@@ -236,15 +279,7 @@ const handleSubmit = () => {
 
     .map-container {
         width: 100%;
-        height: 280px;
-        background-color: #f5f7fa;
-        border: 1px solid #e4e7ed;
         margin-bottom: 20px;
-
-        .map-placeholder {
-            width: 100%;
-            height: 100%;
-        }
     }
 
     .form-footer {
