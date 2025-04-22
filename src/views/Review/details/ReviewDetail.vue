@@ -102,27 +102,34 @@
                                         <a-tabs v-model:activeKey="activeSubTab">
                                             <a-tab-pane key="fattening" tab="育肥区">
                                                 <div class="count-row">
-    <div class="count-item">
-        <span class="label">上报数量：</span>
-        <span class="value">{{ currentArea.fatteningData.reportCount }}</span>
-    </div>
-    <div class="count-item">
-        <span class="label">AI点数：</span>
-        <span class="value">{{ currentArea.fatteningData.aiCount }}</span>
-    </div>
-    <div class="count-item">
-        <span class="label">审核员点数：</span>
-        <a-input-number v-if="!isViewMode" v-model:value="currentArea.fatteningData.reviewerCount" :min="0" style="width: 120px" />
-        <span v-else class="value">{{ currentArea.fatteningData.reviewerCount }}</span>
-    </div>
-    <div class="count-item">
-        <span class="label">上次上报数量：</span>
-        <span class="value">{{ currentArea.fatteningData.lastReportCount }}</span>
-    </div>
-    <div class="count-item">
-        <a-button type="primary" size="small" @click="goToDetailedComparison">详细对比</a-button>
-    </div>
-</div>
+                                                    <div class="count-item">
+                                                        <span class="label">上报数量：</span>
+                                                        <span class="value">{{ currentArea.fatteningData.reportCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">AI点数：</span>
+                                                        <span class="value">{{ currentArea.fatteningData.aiCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">审核员点数：</span>
+                                                        <a-input-number v-if="!isViewMode"
+                                                            v-model:value="currentArea.fatteningData.reviewerCount"
+                                                            :min="0" style="width: 120px" />
+                                                        <span v-else class="value">{{
+                                                            currentArea.fatteningData.reviewerCount }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <span class="label">上次上报数量：</span>
+                                                        <span class="value">{{ currentArea.fatteningData.lastReportCount
+                                                            }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <a-button type="primary" size="small"
+                                                            @click="goToDetailedComparison('fattening')">详细对比</a-button>
+                                                    </div>
+                                                </div>
 
                                                 <!-- 视频展示区域 -->
                                                 <div class="video-container">
@@ -157,7 +164,7 @@
                                                     <div class="count-item">
                                                         <span class="label">上报数量：</span>
                                                         <span class="value">{{ currentArea.pigletsData.reportCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">AI点数：</span>
@@ -170,12 +177,16 @@
                                                             :min="0" style="width: 120px" />
                                                         <span v-else class="value">{{
                                                             currentArea.pigletsData.reviewerCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">上次上报数量：</span>
                                                         <span class="value">{{ currentArea.pigletsData.lastReportCount
-                                                            }}</span>
+                                                        }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <a-button type="primary" size="small"
+                                                            @click="goToDetailedComparison('piglets')">详细对比</a-button>
                                                     </div>
                                                 </div>
 
@@ -212,7 +223,7 @@
                                                     <div class="count-item">
                                                         <span class="label">上报数量：</span>
                                                         <span class="value">{{ currentArea.sowsData.reportCount
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">AI点数：</span>
@@ -224,12 +235,16 @@
                                                             v-model:value="currentArea.sowsData.reviewerCount" :min="0"
                                                             style="width: 120px" />
                                                         <span v-else class="value">{{ currentArea.sowsData.reviewerCount
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
                                                     <div class="count-item">
                                                         <span class="label">上次上报数量：</span>
                                                         <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                            }}</span>
+                                                        }}</span>
+                                                    </div>
+                                                    <div class="count-item">
+                                                        <a-button type="primary" size="small"
+                                                            @click="goToDetailedComparison('sows')">详细对比</a-button>
                                                     </div>
                                                 </div>
 
@@ -576,12 +591,12 @@ const viewDeathDetail = (record) => {
     // 后续开发详情功能
 };
 
-const goToDetailedComparison = () => {
+const goToDetailedComparison = (tabType: string) => {
     router.push({
         path: `/review/super-detail/${props.recordId}`,
-        query: { 
+        query: {
             area: currentAreaIndex.value,
-            tab: activeSubTab.value
+            tab: tabType
         }
     });
 };
@@ -864,7 +879,7 @@ loadData();
     }
 
     .review-row {
-        margin-bottom: 12px;
+        margin-bottom: 16px; // 增加底部间距
     }
 
     .row-title {
@@ -912,7 +927,7 @@ loadData();
     .comment-section {
         display: flex;
         align-items: center;
-        flex: 1;
+        flex: 0 1 800px; // 改为最大宽度800px，看情况改
         margin-right: 20px;
 
         .review-label {
@@ -922,6 +937,19 @@ loadData();
 
         :deep(.ant-input) {
             flex: 1;
+        }
+
+        :deep(.ant-input-textarea) {
+            width: 100%;
+            max-width: 800px; // 设置最大宽度
+        }
+
+        :deep(.ant-input-textarea-show-count) {
+            &::after {
+                position: absolute;
+                bottom: 5px;
+                right: 10px;
+            }
         }
     }
 
@@ -945,6 +973,7 @@ loadData();
         display: flex;
         justify-content: flex-end;
         white-space: nowrap;
+        align-self: flex-end; // 将按钮对齐到底部
     }
 
     .registration-section {

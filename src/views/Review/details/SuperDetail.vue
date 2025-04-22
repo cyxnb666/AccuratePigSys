@@ -16,9 +16,9 @@
 
         <div class="content-container">
             <!-- Two-column layout -->
-            <a-row :gutter="16">
+            <a-row :gutter="16" class="full-height-row">
                 <!-- Left column: Video player -->
-                <a-col :span="14">
+                <a-col :span="14" class="full-height-col">
                     <div class="video-wrapper">
                         <video controls width="100%" class="main-video">
                             <source src="" type="video/mp4">
@@ -28,20 +28,22 @@
                 </a-col>
 
                 <!-- Right column: Track visualizations -->
-                <a-col :span="10">
-                    <!-- Sensor track -->
-                    <div class="track-container">
-                        <div class="track-header">传感器轨迹</div>
-                        <div class="track-content sensor-track">
-                            <!-- This would be implemented with a chart library in production -->
+                <a-col :span="10" class="full-height-col">
+                    <div class="tracks-wrapper">
+                        <!-- Sensor track -->
+                        <div class="track-container">
+                            <div class="track-header">传感器轨迹</div>
+                            <div class="track-content sensor-track">
+                                <!-- This would be implemented with a chart library in production -->
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- GPS track -->
-                    <div class="track-container" style="margin-top: 16px;">
-                        <div class="track-header">GPS轨迹</div>
-                        <div class="track-content gps-track">
-                            <!-- This would be implemented with a map library in production -->
+                        <!-- GPS track -->
+                        <div class="track-container">
+                            <div class="track-header">GPS轨迹</div>
+                            <div class="track-content gps-track">
+                                <!-- This would be implemented with a map library in production -->
+                            </div>
                         </div>
                     </div>
                 </a-col>
@@ -101,6 +103,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 
     .bread-detail-card {
         background-color: white;
@@ -116,27 +119,57 @@ onMounted(() => {
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         padding: 20px;
         flex: 1;
-        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .full-height-row {
+        flex: 1;
+        height: 100%;
+
+        :deep(.ant-row) {
+            height: 100%;
+        }
+    }
+
+    .full-height-col {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
 
     .video-wrapper {
         width: 100%;
+        height: 100%;
         background-color: #000;
         border-radius: 4px;
         overflow: hidden;
-        height: 600px;
+        display: flex;
+        align-items: center;
 
         .main-video {
             width: 100%;
             height: 100%;
+            object-fit: contain;
             display: block;
         }
+    }
+
+    .tracks-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        height: 100%;
     }
 
     .track-container {
         border: 1px solid #e8e8e8;
         border-radius: 4px;
         overflow: hidden;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
 
         .track-header {
             padding: 10px 16px;
@@ -146,8 +179,9 @@ onMounted(() => {
         }
 
         .track-content {
-            height: 280px;
+            flex: 1;
             background-color: #f9f9f9;
+            min-height: 150px;
         }
 
         .sensor-track {
