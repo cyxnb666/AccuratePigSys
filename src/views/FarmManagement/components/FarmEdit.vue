@@ -73,16 +73,9 @@
                 <div class="fence-section">
                     <div class="section-header">
                         <span class="section-title">养殖场电子围栏编辑</span>
-                        <div class="fence-toggle">
-                            开启电子围栏编辑
-                            <a-switch v-model:checked="enableFence" style="margin-left: 8px" />
-                        </div>
                     </div>
-                    <div class="map-container">
-                        <!-- 地图占位区域 -->
-                        <div class="map-placeholder"></div>
-                        <a-button type="primary" class="add-fence-button">新增养殖区域</a-button>
-                    </div>
+                    <!-- 使用新组件代替原来的地图占位区域 -->
+                    <electronic-fence-map ref="fenceMapRef" />
                 </div>
 
                 <!-- 底部空白区域，确保电子围栏完全可见 -->
@@ -129,10 +122,12 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
+import ElectronicFenceMap from './ElectronicFenceMap.vue';
 
 const router = useRouter();
 const route = useRoute();
 const isEdit = ref(route.query.id !== undefined);
+const fenceMapRef = ref<any>(null);
 
 // 行政区划树形数据
 const districtTreeData = [
@@ -204,9 +199,6 @@ const contactColumns = [
 
 const contacts = ref([]);
 
-// 电子围栏
-const enableFence = ref(false);
-
 // 联系人对话框
 const contactDialogVisible = ref(false);
 const newContact = reactive({
@@ -276,6 +268,12 @@ const saveForm = () => {
         return;
     }
 
+    // 获取电子围栏数据
+    const fenceList = fenceMapRef.value?.getFenceList();
+
+    // 在这里可以处理保存围栏数据的逻辑
+    console.log('保存围栏数据:', fenceList);
+
     message.success(`${isEdit.value ? '编辑' : '新增'}养殖场成功`);
     router.go(-1);
 };
@@ -303,7 +301,6 @@ onMounted(() => {
 });
 </script>
 
-
 <style lang="scss" scoped>
 .farm-edit {
     display: flex;
@@ -326,14 +323,12 @@ onMounted(() => {
         flex-direction: column;
         flex: 1;
         overflow: hidden;
-        /* 防止内容溢出 */
     }
 
     .scrollable-content {
         flex: 1;
         padding: 20px;
         padding-bottom: 0;
-        /* 底部留给按钮区域 */
         overflow-y: auto;
         display: flex;
         flex-direction: column;
@@ -357,33 +352,8 @@ onMounted(() => {
         }
     }
 
-    .fence-toggle {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-    }
-
-    .map-container {
-        position: relative;
-
-        .map-placeholder {
-            width: 100%;
-            height: 400px;
-            background-color: #f5f5f5;
-            border: 1px solid #e8e8e8;
-        }
-
-        .add-fence-button {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            z-index: 1;
-        }
-    }
-
     .bottom-spacer {
         height: 60px;
-        /* 确保电子围栏与底部按钮之间有足够空间 */
     }
 
     .form-actions {
@@ -391,7 +361,6 @@ onMounted(() => {
         justify-content: center;
         padding: 16px 0;
         background-color: #f8f8f8;
-        /* 按钮区域背景色 */
         border-top: 1px solid #e8e8e8;
         position: sticky;
         bottom: 0;
