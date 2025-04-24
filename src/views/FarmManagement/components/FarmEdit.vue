@@ -59,8 +59,16 @@
                     </div>
                     <a-table :columns="contactColumns" :data-source="contacts" :pagination="false" bordered>
                         <template #bodyCell="{ column, record }">
+                            <template v-if="column.key === 'status'">
+                                <a-switch :checked="record.status === '启用'" @change="toggleContactStatus(record)"
+                                    :checkedChildren="'启用'" :unCheckedChildren="'禁用'" :style="{
+                                        backgroundColor: record.status === '启用' ? '#52c41a' : '#f5222d'
+                                    }" />
+                            </template>
                             <template v-if="column.key === 'isPrimary'">
-                                <a-radio :checked="record.isPrimary" @change="setPrimaryContact(record)" />
+                                <a-switch :checked="record.isPrimary" @change="setPrimaryContact(record)" :style="{
+                                    backgroundColor: record.isPrimary ? '#1890ff' : '#d9d9d9'
+                                }" />
                             </template>
                             <template v-if="column.key === 'action'">
                                 <a-button type="link" danger @click="deleteContact(record)">删除</a-button>
@@ -250,10 +258,28 @@ const addContact = () => {
     message.success('添加联系人成功');
 };
 
+// 修改设置主要联系人的方法
 const setPrimaryContact = (record) => {
-    contacts.value.forEach(contact => {
-        contact.isPrimary = contact.key === record.key;
-    });
+    // 直接切换状态
+    record.isPrimary = !record.isPrimary;
+
+    // 这里可以调用API更新主要联系人状态
+    console.log(`已${record.isPrimary ? '设置' : '取消'}主要联系人: ${record.name}`);
+
+    // 模拟API调用
+    message.success(`已${record.isPrimary ? '设置' : '取消'}主要联系人: ${record.name}`);
+};
+
+// 切换联系人状态
+const toggleContactStatus = (record) => {
+    // 切换状态
+    record.status = record.status === '启用' ? '禁用' : '启用';
+
+    // 这里可以调用API更新状态
+    console.log(`联系人 ${record.name} 状态已更新为: ${record.status}`);
+
+    // 模拟API调用
+    message.success(`已${record.status === '启用' ? '启用' : '禁用'}联系人: ${record.name}`);
 };
 
 const deleteContact = (record) => {
