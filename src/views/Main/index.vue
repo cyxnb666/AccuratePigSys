@@ -4,7 +4,7 @@
       <div class="header-left">
         <div class="logo">保行生猪精准核验系统</div>
       </div>
-      
+
       <div class="app-menu">
         <a-menu mode="horizontal" v-model:selectedKeys="state.selectedKeys" @click="clickMenu">
           <a-menu-item v-for="item in menuItems" :key="item.name">
@@ -15,7 +15,7 @@
           </a-menu-item>
         </a-menu>
       </div>
-      
+
       <div class="header-right">
         <a-dropdown>
           <a class="ant-dropdown-link" @click.prevent>
@@ -36,7 +36,7 @@
     </div>
 
     <!-- 内容区域 -->
-    <div class="app-content">
+    <div class="app-content" :class="{ 'no-padding': route.name === 'dashboard' }">
       <router-view></router-view>
     </div>
   </div>
@@ -60,7 +60,7 @@ const menuItems = computed(() => {
   // 查找主路由
   const mainRoute = router.options.routes.find(route => route.path === '/');
   if (!mainRoute || !mainRoute.children) return [];
-  
+
   // 返回所有子路由作为菜单项，但过滤掉hideInMenu为true的项
   return mainRoute.children.filter(route => !route.meta?.hideInMenu);
 });
@@ -162,6 +162,10 @@ const outLogin = () => {
     padding: 16px;
     background-color: #f0f2f5;
     overflow: auto;
+
+    &.no-padding {
+      padding: 0;
+    }
   }
 }
 </style>
