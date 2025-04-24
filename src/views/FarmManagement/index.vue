@@ -33,7 +33,7 @@
         :scroll="{ y: tableHeight }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
-            <a-button type="link" @click="handleEdit(record)">编 辑</a-button>
+            <a-button type="link" @click="handleEdit(record)">编辑</a-button>
             <a-button type="link" @click="handleReportConfig(record)">上报任务配置</a-button>
             <a-button type="link" danger @click="handleDelete(record)">删 除</a-button>
           </template>
@@ -174,11 +174,43 @@ const generateData = () => {
     data.push({
       id: i,
       index: i,
-      district: '四川省',
-      farmName: `XXX养殖场`,
-      address: `XXXXXXX`,
-      remark: `备注`,
-      updateTime: '2025-03-31'
+      district: i % 2 === 0 ? '四川省-成都市-武侯区' : '重庆市-渝中区',
+      farmName: `养殖场${i}号`,
+      address: `${i % 2 === 0 ? '四川省成都市武侯区' : '重庆市渝中区'}科技路${i}号`,
+      remark: `这是养殖场${i}的备注信息`,
+      updateTime: '2025-03-31',
+      // 添加上报配置数据
+      reportConfig: {
+        reportPeriod: [new Date('2025-03-01'), new Date('2025-03-31')],
+        stockChangeCount: `${50 + i * 5}`,
+        stockChangeRatio: `${i * 2}`,
+        daysSinceLastReport: `${i + 5}`
+      },
+      // 添加电子围栏数据
+      fenceData: [
+        {
+          id: `fence_${i}_1`,
+          name: `${i}号场围栏A`,
+          remark: '正常使用中的围栏',
+          path: [
+            { lng: 116.458694, lat: 40.000431 },
+            { lng: 116.4629, lat: 40.000628 },
+            { lng: 116.466505, lat: 39.991949 }
+          ],
+          isDisabled: false
+        },
+        {
+          id: `fence_${i}_2`,
+          name: `${i}号场围栏B`,
+          remark: '已禁用的围栏',
+          path: [
+            { lng: 116.473371, lat: 39.999445 },
+            { lng: 116.486503, lat: 39.998919 },
+            { lng: 116.483842, lat: 39.988398 }
+          ],
+          isDisabled: true
+        }
+      ]
     });
   }
   return data;

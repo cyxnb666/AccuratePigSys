@@ -34,7 +34,9 @@
             <!-- </a-popover> -->
             <a-button type="primary" danger @click="deleteSelectedPolygon" :disabled="!selectedPolygon"
                 style="margin-left: 8px">删除地块</a-button>
-            <a-button type="primary" @click="finishEditing" :disabled="!isEditing"
+            <!-- 修改这里，添加selectedPolygon.isDisabled条件 -->
+            <a-button type="primary" @click="finishEditing"
+                :disabled="!isEditing || !selectedPolygon || (selectedPolygon && selectedPolygon.isDisabled)"
                 style="margin-left: 8px">编辑</a-button>
             <!-- 新增地块失效/恢复按钮 -->
             <a-button type="primary" :disabled="!selectedPolygon" @click="toggleDisablePolygon"
@@ -156,12 +158,18 @@ const initMap = () => {
 
         // 双击多边形进入编辑状态
         polygon.on('dblclick', (e) => {
-            // 如果多边形处于失效状态，则阻止编辑
-            if (polygon.isDisabled) {
+            // 阻止事件冒泡，避免地图也响应双击事件
+            e.originalEvent.stopPropagation();
+
+            selectPolygon(polygon);
+
+            // 明确检查isDisabled属性
+            if (polygon.isDisabled === true) {
                 console.log('地块处于失效状态，无法编辑');
+                message.warning('此地块已失效，不可编辑');
                 return;
             }
-            selectPolygon(polygon);
+
             startEditing();
         });
 
@@ -301,6 +309,12 @@ const selectPolygon = (polygon) => {
     // 设置新选中的多边形
     selectedPolygon.value = polygon;
 
+    // 如果正在编辑，并且选中了一个禁用的多边形，则结束编辑状态
+    if (isEditing.value && polygon.isDisabled) {
+        polyEditor.close();
+        isEditing.value = false;
+    }
+
     // 根据多边形状态设置高亮样式
     if (polygon.isDisabled) {
         // 失效状态下的选中样式
@@ -327,9 +341,10 @@ const selectPolygon = (polygon) => {
 const startEditing = () => {
     if (!selectedPolygon.value) return;
 
-    // 如果多边形处于失效状态，则不允许编辑
-    if (selectedPolygon.value.isDisabled) {
+    // 首先检查多边形是否处于失效状态
+    if (selectedPolygon.value.isDisabled === true) {
         console.log('地块处于失效状态，无法编辑');
+        message.warning('此地块已失效，不可编辑');
         return;
     }
 
@@ -361,7 +376,7 @@ const toggleDisablePolygon = () => {
             strokeOpacity: 1,
             strokeWeight: 3
         });
-        console.log('地块已设置为失效状态，无法编辑');
+        message.success('地块已设置为失效状态，无法编辑');
     } else {
         // 恢复正常状态样式
         selectedPolygon.value.setOptions({
@@ -371,7 +386,7 @@ const toggleDisablePolygon = () => {
             strokeOpacity: 1,
             strokeWeight: 3
         });
-        console.log('地块已恢复正常状态，可以编辑');
+        message.success('地块已恢复正常状态，可以编辑');
     }
 };
 
@@ -425,42 +440,52 @@ const deleteSelectedPolygon = () => {
 
 // 编辑
 const finishEditing = () => {
-    if (isEditing.value && selectedPolygon.value) {
-        // 获取编辑后的路径点
-        const editedPath = selectedPolygon.value.getPath();
-        console.log('编辑后的多边形点 (编辑按钮):');
-        editedPath.forEach((point, index) => {
-            console.log(`点${index + 1}: 经度=${point.lng}, 纬度=${point.lat}`);
-        });
-
-        // 存储当前编辑的多边形
-        tempPolygon.value = selectedPolygon.value;
-
-        // 查找现有标签信息
-        const existingLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
-
-        if (existingLabel) {
-            // 设置为编辑模式
-            isEditMode.value = true;
-
-            // 回显现有信息
-            fenceForm.name = existingLabel.name || '';
-            fenceForm.remark = existingLabel.remark || '';
-        } else {
-            // 设置为新增模式
-            isEditMode.value = false;
-
-            // 清空表单
-            fenceForm.name = '';
-            fenceForm.remark = '';
-        }
-
-        // 显示对话框
-        fenceDialogVisible.value = true;
-    } else {
+    if (!isEditing.value || !selectedPolygon.value) {
         polyEditor.close();
         isEditing.value = false;
+        return;
     }
+
+    // 检查是否处于失效状态
+    if (selectedPolygon.value.isDisabled) {
+        console.log('地块处于失效状态，无法编辑');
+        message.warning('此地块已失效，不可编辑');
+        polyEditor.close();
+        isEditing.value = false;
+        return;
+    }
+
+    // 获取编辑后的路径点
+    const editedPath = selectedPolygon.value.getPath();
+    console.log('编辑后的多边形点 (编辑按钮):');
+    editedPath.forEach((point, index) => {
+        console.log(`点${index + 1}: 经度=${point.lng}, 纬度=${point.lat}`);
+    });
+
+    // 存储当前编辑的多边形
+    tempPolygon.value = selectedPolygon.value;
+
+    // 查找现有标签信息
+    const existingLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
+
+    if (existingLabel) {
+        // 设置为编辑模式
+        isEditMode.value = true;
+
+        // 回显现有信息
+        fenceForm.name = existingLabel.name || '';
+        fenceForm.remark = existingLabel.remark || '';
+    } else {
+        // 设置为新增模式
+        isEditMode.value = false;
+
+        // 清空表单
+        fenceForm.name = '';
+        fenceForm.remark = '';
+    }
+
+    // 显示对话框
+    fenceDialogVisible.value = true;
 };
 
 // 处理电子围栏确认
@@ -616,6 +641,140 @@ onUnmounted(() => {
     }
 });
 
+// 设置电子围栏数据
+const setFenceList = (fenceData) => {
+    // 确保地图已初始化
+    if (!map) {
+        console.error('地图尚未初始化');
+        setTimeout(() => {
+            if (map) setFenceList(fenceData);
+        }, 1000);
+        return;
+    }
+
+    // 确保polygons和labels已初始化
+    if (!polygons.value) polygons.value = [];
+    if (!labels.value) labels.value = [];
+
+    // 清除已有的多边形
+    for (let i = 0; i < polygons.value.length; i++) {
+        try {
+            map.remove(polygons.value[i]);
+        } catch (e) {
+            console.error('移除多边形出错:', e);
+        }
+    }
+    polygons.value = [];
+
+    // 清除已有的标签
+    for (let i = 0; i < labels.value.length; i++) {
+        try {
+            if (labels.value[i] && labels.value[i].labelMarker) {
+                map.remove(labels.value[i].labelMarker);
+            }
+        } catch (e) {
+            console.error('移除标签出错:', e);
+        }
+    }
+    labels.value = [];
+
+    // 如果没有数据，直接返回
+    if (!fenceData || fenceData.length === 0) return;
+
+    // 创建并添加多边形
+    fenceData.forEach(fence => {
+        try {
+            // 将普通坐标对象转换为AMap.LngLat对象
+            const path = fence.path.map(point => {
+                return new AMap.LngLat(point.lng, point.lat);
+            });
+
+            // 创建多边形
+            const polygon = new AMap.Polygon({
+                path: path,
+                strokeColor: fence.isDisabled ? '#666666' : '#00D3FC',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: fence.isDisabled ? '#999999' : '#B35656',
+                fillOpacity: 0.5,
+                zIndex: 50
+            });
+
+            // 设置多边形属性
+            polygon.__uid = fence.id;
+            polygon.isDisabled = !!fence.isDisabled;
+
+            // 添加多边形到地图
+            map.add(polygon);
+            polygons.value.push(polygon);
+
+            // 计算多边形中心点用于放置标签
+            let centerX = 0, centerY = 0;
+            path.forEach(point => {
+                centerX += point.getLng();
+                centerY += point.getLat();
+            });
+            centerX /= path.length;
+            centerY /= path.length;
+
+            // 创建标签
+            const textMarker = new AMap.Text({
+                position: new AMap.LngLat(centerX, centerY),
+                text: fence.name || `围栏${polygons.value.length}`,
+                anchor: 'center',
+                style: {
+                    'background-color': '#ffffff',
+                    'border-width': '1px',
+                    'border-color': '#cccccc',
+                    'padding': '5px',
+                    'font-size': '12px',
+                    'border-radius': '3px'
+                },
+                zIndex: 110
+            });
+
+            // 添加标签到地图
+            map.add(textMarker);
+
+            // 存储标签信息
+            labels.value.push({
+                polygonId: fence.id,
+                name: fence.name,
+                remark: fence.remark,
+                labelMarker: textMarker
+            });
+
+            // 添加多边形事件
+            polygon.on('click', () => {
+                selectPolygon(polygon);
+            });
+
+            polygon.on('dblclick', (e) => {
+                if (polygon.isDisabled) {
+                    console.log('地块处于失效状态，无法编辑');
+                    return;
+                }
+                selectPolygon(polygon);
+                startEditing();
+            });
+
+        } catch (error) {
+            console.error('创建围栏失败:', error, fence);
+        }
+    });
+
+    // 调整地图视野以包含所有多边形
+    if (polygons.value.length > 0) {
+        try {
+            map.setFitView(polygons.value);
+        } catch (e) {
+            console.error('设置地图视野出错:', e);
+        }
+    }
+
+    console.log(`成功加载${polygons.value.length}个电子围栏`);
+};
+
 // 导出方法给父组件使用
 defineExpose({
     getFenceList: () => {
@@ -631,7 +790,8 @@ defineExpose({
                 isDisabled: polygon.isDisabled || false // 添加失效状态到返回数据中
             };
         });
-    }
+    },
+    setFenceList
 });
 </script>
 

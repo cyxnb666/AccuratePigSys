@@ -74,7 +74,6 @@
                     <div class="section-header">
                         <span class="section-title">养殖场电子围栏编辑</span>
                     </div>
-                    <!-- 使用新组件代替原来的地图占位区域 -->
                     <electronic-fence-map ref="fenceMapRef" />
                 </div>
 
@@ -280,12 +279,45 @@ const saveForm = () => {
 
 onMounted(() => {
     if (isEdit.value) {
-        // 加载编辑数据
-        // 实际应用中这里应该是API调用
-        formData.district = 'sichuan';
-        formData.farmName = '测试养殖场';
-        formData.address = '四川省成都市武侯区';
-        formData.remark = '这是一个测试养殖场';
+        // 假设这是从API获取的养殖场数据
+        const farmId = route.query.id;
+        // 从dataSource中获取对应ID的养殖场数据
+        const farmData = {
+            district: 'sichuan',
+            farmName: '测试养殖场',
+            address: '四川省成都市武侯区',
+            remark: '这是一个测试养殖场',
+            fenceData: [
+                {
+                    id: 'fence_1',
+                    name: '围栏A区',
+                    remark: '正常使用中的围栏',
+                    path: [
+                        { lng: 116.458694, lat: 40.000431 },
+                        { lng: 116.4629, lat: 40.000628 },
+                        { lng: 116.466505, lat: 39.991949 }
+                    ],
+                    isDisabled: false
+                },
+                {
+                    id: 'fence_2',
+                    name: '围栏B区',
+                    remark: '已禁用的围栏',
+                    path: [
+                        { lng: 116.473371, lat: 39.999445 },
+                        { lng: 116.486503, lat: 39.998919 },
+                        { lng: 116.483842, lat: 39.988398 }
+                    ],
+                    isDisabled: true
+                }
+            ]
+        };
+
+        // 填充表单数据
+        formData.district = farmData.district;
+        formData.farmName = farmData.farmName;
+        formData.address = farmData.address;
+        formData.remark = farmData.remark;
 
         contacts.value = [
             {
@@ -297,6 +329,29 @@ onMounted(() => {
                 remark: '主要联系人'
             }
         ];
+
+        // 在控制台输出电子围栏数据，供开发参考
+        console.log('养殖场电子围栏数据:', farmData.fenceData);
+
+        // 等待地图加载完成后再设置围栏数据
+        const loadFences = () => {
+            if (fenceMapRef.value) {
+                try {
+                    fenceMapRef.value.setFenceList(farmData.fenceData);
+                    message.success('已加载2个电子围栏，其中1个为禁用状态');
+                } catch (e) {
+                    console.error('设置围栏失败:', e);
+                    // 如果失败，再次尝试
+                    setTimeout(loadFences, 1000);
+                }
+            } else {
+                console.log('地图组件尚未初始化，等待...');
+                setTimeout(loadFences, 1000);
+            }
+        };
+
+        // 延迟3秒等待地图初始化完成
+        setTimeout(loadFences, 1000);
     }
 });
 </script>
