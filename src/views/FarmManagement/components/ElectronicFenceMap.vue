@@ -30,18 +30,25 @@
         <!-- 操作栏 -->
         <div class="map-options">
             <!-- <a-popover placement="top" title="提示" content="新增勾画地块前,请先保存之前所勾画的地块!" trigger="hover"> -->
-                <a-button type="primary" @click="createPolygon">勾 画</a-button>
+            <a-button type="primary" @click="createPolygon">勾 画</a-button>
             <!-- </a-popover> -->
             <a-button type="primary" danger @click="deleteSelectedPolygon" :disabled="!selectedPolygon"
                 style="margin-left: 8px">删除地块</a-button>
             <a-button type="primary" @click="finishEditing" :disabled="!isEditing"
                 style="margin-left: 8px">编辑</a-button>
+            <!-- 新增地块失效/恢复按钮 -->
+            <a-button type="primary" :disabled="!selectedPolygon" @click="toggleDisablePolygon"
+                style="margin-left: 8px">
+                {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
+            </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
                 }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
                     <p><b>2.</b> 双击完成地块勾画</p>
+                    <p><b>3.</b> 选中地块后可点击"地块失效"使其不可编辑</p>
+                    <p><b>4.</b> 选中失效地块后可点击"地块恢复"恢复编辑功能</p>
                 </template>
                 <a-button type="link" style="margin-left: 8px">操作指南</a-button>
             </a-popover>
@@ -131,6 +138,10 @@ const initMap = () => {
     // 监听多边形添加事件
     polyEditor.on('add', function (data) {
         const polygon = data.target;
+
+        // 初始化为非禁用状态
+        polygon.isDisabled = false;
+
         polygons.value.push(polygon);
 
         // 添加可吸附的多边形
@@ -144,7 +155,12 @@ const initMap = () => {
         });
 
         // 双击多边形进入编辑状态
-        polygon.on('dblclick', () => {
+        polygon.on('dblclick', (e) => {
+            // 如果多边形处于失效状态，则阻止编辑
+            if (polygon.isDisabled) {
+                console.log('地块处于失效状态，无法编辑');
+                return;
+            }
             selectPolygon(polygon);
             startEditing();
         });
@@ -264,29 +280,99 @@ const createPolygon = () => {
 const selectPolygon = (polygon) => {
     // 清除之前选中多边形的样式
     if (selectedPolygon.value && selectedPolygon.value !== polygon) {
-        selectedPolygon.value.setOptions({
-            fillColor: '#B35656',  // 恢复默认填充色
-            fillOpacity: 0.5       // 恢复默认透明度
-        });
+        // 根据之前选中多边形的状态设置其样式
+        if (selectedPolygon.value.isDisabled) {
+            selectedPolygon.value.setOptions({
+                fillColor: '#999999',  // 失效状态颜色
+                fillOpacity: 0.5,
+                strokeColor: '#666666',
+                strokeOpacity: 0.8
+            });
+        } else {
+            selectedPolygon.value.setOptions({
+                fillColor: '#B35656',  // 恢复默认填充色
+                fillOpacity: 0.5,      // 恢复默认透明度
+                strokeColor: '#00D3FC', // 恢复默认描边色
+                strokeOpacity: 0.9
+            });
+        }
     }
 
     // 设置新选中的多边形
     selectedPolygon.value = polygon;
 
-    // 高亮显示选中的多边形
-    polygon.setOptions({
-        fillColor: '#7bccc4',  // 选中时的填充色
-        fillOpacity: 0.7       // 选中时的透明度
-    });
+    // 根据多边形状态设置高亮样式
+    if (polygon.isDisabled) {
+        // 失效状态下的选中样式
+        polygon.setOptions({
+            fillColor: '#a9a9a9',  // 失效状态下选中的填充色
+            fillOpacity: 0.7,      // 选中时的透明度
+            strokeColor: '#888888',
+            strokeOpacity: 1,
+            strokeWeight: 3
+        });
+    } else {
+        // 正常状态下的选中样式
+        polygon.setOptions({
+            fillColor: '#7bccc4',  // 选中时的填充色
+            fillOpacity: 0.7,      // 选中时的透明度
+            strokeColor: '#00D3FC',
+            strokeOpacity: 1,
+            strokeWeight: 3
+        });
+    }
 };
 
 // 开始编辑选中的多边形
 const startEditing = () => {
     if (!selectedPolygon.value) return;
 
+    // 如果多边形处于失效状态，则不允许编辑
+    if (selectedPolygon.value.isDisabled) {
+        console.log('地块处于失效状态，无法编辑');
+        return;
+    }
+
     polyEditor.setTarget(selectedPolygon.value);
     polyEditor.open();
     isEditing.value = true;
+};
+
+// 切换地块失效/恢复状态
+const toggleDisablePolygon = () => {
+    if (!selectedPolygon.value) return;
+
+    // 如果当前在编辑模式，先结束编辑
+    if (isEditing.value) {
+        polyEditor.close();
+        isEditing.value = false;
+    }
+
+    // 切换失效状态
+    selectedPolygon.value.isDisabled = !selectedPolygon.value.isDisabled;
+
+    // 根据新状态更新视觉样式
+    if (selectedPolygon.value.isDisabled) {
+        // 失效状态样式
+        selectedPolygon.value.setOptions({
+            fillColor: '#a9a9a9',  // 失效状态下选中的填充色
+            fillOpacity: 0.7,      // 选中时的透明度
+            strokeColor: '#888888',
+            strokeOpacity: 1,
+            strokeWeight: 3
+        });
+        console.log('地块已设置为失效状态，无法编辑');
+    } else {
+        // 恢复正常状态样式
+        selectedPolygon.value.setOptions({
+            fillColor: '#7bccc4',  // 选中时的填充色
+            fillOpacity: 0.7,      // 选中时的透明度
+            strokeColor: '#00D3FC',
+            strokeOpacity: 1,
+            strokeWeight: 3
+        });
+        console.log('地块已恢复正常状态，可以编辑');
+    }
 };
 
 // 删除选中的多边形
@@ -542,6 +628,7 @@ defineExpose({
                 name: labelInfo.name || `围栏${index + 1}`,
                 remark: labelInfo.remark || '',
                 path: polygon.getPath(),
+                isDisabled: polygon.isDisabled || false // 添加失效状态到返回数据中
             };
         });
     }
