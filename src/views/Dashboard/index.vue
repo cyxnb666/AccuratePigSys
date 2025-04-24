@@ -1,78 +1,88 @@
 <template>
-    <div class="dashboard-container">
-      <a-row :gutter="16">
-        <a-col :span="6" v-for="card in cards" :key="card.title">
-          <a-card :title="card.title" :bordered="false">
-            <template #extra><a href="#">详情</a></template>
-            <p>{{ card.value }}</p>
-          </a-card>
-        </a-col>
-      </a-row>
-  
-      <a-divider />
-  
-      <a-row :gutter="16">
-        <a-col :span="12">
-          <a-card title="最近活动" :bordered="false">
-            <a-list item-layout="horizontal" :data-source="activities">
-              <template #renderItem="{ item }">
-                <a-list-item>
-                  <a-list-item-meta :title="item.title" :description="item.time">
-                    <template #avatar>
-                      <a-avatar :style="{ backgroundColor: item.color }">{{ item.avatar }}</a-avatar>
-                    </template>
-                  </a-list-item-meta>
-                </a-list-item>
-              </template>
-            </a-list>
-          </a-card>
-        </a-col>
-        <a-col :span="12">
-          <a-card title="核验数据概览" :bordered="false">
-            <div style="margin-bottom: 16px">
-              <span>精准核验完成率: </span>
-              <a-progress :percent="75" status="active" />
-            </div>
-            <div style="margin-bottom: 16px">
-              <span>核验任务进度: </span>
-              <a-progress :percent="45" status="active" />
-            </div>
-            <div>
-              <span>系统负载情况: </span>
-              <a-progress :percent="30" status="active" />
-            </div>
-          </a-card>
-        </a-col>
-      </a-row>
-    </div>
-  </template>
-  
-  <script setup lang="ts">
-  import { ref } from 'vue';
-  
-  const cards = ref([
-    { title: '待核验车辆', value: '126' },
-    { title: '已完成核验', value: '894' },
-    { title: '系统预警', value: '12' },
-    { title: '待处理审核', value: '5' }
-  ]);
-  
-  const activities = ref([
-    { title: '某市完成核验任务', time: '刚刚', avatar: '核', color: '#1890ff' },
-    { title: '新增核验数据58条', time: '10分钟前', avatar: '新', color: '#52c41a' },
-    { title: '系统自动更新完成', time: '30分钟前', avatar: '更', color: '#faad14' },
-    { title: '管理员发布新任务', time: '1小时前', avatar: '任', color: '#f5222d' }
-  ]);
-  </script>
-  
-  <style scoped>
-  .dashboard-container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  <div class="dashboard-container">
+    <div id="map-container" class="map-container"></div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue';
+import mapConfig from '@/utils/map-config';
+
+let map = null;
+let satelliteLayer = null;
+
+// 默认地图中心点和缩放级别
+const defaultCenter = [116.397428, 39.90923]; // 北京
+const defaultZoom = 11;
+
+onMounted(() => {
+  // 设置安全密钥
+  window._AMapSecurityConfig = {
+    securityJsCode: mapConfig.SecurityJsCode,
+  };
+
+  // 动态加载高德地图API脚本
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = `https://webapi.amap.com/maps?v=2.0&key=${mapConfig.AMAPKEY}&plugin=AMap.ToolBar,AMap.Scale`;
+  document.head.appendChild(script);
+
+  // 地图加载完成后初始化
+  script.onload = () => {
+    initMap();
+  };
+});
+
+// 地图初始化
+const initMap = () => {
+  // 创建地图实例
+  map = new AMap.Map('map-container', {
+    viewMode: '3D',
+    center: defaultCenter,
+    zoom: defaultZoom,
+    layers: [], // 先不设置图层，后面添加卫星图层
+    showBuildingBlock: false, // 不显示楼块
+  });
+
+  // 创建卫星图层
+  satelliteLayer = new AMap.TileLayer.Satellite({
+    zooms: [3, 20], // 支持的缩放级别范围
+    opacity: 1, // 透明度
+  });
+
+  // 将图层添加到地图
+  map.add([satelliteLayer]);
+
+  // 添加比例尺控件
+  map.addControl(new AMap.Scale());
+
+  // 添加工具条控件
+  map.addControl(new AMap.ToolBar({
+    position: 'RB' // 右下角
+  }));
+};
+
+onUnmounted(() => {
+  // 销毁地图实例
+  if (map) {
+    map.destroy();
+    map = null;
   }
-  
-  :deep(.ant-card) {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  </style>
+});
+</script>
+
+<style scoped>
+.dashboard-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.map-container {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+}
+</style>
