@@ -29,22 +29,19 @@
 
         <!-- 操作栏 -->
         <div class="map-options">
-            <a-popover placement="top" title="提示" content="新增勾画地块前,请先保存之前所勾画的地块!" trigger="hover">
+            <!-- <a-popover placement="top" title="提示" content="新增勾画地块前,请先保存之前所勾画的地块!" trigger="hover"> -->
                 <a-button type="primary" @click="createPolygon">勾 画</a-button>
-            </a-popover>
+            <!-- </a-popover> -->
             <a-button type="primary" danger @click="deleteSelectedPolygon" :disabled="!selectedPolygon"
                 style="margin-left: 8px">删除地块</a-button>
             <a-button type="primary" @click="finishEditing" :disabled="!isEditing"
-                style="margin-left: 8px">完成编辑</a-button>
+                style="margin-left: 8px">编辑</a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
                 }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
                     <p><b>2.</b> 双击完成地块勾画</p>
-                    <p><b>3.</b> 双击地块可进入编辑状态</p>
-                    <p><b>4.</b> 点击"删除地块"可删除已选中地块</p>
-                    <p><b>5.</b> 点击"完成编辑"结束编辑状态</p>
                 </template>
                 <a-button type="link" style="margin-left: 8px">操作指南</a-button>
             </a-popover>
@@ -340,12 +337,12 @@ const deleteSelectedPolygon = () => {
     isEditing.value = false;
 };
 
-// 完成编辑
+// 编辑
 const finishEditing = () => {
     if (isEditing.value && selectedPolygon.value) {
         // 获取编辑后的路径点
         const editedPath = selectedPolygon.value.getPath();
-        console.log('编辑后的多边形点 (完成编辑按钮):');
+        console.log('编辑后的多边形点 (编辑按钮):');
         editedPath.forEach((point, index) => {
             console.log(`点${index + 1}: 经度=${point.lng}, 纬度=${point.lat}`);
         });
