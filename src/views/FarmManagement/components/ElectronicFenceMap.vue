@@ -6,7 +6,7 @@
                 <tbody>
                     <tr>
                         <td>
-                            <label>请输入关键字：</label>
+                            <label>请输入地址搜索：</label>
                         </td>
                     </tr>
                     <tr>
@@ -816,11 +816,10 @@ defineExpose({
         position: absolute;
         top: 10px;
         left: 10px;
-        background-color: #fff;
+        // background-color: #fff;
         padding: 10px;
-        z-index: 9999;
         border-radius: 4px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
     .layer-switcher {
