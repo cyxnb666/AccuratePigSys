@@ -2,6 +2,9 @@
     <div class="info-section">
         <div class="section-header">
             <div class="title">养殖场基础信息</div>
+            <div v-if="showDetailButton" class="detail-link">
+                <a @click="$emit('view-detail')">详情 <right-outlined /></a>
+            </div>
         </div>
         <div class="basic-info">
             <div class="info-row">
@@ -33,6 +36,7 @@
 </template>
 
 <script setup lang="ts">
+import { RightOutlined } from '@ant-design/icons-vue';
 defineProps({
     farmInfo: {
         type: Object,
@@ -44,8 +48,13 @@ defineProps({
             contactPerson: '',
             contactPhone: ''
         })
+    },
+    showDetailButton: {
+        type: Boolean,
+        default: false
     }
 });
+defineEmits(['view-detail']);
 </script>
 
 <style lang="scss" scoped>
@@ -73,6 +82,17 @@ defineProps({
                 height: 16px;
                 background-color: #5276E5;
                 border-radius: 2px;
+            }
+        }
+
+        .detail-link {
+            a {
+                color: #5276E5;
+                font-size: 14px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 4px;
             }
         }
     }

@@ -2,10 +2,15 @@
     <div class="detail-card">
         <div class="card-header">
             <div class="title">当前存栏信息</div>
+            <!-- 添加可选的查看更多按钮 -->
+            <div v-if="showViewMore" class="view-more-link">
+                <a @click="$emit('view-more')">查看更多 <right-outlined /></a>
+            </div>
         </div>
-        <a-tabs v-model:activeKey="activeKey">
+        <a-tabs v-model:activeKey="activeKey" @change="handleTabChange">
             <a-tab-pane key="1" tab="存栏记录">
-                <a-table :columns="stockColumns" :data-source="stockData" :pagination="pagination" bordered>
+                <a-table :columns="stockColumns" :data-source="stockData"
+                    :pagination="showPagination ? pagination : false" bordered>
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'action'">
                             <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
@@ -19,15 +24,18 @@
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="2" tab="出栏记录">
-                <a-table :columns="outboundColumns" :data-source="outboundData" :pagination="pagination" bordered>
+                <a-table :columns="outboundColumns" :data-source="outboundData"
+                    :pagination="showPagination ? pagination : false" bordered>
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="3" tab="入栏记录">
-                <a-table :columns="inboundColumns" :data-source="inboundData" :pagination="pagination" bordered>
+                <a-table :columns="inboundColumns" :data-source="inboundData"
+                    :pagination="showPagination ? pagination : false" bordered>
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="4" tab="死亡记录">
-                <a-table :columns="deathColumns" :data-source="deathData" :pagination="pagination" bordered>
+                <a-table :columns="deathColumns" :data-source="deathData"
+                    :pagination="showPagination ? pagination : false" bordered>
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'action'">
                             <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
@@ -41,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { RightOutlined } from '@ant-design/icons-vue';
 
 defineProps({
     stockData: {
@@ -73,11 +82,23 @@ defineProps({
             showTotal: (total) => `共 ${total} 条`,
             onChange: () => { }
         })
+    },
+    showViewMore: {
+        type: Boolean,
+        default: false
+    },
+    showPagination: {
+        type: Boolean,
+        default: true
     }
 });
+defineEmits(['view-detail', 'view-more']);
 
-defineEmits(['view-detail']);
-
+const handleTabChange = (newActiveKey) => {
+    if (pagination && pagination.onChange && showPagination) {
+        pagination.current = 1;
+    }
+};
 const activeKey = ref('1');
 
 // 表格列定义
@@ -140,6 +161,17 @@ const deathColumns = [
             font-size: 16px;
             font-weight: 500;
             color: #333;
+        }
+
+        .view-more-link {
+            a {
+                color: #5276E5;
+                font-size: 14px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
         }
     }
 }

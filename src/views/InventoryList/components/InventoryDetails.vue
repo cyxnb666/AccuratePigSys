@@ -89,13 +89,12 @@ const mixedChartDateRange = ref<any>([]);
 
 // 分页配置
 const pagination = reactive({
-    current: 1,
-    pageSize: 10,
-    total: 50,
-    showTotal: (total) => `共 ${total} 条`,
-    onChange: (page) => {
-        pagination.current = page;
-    }
+  stock: { current: 1, pageSize: 10 },
+  outbound: { current: 1, pageSize: 10 },
+  inbound: { current: 1, pageSize: 10 },
+  death: { current: 1, pageSize: 10 },
+  total: 50,
+  showTotal: (total) => `共 ${total} 条`
 });
 
 // 异常预警表格数据

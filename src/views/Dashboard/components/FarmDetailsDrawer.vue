@@ -4,11 +4,14 @@
         <div v-if="loading" class="loading-container">
             <a-spin size="large" />
         </div>
-        
+
         <template v-else>
             <div class="info-warning-card">
                 <!-- 养殖场基础信息 -->
-                <farm-basic-info :farm-info="farmInfo" />
+                <farm-basic-info 
+        :farm-info="farmInfo" 
+        :show-detail-button="true" 
+        @view-detail="viewFarmDetail" />
 
                 <!-- 异常预警 -->
                 <div style="margin-top: 20px;">
@@ -23,7 +26,8 @@
                         <farm-inventory-pie :inventory-data="inventoryData" />
                     </a-col>
                     <a-col :span="12">
-                        <report-status-bar class="report-status-adjusted" :report-data="reportData" v-model:date-range="dateRange" />
+                        <report-status-bar class="report-status-adjusted" :report-data="reportData"
+                            v-model:date-range="dateRange" />
                     </a-col>
                 </a-row>
             </div>
@@ -40,8 +44,10 @@
 
             <!-- 当前存栏信息 -->
             <div class="detail-section">
-                <current-inventory-tabs :stock-data="stockData" :outbound-data="outboundData" :inbound-data="inboundData"
-                    :death-data="deathData" :pagination="pagination" @view-detail="handleViewDetail" />
+                <current-inventory-tabs :stock-data="stockData.slice(0, 5)" :outbound-data="outboundData.slice(0, 5)"
+                    :inbound-data="inboundData.slice(0, 5)" :death-data="deathData.slice(0, 5)" :pagination="pagination"
+                    :show-pagination="false" :show-view-more="true" @view-detail="handleViewDetail"
+                    @view-more="viewMoreInventory" />
             </div>
         </template>
     </div>
@@ -58,7 +64,8 @@ import ReportStatusBar from '@/components/ReportStatusBar.vue';
 import InventoryTrendLine from '@/components/InventoryTrendLine.vue';
 import MonthlyChangeMixed from '@/components/MonthlyChangeMixed.vue';
 import CurrentInventoryTabs from '@/components/CurrentInventoryTabs.vue';
-
+import { useRouter } from 'vue-router';
+const router = useRouter();
 // 接收养殖场数据属性
 const props = defineProps({
     farmData: {
@@ -154,6 +161,13 @@ const mixedData = reactive({
 const viewMoreWarnings = () => {
     message.info('查看更多异常预警功能待实现');
 };
+const viewFarmDetail = () => {
+    if (props.farmData && props.farmData.id) {
+        router.push(`/farm/edit/?id=${props.farmData.id}`);
+    } else {
+        message.info('无法获取养殖场ID，请稍后再试');
+    }
+};
 
 // 生成模拟数据
 const generateStockData = () => {
@@ -212,12 +226,19 @@ const deathData = ref(generateDeathData());
 const handleViewDetail = (record) => {
     message.info(`查看记录详情: ${record.index}`);
 };
+const viewMoreInventory = () => {
+    if (props.farmData && props.farmData.id) {
+        router.push(`/archive/details/${props.farmData.id}`);
+    } else {
+        message.info('无法获取养殖场ID，请稍后再试');
+    }
+};
 
 // 监听farmData变化更新组件数据
 watch(() => props.farmData, async (newData) => {
     if (newData) {
         loading.value = true;
-        
+
         try {
             // 更新基础信息
             farmInfo.district = newData.district || farmInfo.district;
@@ -225,25 +246,25 @@ watch(() => props.farmData, async (newData) => {
             farmInfo.address = newData.address || farmInfo.address;
             farmInfo.contactPerson = newData.contactPerson || farmInfo.contactPerson;
             farmInfo.contactPhone = newData.contactPhone || farmInfo.contactPhone;
-            
+
             // 模拟加载其他数据的延迟
             await new Promise(resolve => setTimeout(resolve, 800));
-            
+
             // 这里可以根据需要获取更多数据
             // 例如：更新预警数据、存栏数据、历史记录等
-            
+
             // 可以根据farmId生成不同的随机数据
             if (newData.id) {
                 // 为不同养殖场生成稍微不同的数据
                 const modifier = newData.id % 3 + 1;
-                
+
                 // 更新饼图数据
                 inventoryData.value = [
                     { value: 20 * modifier, name: '仔猪' },
                     { value: 40 * modifier, name: '育肥猪' },
                     { value: 100 * (modifier / 2), name: '能繁母猪' }
                 ];
-                
+
                 // 更新报表数据
                 reportData.value = [
                     { name: '提醒上报', value: 20 * modifier, color: '#40A9FF' },
@@ -274,7 +295,7 @@ defineExpose({
     padding: 0 8px;
     height: 100%;
     overflow-y: auto;
-    
+
     .loading-container {
         display: flex;
         justify-content: center;
@@ -289,6 +310,7 @@ defineExpose({
         padding: 16px;
         margin-bottom: 20px;
     }
+
     .detail-section {
         margin-bottom: 20px;
 
@@ -316,6 +338,7 @@ defineExpose({
         padding: 16px;
         margin-bottom: 20px;
     }
+
     .detail-section {
         margin-bottom: 20px;
 

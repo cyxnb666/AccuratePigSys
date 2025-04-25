@@ -136,7 +136,8 @@ const addSichuanDistrict = () => {
   map.add(districtLayer);
 
   // 调整视图以聚焦四川省
-  map.setZoomAndCenter(7, [104.07, 30.67]);
+  map.setZoomAndCenter(7, [102.07, 30.67]);
+  // map.setZoomAndCenter(7, [104.07, 30.67]); 本来是这个的但是位置看起来不太对就手动往右了些
 };
 
 onMounted(() => {
@@ -164,7 +165,7 @@ const initMap = () => {
     viewMode: '3D',
     center: defaultCenter,
     zoom: defaultZoom,
-    mapStyle: "amap://styles/blue", // 使用暗色样式更好展示自定义图层
+    mapStyle: "amap://styles/blue", // 使用靛青蓝展示自定义图层
     showBuildingBlock: false, // 不显示楼块
     resizeEnable: true, // 是否监控地图容器尺寸变化
     pitch: 0, // 将俯仰角设为0，以便从正上方看地图
