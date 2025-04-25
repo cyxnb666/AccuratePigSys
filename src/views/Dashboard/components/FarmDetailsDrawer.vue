@@ -6,7 +6,6 @@
         </div>
         
         <template v-else>
-            <!-- 第一行：养殖场基础信息和异常预警 - 用一个div包裹并添加阴影效果 -->
             <div class="info-warning-card">
                 <!-- 养殖场基础信息 -->
                 <farm-basic-info :farm-info="farmInfo" />
@@ -52,7 +51,6 @@
 import { ref, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
 
-// 引入组件
 import FarmBasicInfo from '@/components/FarmBasicInfo.vue';
 import AbnormalWarning from '@/components/AbnormalWarning.vue';
 import FarmInventoryPie from '@/components/FarmInventoryPie.vue';

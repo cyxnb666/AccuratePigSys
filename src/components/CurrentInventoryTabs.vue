@@ -20,20 +20,10 @@
             </a-tab-pane>
             <a-tab-pane key="2" tab="出栏记录">
                 <a-table :columns="outboundColumns" :data-source="outboundData" :pagination="pagination" bordered>
-                    <!-- <template #bodyCell="{ column, record }">
-                        <template v-if="column.key === 'action'">
-                            <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
-                        </template>
-                    </template> -->
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="3" tab="入栏记录">
                 <a-table :columns="inboundColumns" :data-source="inboundData" :pagination="pagination" bordered>
-                    <!-- <template #bodyCell="{ column, record }">
-                        <template v-if="column.key === 'action'">
-                            <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
-                        </template>
-                    </template> -->
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="4" tab="死亡记录">
@@ -109,7 +99,6 @@ const outboundColumns = [
     { title: '出栏类型', dataIndex: 'type', key: 'type', align: 'center' },
     { title: '出栏数量', dataIndex: 'quantity', key: 'quantity', align: 'center' },
     { title: '出栏原因', dataIndex: 'reason', key: 'reason', align: 'center' },
-    // { title: '操作', key: 'action', align: 'center' },
 ];
 
 // 入栏记录表格列
@@ -119,7 +108,6 @@ const inboundColumns = [
     { title: '入栏类型', dataIndex: 'type', key: 'type', align: 'center' },
     { title: '入栏数量', dataIndex: 'quantity', key: 'quantity', align: 'center' },
     { title: '入栏来源', dataIndex: 'source', key: 'source', align: 'center' },
-    // { title: '操作', key: 'action', align: 'center' },
 ];
 
 // 死亡记录表格列
