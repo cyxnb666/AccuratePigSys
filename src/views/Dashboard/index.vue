@@ -26,8 +26,8 @@ const defaultZoom = 7; // 缩小级别以显示整个四川省
 
 // 模拟的养殖场点位
 const farmLocations = [
-  { id: 1, position: [104.101698, 30.677180], name: "XXXXX养殖场1" },
-  { id: 2, position: [104.066507, 30.669798], name: "XXXXX养殖场2" }
+  { id: 1, position: [104.101698, 30.677180], name: "XXXXX养殖场1", situation: "1" },
+  { id: 2, position: [104.066507, 30.669798], name: "XXXXX养殖场2", situation: "0" }
 ];
 
 // 当前选中的养殖场数据
@@ -90,12 +90,15 @@ const addMarkers = () => {
 
   // 添加新标记
   farmLocations.forEach(farm => {
+    // 根据situation参数选择标记颜色
+    const markerColor = farm.situation === "1" ? 'r' : 'b'; // 1使用红色标记，0使用蓝色标记
+
     // 创建标记点
     const marker = new AMap.Marker({
       position: farm.position,
       title: farm.name,
       icon: new AMap.Icon({
-        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png',
+        image: `https://webapi.amap.com/theme/v1.3/markers/n/mark_${markerColor}.png`,
         size: new AMap.Size(32, 32),
         imageSize: new AMap.Size(32, 32)
       }),
