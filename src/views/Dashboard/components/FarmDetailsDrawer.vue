@@ -1,48 +1,55 @@
 <template>
     <div class="farm-details-drawer">
-        <!-- 第一行：养殖场基础信息和异常预警 - 用一个div包裹并添加阴影效果 -->
-        <div class="info-warning-card">
-            <!-- 养殖场基础信息 -->
-            <farm-basic-info :farm-info="farmInfo" />
+        <!-- 加载状态 -->
+        <div v-if="loading" class="loading-container">
+            <a-spin size="large" />
+        </div>
+        
+        <template v-else>
+            <!-- 第一行：养殖场基础信息和异常预警 - 用一个div包裹并添加阴影效果 -->
+            <div class="info-warning-card">
+                <!-- 养殖场基础信息 -->
+                <farm-basic-info :farm-info="farmInfo" />
 
-            <!-- 异常预警 -->
-            <div style="margin-top: 20px;">
-                <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+                <!-- 异常预警 -->
+                <div style="margin-top: 20px;">
+                    <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+                </div>
             </div>
-        </div>
 
-        <!-- 第二行：养殖场存栏情况和上报情况 -->
-        <div class="detail-section">
-            <a-row :gutter="16">
-                <a-col :span="12">
-                    <farm-inventory-pie :inventory-data="inventoryData" />
-                </a-col>
-                <a-col :span="12">
-                    <report-status-bar class="report-status-adjusted" :report-data="reportData" v-model:date-range="dateRange" />
-                </a-col>
-            </a-row>
-        </div>
+            <!-- 第二行：养殖场存栏情况和上报情况 -->
+            <div class="detail-section">
+                <a-row :gutter="16">
+                    <a-col :span="12">
+                        <farm-inventory-pie :inventory-data="inventoryData" />
+                    </a-col>
+                    <a-col :span="12">
+                        <report-status-bar class="report-status-adjusted" :report-data="reportData" v-model:date-range="dateRange" />
+                    </a-col>
+                </a-row>
+            </div>
 
-        <!-- 养殖区存栏量变化趋势图 -->
-        <div class="detail-section">
-            <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" />
-        </div>
+            <!-- 养殖区存栏量变化趋势图 -->
+            <div class="detail-section">
+                <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" />
+            </div>
 
-        <!-- 养殖场存栏量月度变化趋势 -->
-        <div class="detail-section">
-            <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange" />
-        </div>
+            <!-- 养殖场存栏量月度变化趋势 -->
+            <div class="detail-section">
+                <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange" />
+            </div>
 
-        <!-- 当前存栏信息 -->
-        <div class="detail-section">
-            <current-inventory-tabs :stock-data="stockData" :outbound-data="outboundData" :inbound-data="inboundData"
-                :death-data="deathData" :pagination="pagination" @view-detail="handleViewDetail" />
-        </div>
+            <!-- 当前存栏信息 -->
+            <div class="detail-section">
+                <current-inventory-tabs :stock-data="stockData" :outbound-data="outboundData" :inbound-data="inboundData"
+                    :death-data="deathData" :pagination="pagination" @view-detail="handleViewDetail" />
+            </div>
+        </template>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
 
 // 引入组件
@@ -53,6 +60,17 @@ import ReportStatusBar from '@/components/ReportStatusBar.vue';
 import InventoryTrendLine from '@/components/InventoryTrendLine.vue';
 import MonthlyChangeMixed from '@/components/MonthlyChangeMixed.vue';
 import CurrentInventoryTabs from '@/components/CurrentInventoryTabs.vue';
+
+// 接收养殖场数据属性
+const props = defineProps({
+    farmData: {
+        type: Object,
+        default: () => null
+    }
+});
+
+// 加载状态
+const loading = ref(false);
 
 // 初始化日期范围
 const dateRange = ref<any>([]);
@@ -196,7 +214,96 @@ const deathData = ref(generateDeathData());
 const handleViewDetail = (record) => {
     message.info(`查看记录详情: ${record.index}`);
 };
+
+// 监听farmData变化更新组件数据
+watch(() => props.farmData, async (newData) => {
+    if (newData) {
+        loading.value = true;
+        
+        try {
+            // 更新基础信息
+            farmInfo.district = newData.district || farmInfo.district;
+            farmInfo.farmName = newData.name || farmInfo.farmName;
+            farmInfo.address = newData.address || farmInfo.address;
+            farmInfo.contactPerson = newData.contactPerson || farmInfo.contactPerson;
+            farmInfo.contactPhone = newData.contactPhone || farmInfo.contactPhone;
+            
+            // 模拟加载其他数据的延迟
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // 这里可以根据需要获取更多数据
+            // 例如：更新预警数据、存栏数据、历史记录等
+            
+            // 可以根据farmId生成不同的随机数据
+            if (newData.id) {
+                // 为不同养殖场生成稍微不同的数据
+                const modifier = newData.id % 3 + 1;
+                
+                // 更新饼图数据
+                inventoryData.value = [
+                    { value: 20 * modifier, name: '仔猪' },
+                    { value: 40 * modifier, name: '育肥猪' },
+                    { value: 100 * (modifier / 2), name: '能繁母猪' }
+                ];
+                
+                // 更新报表数据
+                reportData.value = [
+                    { name: '提醒上报', value: 20 * modifier, color: '#40A9FF' },
+                    { name: '延期未上报', value: 15 * modifier, color: '#73D13D' },
+                    { name: '实际上报', value: 25 * modifier, color: '#36CFC9' }
+                ];
+            }
+        } catch (error) {
+            console.error('加载养殖场数据失败:', error);
+            message.error('加载养殖场数据失败');
+        } finally {
+            loading.value = false;
+        }
+    }
+}, { immediate: true });
+
+// 可以在组件外暴露一些方法或数据
+defineExpose({
+    refreshData: () => {
+        // 刷新数据的方法
+        message.info('刷新数据...');
+    }
+});
 </script>
+
+<style lang="scss" scoped>
+.farm-details-drawer {
+    padding: 0 8px;
+    height: 100%;
+    overflow-y: auto;
+    
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
+    .info-warning-card {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    .detail-section {
+        margin-bottom: 20px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        :deep(.chart-container) {
+            height: 280px !important;
+        }
+    }
+}
+</style>
 
 <style lang="scss" scoped>
 .farm-details-drawer {
