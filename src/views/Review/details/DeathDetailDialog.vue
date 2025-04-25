@@ -72,9 +72,12 @@
                         <div class="info-item">
                             <span class="label">AI点数总数:</span>
                             <span class="value">{{ deathInfo.aiTotalCount }}</span>
-                            <span class="warning-message">
-                                （预警提示：上报点数与AI点数差异已超过预警阈值20%，请仔细审核）
-                            </span>
+                            <a-popover title="预警提示">
+                                <template #content>
+                                    上报点数与AI点数差异已超过预警阈值20%，请仔细审核
+                                </template>
+                                <exclamation-circle-filled class="warning-icon" />
+                            </a-popover>
                         </div>
                     </a-col>
                 </a-row>
@@ -122,6 +125,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import { ExclamationCircleFilled } from '@ant-design/icons-vue';
 
 const props = defineProps({
     modelValue: {
@@ -243,6 +247,7 @@ const handleConfirm = () => {
         width: 100%;
         max-height: calc(100vh - 200px);
         overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .info-section {
@@ -297,6 +302,13 @@ const handleConfirm = () => {
 
         .value {
             color: #333;
+        }
+
+        .warning-icon {
+            color: #ff4d4f;
+            font-size: 16px;
+            margin-left: 8px;
+            cursor: pointer;
         }
 
         .warning-message {
