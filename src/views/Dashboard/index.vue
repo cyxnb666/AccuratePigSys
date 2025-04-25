@@ -127,11 +127,7 @@ const addSichuanDistrict = () => {
     adcode: '510000', // 四川省的行政区编码
     depth: 1,         // 显示省级下面一级行政区划
     styles: {
-      'fill': '#2C5597',         // 填充色
-      'province-stroke': '#2C5597', // 省界颜色
-      'city-stroke': '#2C5597',  // 市级边界
-      'county-stroke': '#2C5597', // 区县边界
-      'fill-opacity': 0.6       // 填充透明度
+      'fill': 'rgba(44, 85, 151, 0.7)',         // 填充色
     }
   });
 

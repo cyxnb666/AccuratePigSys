@@ -2,10 +2,16 @@
     <div class="dashboard-stats-panel">
         <!-- Region selector -->
         <div class="region-selector">
-            <a-select v-model:value="selectedRegion" style="width: 100%">
-                <a-select-option value="四川">四川</a-select-option>
-                <!-- More options can be added here -->
-            </a-select>
+            <a-tree-select
+                v-model:value="selectedRegion"
+                style="width: 100%"
+                :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
+                :tree-data="regionTreeData"
+                placeholder="请选择地区"
+                tree-default-expand-all
+                :replaceFields="{title: 'title', value: 'value', children: 'children'}"
+            >
+            </a-tree-select>
         </div>
 
         <!-- Farm count -->
@@ -60,7 +66,62 @@ import * as echarts from 'echarts';
 import { message } from 'ant-design-vue';
 
 // Region selector
-const selectedRegion = ref('四川');
+const regionTreeData = ref([
+    {
+        title: '四川省',
+        value: 'sichuan',
+        key: 'sichuan',
+        children: [
+            {
+                title: '成都市',
+                value: 'chengdu',
+                key: 'chengdu',
+                children: [
+                    {
+                        title: '武侯区',
+                        value: 'wuhou',
+                        key: 'wuhou',
+                    },
+                    {
+                        title: '锦江区',
+                        value: 'jinjiang',
+                        key: 'jinjiang',
+                    },
+                    {
+                        title: '青羊区',
+                        value: 'qingyang',
+                        key: 'qingyang',
+                    }
+                ]
+            },
+            {
+                title: '绵阳市',
+                value: 'mianyang',
+                key: 'mianyang',
+                children: [
+                    {
+                        title: '涪城区',
+                        value: 'fucheng',
+                        key: 'fucheng',
+                    },
+                    {
+                        title: '安州区',
+                        value: 'anzhou',
+                        key: 'anzhou',
+                    }
+                ]
+            },
+            {
+                title: '南充市',
+                value: 'nanchong',
+                key: 'nanchong',
+            }
+        ]
+    }
+]);
+
+// 默认选中四川省
+const selectedRegion = ref('sichuan');
 
 // Farm situation table
 const situationColumns = [

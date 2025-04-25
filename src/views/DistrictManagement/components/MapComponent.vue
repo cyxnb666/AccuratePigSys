@@ -1,17 +1,5 @@
 <template>
     <div style="width: 100%">
-        <!-- 搜索框 -->
-        <div class="search-box">
-            <a-select-input v-model:value="keyword" :loading="loading" placeholder="请输入关键词搜索" allow-input allow-clear
-                @search="remoteMethod" @select="handleSelect">
-                <template #optionRender="{ data }">
-                    <a-select-option v-for="item in options" :key="item.id" :value="item">
-                        {{ item.name }}
-                    </a-select-option>
-                </template>
-            </a-select-input>
-        </div>
-
         <!-- 地图容器 --> 
         <div ref="mapContainer" class="map-container"></div>
     </div>
@@ -30,14 +18,10 @@ window._AMapSecurityConfig = {
 };
 
 const mapContainer = ref<HTMLDivElement>();
-const keyword = ref('');
-const loading = ref(false);
-const options = ref<any[]>([]);
 
 let map: any = null;
 let marker: any = null;
 let geocoder: any = null;
-let placeSearch: any = null;
 
 onMounted(() => {
     initMap();
@@ -53,7 +37,7 @@ const initMap = async () => {
         const AMap = await AMapLoader.load({
             key: mapConfig.AMAPKEY,
             version: '2.0',
-            plugins: ['AMap.PlaceSearch', 'AMap.Geocoder', 'AMap.AutoComplete']
+            plugins: ['AMap.Geocoder', 'AMap.AutoComplete']
         });
 
         map = new AMap.Map(mapContainer.value, {
@@ -65,11 +49,6 @@ const initMap = async () => {
         // 初始化插件
         geocoder = new AMap.Geocoder({
             city: '全国'
-        });
-
-        placeSearch = new AMap.PlaceSearch({
-            city: '全国',
-            citylimit: false
         });
 
         // 点击地图事件
@@ -118,39 +97,6 @@ const updateMapPosition = (lng: number, lat: number) => {
     setMarker(lnglat);
 };
 
-// 搜索地址
-const remoteMethod = (query: string) => {
-    if (!query) {
-        options.value = [];
-        return;
-    }
-
-    loading.value = true;
-    placeSearch.search(query, (status: string, result: any) => {
-        loading.value = false;
-        if (status === 'complete' && result.poiList) {
-            options.value = result.poiList.pois;
-        } else {
-            options.value = [];
-        }
-    });
-};
-
-// 选择搜索结果
-const handleSelect = (val: any) => {
-    if (!val || !val.location) return;
-
-    const lnglat = new AMap.LngLat(val.location.lng, val.location.lat);
-    map.setCenter(lnglat);
-    setMarker(lnglat);
-
-    emit('updatePosition', {
-        longitude: val.location.lng,
-        latitude: val.location.lat,
-        address: val.name
-    });
-};
-
 // 暴露给父组件使用的方法
 defineExpose({
     updateMapPosition
@@ -158,10 +104,6 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
-.search-box {
-    margin-bottom: 10px;
-}
-
 .map-container {
     width: 100%;
     height: 300px;
