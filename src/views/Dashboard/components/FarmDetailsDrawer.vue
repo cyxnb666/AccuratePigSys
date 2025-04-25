@@ -1,8 +1,14 @@
 <template>
     <div class="farm-details-drawer">
-        <!-- 第一行：养殖场基础信息 -->
-        <div class="detail-section">
+        <!-- 第一行：养殖场基础信息和异常预警 - 用一个div包裹并添加阴影效果 -->
+        <div class="info-warning-card">
+            <!-- 养殖场基础信息 -->
             <farm-basic-info :farm-info="farmInfo" />
+
+            <!-- 异常预警 -->
+            <div style="margin-top: 20px;">
+                <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+            </div>
         </div>
 
         <!-- 第二行：养殖场存栏情况和上报情况 -->
@@ -12,14 +18,9 @@
                     <farm-inventory-pie :inventory-data="inventoryData" />
                 </a-col>
                 <a-col :span="12">
-                    <report-status-bar :report-data="reportData" v-model:date-range="dateRange" />
+                    <report-status-bar class="report-status-adjusted" :report-data="reportData" v-model:date-range="dateRange" />
                 </a-col>
             </a-row>
-        </div>
-
-        <!-- 异常预警 -->
-        <div class="detail-section">
-            <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
         </div>
 
         <!-- 养殖区存栏量变化趋势图 -->
@@ -203,6 +204,13 @@ const handleViewDetail = (record) => {
     height: 100%;
     overflow-y: auto;
 
+    .info-warning-card {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+        padding: 16px;
+        margin-bottom: 20px;
+    }
     .detail-section {
         margin-bottom: 20px;
 

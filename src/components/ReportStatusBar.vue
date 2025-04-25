@@ -71,7 +71,7 @@ const initChart = () => {
             left: '3%',
             right: '4%',
             bottom: '15%',
-            top: '5%',
+            top: '8%',
             containLabel: true
         },
         xAxis: {
@@ -152,6 +152,7 @@ onUnmounted(() => {
     .chart-container {
         width: 100%;
         height: 300px;
+        
 
         .chart {
             width: 100%;
