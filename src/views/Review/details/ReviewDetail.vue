@@ -110,30 +110,33 @@
                                         <a-tabs v-model:activeKey="activeSubTab">
                                             <a-tab-pane key="fattening" tab="育肥区">
                                                 <div class="count-row">
-                                                    <div class="count-item">
-                                                        <span class="label">上报数量：</span>
-                                                        <span class="value">{{ currentArea.fatteningData.reportCount
-                                                            }}</span>
+                                                    <div class="count-items-container">
+                                                        <div class="count-item">
+                                                            <span class="label">上报数量：</span>
+                                                            <span class="value">{{ currentArea.fatteningData.reportCount
+                                                                }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">AI点数：</span>
+                                                            <span class="value">{{ currentArea.fatteningData.aiCount
+                                                                }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">审核员点数：</span>
+                                                            <a-input-number v-if="!isViewMode"
+                                                                v-model:value="currentArea.fatteningData.reviewerCount"
+                                                                :min="0" style="width: 120px" />
+                                                            <span v-else class="value">{{
+                                                                currentArea.fatteningData.reviewerCount }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">上次上报数量：</span>
+                                                            <span class="value">{{
+                                                                currentArea.fatteningData.lastReportCount
+                                                                }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="count-item">
-                                                        <span class="label">AI点数：</span>
-                                                        <span class="value">{{ currentArea.fatteningData.aiCount
-                                                            }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">审核员点数：</span>
-                                                        <a-input-number v-if="!isViewMode"
-                                                            v-model:value="currentArea.fatteningData.reviewerCount"
-                                                            :min="0" style="width: 120px" />
-                                                        <span v-else class="value">{{
-                                                            currentArea.fatteningData.reviewerCount }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">上次上报数量：</span>
-                                                        <span class="value">{{ currentArea.fatteningData.lastReportCount
-                                                            }}</span>
-                                                    </div>
-                                                    <div class="count-item">
+                                                    <div class="detail-button-container">
                                                         <a-button type="primary" size="small"
                                                             @click="goToDetailedComparison('fattening')">详细对比</a-button>
                                                     </div>
@@ -169,30 +172,34 @@
 
                                             <a-tab-pane key="piglets" tab="仔猪区">
                                                 <div class="count-row">
-                                                    <div class="count-item">
-                                                        <span class="label">上报数量：</span>
-                                                        <span class="value">{{ currentArea.pigletsData.reportCount
-                                                            }}</span>
+                                                    <div class="count-items-container">
+                                                        <div class="count-item">
+                                                            <span class="label">上报数量：</span>
+                                                            <span class="value">{{ currentArea.pigletsData.reportCount
+                                                                }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">AI点数：</span>
+                                                            <span class="value">{{ currentArea.pigletsData.aiCount
+                                                                }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">审核员点数：</span>
+                                                            <a-input-number v-if="!isViewMode"
+                                                                v-model:value="currentArea.pigletsData.reviewerCount"
+                                                                :min="0" style="width: 120px" />
+                                                            <span v-else class="value">{{
+                                                                currentArea.pigletsData.reviewerCount
+                                                                }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">上次上报数量：</span>
+                                                            <span class="value">{{
+                                                                currentArea.pigletsData.lastReportCount
+                                                                }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="count-item">
-                                                        <span class="label">AI点数：</span>
-                                                        <span class="value">{{ currentArea.pigletsData.aiCount }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">审核员点数：</span>
-                                                        <a-input-number v-if="!isViewMode"
-                                                            v-model:value="currentArea.pigletsData.reviewerCount"
-                                                            :min="0" style="width: 120px" />
-                                                        <span v-else class="value">{{
-                                                            currentArea.pigletsData.reviewerCount
-                                                            }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">上次上报数量：</span>
-                                                        <span class="value">{{ currentArea.pigletsData.lastReportCount
-                                                        }}</span>
-                                                    </div>
-                                                    <div class="count-item">
+                                                    <div class="detail-button-container">
                                                         <a-button type="primary" size="small"
                                                             @click="goToDetailedComparison('piglets')">详细对比</a-button>
                                                     </div>
@@ -228,29 +235,33 @@
 
                                             <a-tab-pane key="sows" tab="母猪区">
                                                 <div class="count-row">
-                                                    <div class="count-item">
-                                                        <span class="label">上报数量：</span>
-                                                        <span class="value">{{ currentArea.sowsData.reportCount
+                                                    <div class="count-items-container">
+                                                        <div class="count-item">
+                                                            <span class="label">上报数量：</span>
+                                                            <span class="value">{{ currentArea.sowsData.reportCount
                                                             }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">AI点数：</span>
+                                                            <span class="value">{{ currentArea.sowsData.aiCount
+                                                            }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">审核员点数：</span>
+                                                            <a-input-number v-if="!isViewMode"
+                                                                v-model:value="currentArea.sowsData.reviewerCount"
+                                                                :min="0" style="width: 120px" />
+                                                            <span v-else class="value">{{
+                                                                currentArea.sowsData.reviewerCount
+                                                            }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">上次上报数量：</span>
+                                                            <span class="value">{{ currentArea.sowsData.lastReportCount
+                                                            }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="count-item">
-                                                        <span class="label">AI点数：</span>
-                                                        <span class="value">{{ currentArea.sowsData.aiCount }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">审核员点数：</span>
-                                                        <a-input-number v-if="!isViewMode"
-                                                            v-model:value="currentArea.sowsData.reviewerCount" :min="0"
-                                                            style="width: 120px" />
-                                                        <span v-else class="value">{{ currentArea.sowsData.reviewerCount
-                                                        }}</span>
-                                                    </div>
-                                                    <div class="count-item">
-                                                        <span class="label">上次上报数量：</span>
-                                                        <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                        }}</span>
-                                                    </div>
-                                                    <div class="count-item">
+                                                    <div class="detail-button-container">
                                                         <a-button type="primary" size="small"
                                                             @click="goToDetailedComparison('sows')">详细对比</a-button>
                                                     </div>
@@ -832,9 +843,19 @@ loadData();
 
     .count-row {
         display: flex;
-        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 20px;
+    }
+
+    .count-items-container {
+        display: flex;
+        flex-wrap: wrap;
         gap: 20px;
+    }
+
+    .detail-button-container {
+        margin-left: auto;
     }
 
     .count-item {
