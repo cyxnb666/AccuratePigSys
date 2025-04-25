@@ -34,6 +34,7 @@ onUnmounted(() => {
 // 初始化地图
 const initMap = async () => {
     try {
+        AMapLoader.reset()
         const AMap = await AMapLoader.load({
             key: mapConfig.AMAPKEY,
             version: '2.0',
