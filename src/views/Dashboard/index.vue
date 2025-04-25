@@ -1,12 +1,25 @@
 <template>
   <div class="dashboard-container">
+    <!-- Add button in top right -->
+    <div class="farm-detail-button">
+      <a-button type="primary" @click="showDrawer">养殖场详情</a-button>
+    </div>
+
     <div id="map-container" class="map-container"></div>
+
+    <!-- Add drawer component -->
+    <a-drawer title="养殖场详情" placement="right" :width="1000" :visible="drawerVisible" @close="closeDrawer"
+      @afterVisibleChange="afterDrawerOpen">
+      <farm-details-drawer v-if="drawerVisible" ref="farmDetailsRef" />
+    </a-drawer>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import mapConfig from '@/utils/map-config';
+import FarmDetailsDrawer from './components/FarmDetailsDrawer.vue';
 
 let map = null;
 let satelliteLayer = null;
@@ -14,6 +27,30 @@ let satelliteLayer = null;
 // 默认地图中心点和缩放级别
 const defaultCenter = [116.397428, 39.90923]; // 北京
 const defaultZoom = 11;
+
+const farmDetailsRef = ref(null);
+const afterDrawerOpen = (visible) => {
+  if (visible && farmDetailsRef.value) {
+    // 给一点延迟确保抽屉完全打开
+    setTimeout(() => {
+      // 手动触发窗口resize事件以刷新图表
+      window.dispatchEvent(new Event('resize'));
+    }, 1);
+  }
+};
+
+// 控制抽屉显示状态
+const drawerVisible = ref(false);
+
+// 显示抽屉
+const showDrawer = () => {
+  drawerVisible.value = true;
+};
+
+// 关闭抽屉
+const closeDrawer = () => {
+  drawerVisible.value = false;
+};
 
 onMounted(() => {
   // 设置安全密钥
@@ -84,5 +121,12 @@ onUnmounted(() => {
   flex: 1;
   height: 100%;
   width: 100%;
+}
+
+.farm-detail-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
 }
 </style>
