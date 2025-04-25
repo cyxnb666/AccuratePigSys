@@ -114,12 +114,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.fatteningData.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.fatteningData.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -133,7 +133,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.fatteningData.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -163,7 +163,9 @@
                                                         <div class="track-item">
                                                             <div class="track-header">GPS轨迹</div>
                                                             <div class="track-content gps-track">
-                                                                <!-- GPS轨迹图占位符 -->
+                                                                <plot-g-p-s :fence-data="fenceData"
+                                                                    :tracking-data="trackingData"
+                                                                    :area-type="activeSubTab" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -176,12 +178,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.pigletsData.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.pigletsData.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -190,13 +192,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.pigletsData.reviewerCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.pigletsData.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -239,12 +241,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.sowsData.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.sowsData.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -253,12 +255,12 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.sowsData.reviewerCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -393,6 +395,23 @@ import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
+import PlotGPS from '../plotGPS/PlotGPS.vue';
+
+const fenceData = reactive({
+    path: [
+        { lng: 116.458694, lat: 40.000431 },
+        { lng: 116.4629, lat: 40.000628 },
+        { lng: 116.466505, lat: 39.991949 }
+    ]
+});
+
+const trackingData = reactive([
+    { lng: 116.462, lat: 39.997, timestamp: '0s' },
+    { lng: 116.463, lat: 39.996, timestamp: '4s' },
+    { lng: 116.464, lat: 39.995, timestamp: '8s' },
+    { lng: 116.465, lat: 39.994, timestamp: '12s' },
+    { lng: 116.4655, lat: 39.9935, timestamp: '15s' }
+]);
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
