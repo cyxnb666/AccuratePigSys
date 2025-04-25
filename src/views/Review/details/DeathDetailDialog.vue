@@ -1,9 +1,7 @@
 <template>
     <a-modal v-model:open="dialogVisible" title="死亡上报" :width="1200" :footer="null" :maskClosable="false"
         class="death-detail-dialog">
-        <!-- Dialog Content -->
         <div class="dialog-content">
-            <!-- Basic Information Section -->
             <div class="info-section">
                 <div class="section-header">
                     <div class="title">基础信息</div>
@@ -52,7 +50,6 @@
                 </a-row>
             </div>
 
-            <!-- Death Information Section -->
             <div class="info-section">
                 <div class="section-header">
                     <div class="title">死亡信息</div>
@@ -71,7 +68,7 @@
                             <span class="value">{{ deathInfo.totalReportCount }}</span>
                         </div>
                     </a-col>
-                    <a-col :span="24">
+                    <a-col :span="8">
                         <div class="info-item">
                             <span class="label">AI点数总数:</span>
                             <span class="value">{{ deathInfo.aiTotalCount }}</span>
@@ -82,7 +79,6 @@
                     </a-col>
                 </a-row>
 
-                <!-- Death Count Table -->
                 <a-table :columns="deathColumns" :data-source="deathData" :pagination="false" bordered size="small"
                     class="death-table">
                     <template #bodyCell="{ column, record }">
@@ -95,19 +91,16 @@
                 </a-table>
             </div>
 
-            <!-- Photos/Videos Section -->
             <div class="info-section">
                 <div class="section-header">
                     <div class="title">照片/视频</div>
                 </div>
 
                 <div class="media-grid">
-                    <!-- Image placeholders -->
                     <div v-for="i in 2" :key="`image-${i}`" class="media-item image-placeholder">
                         <img src="" alt="" />
                     </div>
 
-                    <!-- Video placeholder -->
                     <div class="media-item video-placeholder">
                         <video controls>
                             <source src="" type="video/mp4">
@@ -118,7 +111,6 @@
             </div>
         </div>
 
-        <!-- Footer Buttons -->
         <div class="dialog-footer">
             <a-button @click="handleCancel">取 消</a-button>
             <a-button v-if="!isViewMode" type="primary" @click="handleConfirm">
@@ -153,7 +145,6 @@ const dialogVisible = computed({
     set: (value) => emit('update:modelValue', value)
 });
 
-// Mock data - replace with actual data from props.record
 const basicInfo = reactive({
     district: '四川省成都市',
     farmName: 'XXXXXX养殖场',
@@ -169,7 +160,6 @@ const deathInfo = reactive({
     aiTotalCount: '1'
 });
 
-// Table columns
 const deathColumns = [
     {
         title: '种类',
@@ -191,7 +181,6 @@ const deathColumns = [
     }
 ];
 
-// Table data - in view mode, use actual values; in edit mode, initialize with 0
 const deathData = ref([
     {
         key: '1',
@@ -213,13 +202,11 @@ const deathData = ref([
     }
 ]);
 
-// Event handlers
 const handleCancel = () => {
     dialogVisible.value = false;
 };
 
 const handleConfirm = () => {
-    // Gather data including reviewer counts
     const reviewData = {
         reviewerCounts: deathData.value.map(item => ({
             type: item.type,
@@ -231,9 +218,6 @@ const handleConfirm = () => {
     dialogVisible.value = false;
 };
 </script>
-
-<style lang="scss" scoped>
-// ... (保持原有样式不变)</style>
 
 <style lang="scss" scoped>
 .death-detail-dialog {
@@ -256,7 +240,7 @@ const handleConfirm = () => {
     }
 
     .dialog-content {
-        padding: 20px 24px;
+        width: 100%;
         max-height: calc(100vh - 200px);
         overflow-y: auto;
     }

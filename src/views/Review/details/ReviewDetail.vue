@@ -343,7 +343,7 @@
                         <div class="review-option-item">
                             <span class="review-label">审核员点数:</span>
                             <span class="review-value">{{ calculateTotalReviewerCount() }}</span>
-                            <span class="review-note">(根据审核员填写的各区域点数自动计算)</span>
+                            <span class="review-note">(自动计算所有总和)</span>
                         </div>
                         <div class="review-option-item">
                             <span class="review-label">应计存栏数:</span>
