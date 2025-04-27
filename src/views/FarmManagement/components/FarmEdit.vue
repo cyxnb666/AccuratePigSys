@@ -131,7 +131,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import ElectronicFenceMap from './ElectronicFenceMap.vue';
 
@@ -289,8 +289,17 @@ const toggleContactStatus = (record) => {
 };
 
 const deleteContact = (record) => {
-    contacts.value = contacts.value.filter(item => item.key !== record.key);
-    message.success('删除联系人成功');
+    Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除联系人 "${record.name}" 吗？`,
+        okText: '确认',
+        cancelText: '取消',
+        onOk: () => {
+            // 用户确认后执行删除操作
+            contacts.value = contacts.value.filter(item => item.key !== record.key);
+            message.success('删除联系人成功');
+        }
+    });
 };
 
 const saveForm = () => {

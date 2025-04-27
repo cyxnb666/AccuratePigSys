@@ -41,7 +41,7 @@
                 {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
             </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
-                }}</a-button>
+            }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, reactive, nextTick } from 'vue';
 import mapConfig from '@/utils/map-config';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 
 let map = null;
 let polyEditor = null;
@@ -389,71 +389,97 @@ const startEditing = () => {
 const toggleDisablePolygon = () => {
     if (!selectedPolygon.value) return;
 
-    // 如果当前在编辑模式，先结束编辑
-    if (isEditing.value) {
-        polyEditor.close();
-        isEditing.value = false;
-    }
+    // 确定弹窗标题和内容
+    const isCurrentlyDisabled = selectedPolygon.value.isDisabled;
+    const modalTitle = isCurrentlyDisabled ? '确认恢复' : '确认失效';
+    const modalContent = isCurrentlyDisabled 
+        ? '确定要将选中地块恢复为正常状态吗？' 
+        : '确定要将选中地块设置为失效状态吗？';
 
-    // 切换失效状态
-    selectedPolygon.value.isDisabled = !selectedPolygon.value.isDisabled;
+    // 添加确认弹窗
+    Modal.confirm({
+        title: modalTitle,
+        content: modalContent,
+        okText: '确认',
+        cancelText: '取消',
+        onOk: () => {
+            // 如果当前在编辑模式，先结束编辑
+            if (isEditing.value) {
+                polyEditor.close();
+                isEditing.value = false;
+            }
 
-    // 根据新状态更新视觉样式
-    if (selectedPolygon.value.isDisabled) {
-        selectedPolygon.value.setOptions(POLYGON_COLORS.SELECTED_DISABLED);
-        message.success('地块已设置为失效状态，无法编辑');
-    } else {
-        selectedPolygon.value.setOptions(POLYGON_COLORS.SELECTED);
-        message.success('地块已恢复正常状态，可以编辑');
-    }
+            // 切换失效状态
+            selectedPolygon.value.isDisabled = !selectedPolygon.value.isDisabled;
+
+            // 根据新状态更新视觉样式
+            if (selectedPolygon.value.isDisabled) {
+                selectedPolygon.value.setOptions(POLYGON_COLORS.SELECTED_DISABLED);
+                message.success('地块已设置为失效状态，无法编辑');
+            } else {
+                selectedPolygon.value.setOptions(POLYGON_COLORS.SELECTED);
+                message.success('地块已恢复正常状态，可以编辑');
+            }
+        }
+    });
 };
 
 // 删除选中的多边形
 const deleteSelectedPolygon = () => {
     if (!selectedPolygon.value) return;
 
-    // 关闭编辑器
-    polyEditor.close();
-    polyEditor.setTarget(null);
+    // 添加确认弹窗
+    Modal.confirm({
+        title: '确认删除',
+        content: '确定要删除选中的地块吗？',
+        okText: '确认',
+        cancelText: '取消',
+        onOk: () => {
+            // 用户确认后执行删除操作
+            // 关闭编辑器
+            polyEditor.close();
+            polyEditor.setTarget(null);
 
-    // 查找关联的标签并删除
-    const associatedLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
-    if (associatedLabel && associatedLabel.labelMarker) {
-        map.remove(associatedLabel.labelMarker);
-        labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
-    }
-
-    // 尝试所有可能的删除方法
-    try {
-        selectedPolygon.value.remove();
-    } catch (e) {
-        console.error('删除多边形时出错:', e);
-        try {
-            selectedPolygon.value.destroy();
-        } catch (e) {
-            console.error('销毁多边形时出错:', e);
-            try {
-                map.remove([selectedPolygon.value]);
-            } catch (e) {
-                console.error('从地图移除多边形时出错:', e);
+            // 查找关联的标签并删除
+            const associatedLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
+            if (associatedLabel && associatedLabel.labelMarker) {
+                map.remove(associatedLabel.labelMarker);
+                labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
             }
+
+            // 尝试所有可能的删除方法
+            try {
+                selectedPolygon.value.remove();
+            } catch (e) {
+                console.error('删除多边形时出错:', e);
+                try {
+                    selectedPolygon.value.destroy();
+                } catch (e) {
+                    console.error('销毁多边形时出错:', e);
+                    try {
+                        map.remove([selectedPolygon.value]);
+                    } catch (e) {
+                        console.error('从地图移除多边形时出错:', e);
+                    }
+                }
+            }
+
+            // 从数组中移除引用
+            polygons.value = polygons.value.filter(p => p !== selectedPolygon.value);
+
+            // 最后手动刷新地图
+            if (polygons.value.length > 0) {
+                map.setFitView(polygons.value);
+            }
+
+            console.log('多边形已删除');
+            console.log('剩余多边形数量:', polygons.value.length);
+
+            // 重置选中状态
+            selectedPolygon.value = null;
+            isEditing.value = false;
         }
-    }
-
-    // 从数组中移除引用
-    polygons.value = polygons.value.filter(p => p !== selectedPolygon.value);
-
-    // 最后手动刷新地图
-    if (polygons.value.length > 0) {
-        map.setFitView(polygons.value);
-    }
-
-    console.log('多边形已删除');
-    console.log('剩余多边形数量:', polygons.value.length);
-
-    // 重置选中状态
-    selectedPolygon.value = null;
-    isEditing.value = false;
+    });
 };
 
 // 编辑
@@ -644,11 +670,11 @@ const toggleFullscreen = () => {
 // 全屏变化事件处理
 const onFullscreenChange = () => {
     isFullscreen.value = !!document.fullscreenElement;
-    
+
     setTimeout(() => {
         const sugResults = document.querySelector('.amap-sug-result');
         const mapContainer = document.querySelector('.electronic-fence-map');
-        
+
         if (sugResults && mapContainer) {
             if (isFullscreen.value) {
                 // 全屏模式：将搜索结果移动到全屏容器内的最前面
@@ -681,7 +707,7 @@ onUnmounted(() => {
             if (mutation.type === 'childList' && isFullscreen.value) {
                 const sugResults = document.querySelector('.amap-sug-result');
                 const mapContainer = document.querySelector('.electronic-fence-map');
-                
+
                 if (sugResults && mapContainer && !mapContainer.contains(sugResults)) {
                     mapContainer.appendChild(sugResults);
                     sugResults.style.zIndex = '10000';
@@ -690,9 +716,9 @@ onUnmounted(() => {
             }
         });
     });
-    
+
     observer.observe(document.body, { childList: true, subtree: true });
-    
+
     // 在组件卸载时取消观察
     onUnmounted(() => {
         observer.disconnect();
