@@ -29,12 +29,9 @@
 
         <!-- 操作栏 -->
         <div class="map-options">
-            <!-- <a-popover placement="top" title="提示" content="新增勾画地块前,请先保存之前所勾画的地块!" trigger="hover"> -->
             <a-button type="primary" @click="createPolygon">勾 画</a-button>
-            <!-- </a-popover> -->
             <a-button type="primary" danger @click="deleteSelectedPolygon" :disabled="!selectedPolygon"
                 style="margin-left: 8px">删除地块</a-button>
-            <!-- 修改这里，添加selectedPolygon.isDisabled条件 -->
             <a-button type="primary" @click="finishEditing"
                 :disabled="!isEditing || !selectedPolygon || (selectedPolygon && selectedPolygon.isDisabled)"
                 style="margin-left: 8px">编辑</a-button>
@@ -73,8 +70,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, reactive } from 'vue';
+import { onMounted, onUnmounted, ref, reactive, nextTick } from 'vue';
 import mapConfig from '@/utils/map-config';
+import { message } from 'ant-design-vue';
 
 let map = null;
 let polyEditor = null;
@@ -159,8 +157,11 @@ const initMap = () => {
 
         // 双击多边形进入编辑状态
         polygon.on('dblclick', (e) => {
-            // 阻止事件冒泡，避免地图也响应双击事件
-            e.originalEvent.stopPropagation();
+            // 确保originalEvent存在
+            if (e && e.originalEvent) {
+                // 阻止事件冒泡，避免地图也响应双击事件
+                e.originalEvent.stopPropagation();
+            }
 
             selectPolygon(polygon);
 
