@@ -28,7 +28,7 @@
         </div>
 
         <!-- 操作栏 -->
-        <div class="map-options">
+        <div class="map-options" v-if="props.showToolbar">
             <a-button type="primary" @click="createPolygon">勾 画</a-button>
             <a-button type="primary" danger @click="deleteSelectedPolygon" :disabled="!selectedPolygon"
                 style="margin-left: 8px">删除地块</a-button>
@@ -85,6 +85,12 @@ const polygons = ref([]);
 const labels = ref([]);  // 存储围栏标签
 const isEditMode = ref(false); // 是否为编辑模式
 
+const props = defineProps({
+    showToolbar: {
+        type: Boolean,
+        default: false
+    }
+});
 // 电子围栏对话框相关
 const fenceDialogVisible = ref(false);
 const fenceFormRef = ref(null);
@@ -157,9 +163,8 @@ const initMap = () => {
 
         // 双击多边形进入编辑状态
         polygon.on('dblclick', (e) => {
-            // 确保originalEvent存在
+            // 阻止事件冒泡，避免地图也响应双击事件
             if (e && e.originalEvent) {
-                // 阻止事件冒泡，避免地图也响应双击事件
                 e.originalEvent.stopPropagation();
             }
 
@@ -195,6 +200,9 @@ const initMap = () => {
         if (!polygon.__uid) {
             polygon.__uid = Date.now().toString();
         }
+
+        // 完成创建后，重置标志 - 放在这里，在打开对话框前
+        isCreatingNewPolygon.value = false;
 
         // 设置为新增模式
         isEditMode.value = false;
@@ -272,6 +280,8 @@ const switchLayer = () => {
     }
 };
 
+// 是否正在创建新多边形
+const isCreatingNewPolygon = ref(false);
 // 创建新多边形（勾画）
 const createPolygon = () => {
     // 关闭之前的编辑
@@ -280,68 +290,88 @@ const createPolygon = () => {
     // 清除当前编辑目标
     polyEditor.setTarget();
 
+    // 设置标志为正在创建
+    isCreatingNewPolygon.value = true;
+
     // 开始新建多边形
     polyEditor.open();
 
     isEditing.value = true;
 };
 
+const POLYGON_COLORS = {
+    // 选中状态 - 蓝色
+    SELECTED: {
+        fillColor: '#3B82F6',  // 蓝色填充
+        fillOpacity: 0.6,
+        strokeColor: '#1D4ED8', // 深蓝色边框
+        strokeOpacity: 1,
+        strokeWeight: 3
+    },
+    // 普通状态（未选中）- 红色
+    NORMAL: {
+        fillColor: '#F87171',  // 红色填充
+        fillOpacity: 0.5,
+        strokeColor: '#00D3FC', // 青色边框
+        strokeOpacity: 0.8,
+        strokeWeight: 2
+    },
+    // 失效状态 - 灰色
+    DISABLED: {
+        fillColor: '#9CA3AF',  // 灰色填充
+        fillOpacity: 0.5,
+        strokeColor: '#6B7280', // 深灰色边框
+        strokeOpacity: 0.8,
+        strokeWeight: 2
+    },
+    // 选中且失效 - 深灰色
+    SELECTED_DISABLED: {
+        fillColor: '#6B7280',  // 深灰色填充
+        fillOpacity: 0.6,
+        strokeColor: '#4B5563', // 更深的灰色边框
+        strokeOpacity: 1,
+        strokeWeight: 3
+    }
+};
 // 选择多边形
 const selectPolygon = (polygon) => {
+    // 如果正在创建新多边形，不要关闭编辑状态
+    if (isEditing.value && !isCreatingNewPolygon.value && selectedPolygon.value !== polygon) {
+        // 关闭编辑器
+        polyEditor.close();
+        isEditing.value = false;
+    }
+
     // 清除之前选中多边形的样式
     if (selectedPolygon.value && selectedPolygon.value !== polygon) {
         // 根据之前选中多边形的状态设置其样式
         if (selectedPolygon.value.isDisabled) {
-            selectedPolygon.value.setOptions({
-                fillColor: '#999999',  // 失效状态颜色
-                fillOpacity: 0.5,
-                strokeColor: '#666666',
-                strokeOpacity: 0.8
-            });
+            selectedPolygon.value.setOptions(POLYGON_COLORS.DISABLED);
         } else {
-            selectedPolygon.value.setOptions({
-                fillColor: '#B35656',  // 恢复默认填充色
-                fillOpacity: 0.5,      // 恢复默认透明度
-                strokeColor: '#00D3FC', // 恢复默认描边色
-                strokeOpacity: 0.9
-            });
+            selectedPolygon.value.setOptions(POLYGON_COLORS.NORMAL);
         }
     }
 
     // 设置新选中的多边形
     selectedPolygon.value = polygon;
 
-    // 如果正在编辑，并且选中了一个禁用的多边形，则结束编辑状态
-    if (isEditing.value && polygon.isDisabled) {
-        polyEditor.close();
-        isEditing.value = false;
-    }
-
     // 根据多边形状态设置高亮样式
     if (polygon.isDisabled) {
-        // 失效状态下的选中样式
-        polygon.setOptions({
-            fillColor: '#a9a9a9',  // 失效状态下选中的填充色
-            fillOpacity: 0.7,      // 选中时的透明度
-            strokeColor: '#888888',
-            strokeOpacity: 1,
-            strokeWeight: 3
-        });
+        polygon.setOptions(POLYGON_COLORS.SELECTED_DISABLED);
     } else {
-        // 正常状态下的选中样式
-        polygon.setOptions({
-            fillColor: '#7bccc4',  // 选中时的填充色
-            fillOpacity: 0.7,      // 选中时的透明度
-            strokeColor: '#00D3FC',
-            strokeOpacity: 1,
-            strokeWeight: 3
-        });
+        polygon.setOptions(POLYGON_COLORS.SELECTED);
     }
 };
 
 // 开始编辑选中的多边形
 const startEditing = () => {
     if (!selectedPolygon.value) return;
+
+    // 如果工具栏未显示（编辑模式未开启），则不允许编辑
+    if (!props.showToolbar) {
+        message.warning('请先开启电子围栏编辑功能');
+        return;
+    }
 
     // 首先检查多边形是否处于失效状态
     if (selectedPolygon.value.isDisabled === true) {
@@ -370,24 +400,10 @@ const toggleDisablePolygon = () => {
 
     // 根据新状态更新视觉样式
     if (selectedPolygon.value.isDisabled) {
-        // 失效状态样式
-        selectedPolygon.value.setOptions({
-            fillColor: '#a9a9a9',  // 失效状态下选中的填充色
-            fillOpacity: 0.7,      // 选中时的透明度
-            strokeColor: '#888888',
-            strokeOpacity: 1,
-            strokeWeight: 3
-        });
+        selectedPolygon.value.setOptions(POLYGON_COLORS.SELECTED_DISABLED);
         message.success('地块已设置为失效状态，无法编辑');
     } else {
-        // 恢复正常状态样式
-        selectedPolygon.value.setOptions({
-            fillColor: '#7bccc4',  // 选中时的填充色
-            fillOpacity: 0.7,      // 选中时的透明度
-            strokeColor: '#00D3FC',
-            strokeOpacity: 1,
-            strokeWeight: 3
-        });
+        selectedPolygon.value.setOptions(POLYGON_COLORS.SELECTED);
         message.success('地块已恢复正常状态，可以编辑');
     }
 };
@@ -694,12 +710,7 @@ const setFenceList = (fenceData) => {
             // 创建多边形
             const polygon = new AMap.Polygon({
                 path: path,
-                strokeColor: fence.isDisabled ? '#666666' : '#00D3FC',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: fence.isDisabled ? '#999999' : '#B35656',
-                fillOpacity: 0.5,
-                zIndex: 50
+                ...fence.isDisabled ? POLYGON_COLORS.DISABLED : POLYGON_COLORS.NORMAL
             });
 
             // 设置多边形属性

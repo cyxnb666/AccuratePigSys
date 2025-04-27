@@ -81,8 +81,12 @@
                 <div class="fence-section">
                     <div class="section-header">
                         <span class="section-title">养殖场电子围栏编辑</span>
+                        <div class="fence-edit-switch">
+                            <span>开启电子围栏编辑</span>
+                            <a-switch v-model:checked="fenceEditEnabled" @change="handleFenceEditChange" />
+                        </div>
                     </div>
-                    <electronic-fence-map ref="fenceMapRef" />
+                    <electronic-fence-map ref="fenceMapRef" :showToolbar="showMapToolbar" />
                 </div>
 
                 <!-- 底部空白区域，确保电子围栏完全可见 -->
@@ -135,6 +139,8 @@ const router = useRouter();
 const route = useRoute();
 const isEdit = ref(route.query.id !== undefined);
 const fenceMapRef = ref<any>(null);
+const fenceEditEnabled = ref(false);
+const showMapToolbar = ref(false);
 
 // 行政区划树形数据
 const districtTreeData = [
@@ -303,6 +309,19 @@ const saveForm = () => {
     router.go(-1);
 };
 
+const handleFenceEditChange = (checked) => {
+    console.log('电子围栏编辑状态:', checked ? '已开启' : '已关闭');
+    
+    // 控制地图操作栏的显示/隐藏
+    showMapToolbar.value = checked;
+    
+    // 这里可以调用 API 来启用/禁用围栏编辑功能
+    // 例如: apiToggleFenceEdit(checked)
+    
+    // 显示消息提示
+    message.success(`电子围栏编辑已${checked ? '开启' : '关闭'}`);
+};
+
 onMounted(() => {
     if (isEdit.value) {
         // 假设这是从API获取的养殖场数据
@@ -423,6 +442,8 @@ onMounted(() => {
     .section-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        /* 修改为两端对齐 */
         margin-bottom: 16px;
         padding-bottom: 8px;
         border-bottom: 1px solid #f0f0f0;
@@ -430,6 +451,21 @@ onMounted(() => {
         .section-title {
             font-size: 16px;
             font-weight: 500;
+        }
+
+        .fence-edit-switch {
+            display: flex;
+            align-items: center;
+
+            span {
+                margin-right: 8px;
+                font-size: 14px;
+                color: #666;
+            }
+
+            :deep(.ant-switch) {
+                min-width: 44px;
+            }
         }
     }
 
