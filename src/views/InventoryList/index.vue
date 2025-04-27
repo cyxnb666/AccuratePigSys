@@ -36,8 +36,7 @@
                         <!-- 分页 -->
                         <div class="pagination">
                             <a-pagination v-model:current="pagination.current" :total="pagination.total"
-                                :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer
-                                show-quick-jumper />
+                                :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer />
                         </div>
                     </div>
                 </div>

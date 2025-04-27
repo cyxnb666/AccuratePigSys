@@ -43,7 +43,7 @@
       <!-- 分页 -->
       <div class="pagination">
         <a-pagination v-model:current="pagination.current" :total="pagination.total" :page-size="pagination.pageSize"
-          @change="handleTableChange" show-size-changer show-quick-jumper />
+          @change="handleTableChange" show-size-changer />
       </div>
     </div>
 
@@ -57,6 +57,7 @@ import { ref, reactive } from 'vue';
 import ReportTaskDialog from './components/ReportTaskDialog.vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
+import dayjs from 'dayjs';
 
 const router = useRouter();
 const reportTaskDialogVisible = ref(false);
@@ -179,9 +180,8 @@ const generateData = () => {
       address: `${i % 2 === 0 ? '四川省成都市武侯区' : '重庆市渝中区'}科技路${i}号`,
       remark: `这是养殖场${i}的备注信息`,
       updateTime: '2025-03-31',
-      // 添加上报配置数据
       reportConfig: {
-        reportPeriod: [new Date('2025-03-01'), new Date('2025-03-31')],
+        reportPeriod: [dayjs('2025-03-01'), dayjs('2025-03-31')],
         stockChangeCount: `${50 + i * 5}`,
         stockChangeRatio: `${i * 2}`,
         daysSinceLastReport: `${i + 5}`
