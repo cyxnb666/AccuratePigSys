@@ -39,15 +39,20 @@
     <div class="app-content" :class="{ 'no-padding': route.name === 'dashboard' }">
       <router-view></router-view>
     </div>
+
+    <!-- 修改密码对话框 -->
+    <password-change-dialog v-model="passwordDialogVisible" @success="handlePasswordChangeSuccess" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, watch, computed } from 'vue';
+import { reactive, watch, computed, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { DownOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import PasswordChangeDialog from './components/PasswordChangeDialog.vue';
 
+const passwordDialogVisible = ref(false);
 const router = useRouter();
 const route = useRoute();
 
@@ -84,7 +89,18 @@ const clickMenu = (menuInfo) => {
 
 // 修改密码
 const changePassword = () => {
-  message.info('修改密码功能待实现');
+  passwordDialogVisible.value = true;
+};
+
+const handlePasswordChangeSuccess = (data) => {
+  console.log('密码修改成功，新数据:', data);
+  
+  // 如果需要退出登录
+  if (data.shouldLogout) {
+    setTimeout(() => {
+      outLogin(); // 延迟一点调用退出登录，让用户看到成功消息
+    }, 1500);
+  }
 };
 
 // 退出登录
