@@ -15,9 +15,7 @@
         </div>
 
         <div class="content-container">
-            <!-- Two-column layout -->
             <a-row :gutter="16" class="full-height-row">
-                <!-- Left column: Video player -->
                 <a-col :span="14" class="full-height-col">
                     <div class="video-wrapper">
                         <video controls width="100%" class="main-video">
@@ -27,7 +25,6 @@
                     </div>
                 </a-col>
 
-                <!-- Right column: Track visualizations -->
                 <a-col :span="10" class="full-height-col">
                     <div class="tracks-wrapper">
                         <!-- Sensor track -->
@@ -74,21 +71,10 @@ const props = defineProps({
 
 const router = useRouter();
 
-// Go back to the previous page
 const goBack = () => {
     router.go(-1);
 };
 
-// Mock data for sensor track and GPS coordinates
-const sensorTrackData = ref([
-    { time: '0s', value: 10 },
-    { time: '4s', value: 25 },
-    { time: '8s', value: 15 },
-    { time: '12s', value: 30 },
-    { time: '16s', value: 20 }
-]);
-
-// Load data based on props
 onMounted(() => {
     console.log(`Loading detailed comparison for record ${props.recordId}, area ${props.areaIndex}, tab ${props.tabKey}`);
     // In a real implementation, you would fetch the video and track data from your API
@@ -185,13 +171,11 @@ onMounted(() => {
         }
 
         .sensor-track {
-            /* Purple line graph with timestamps */
             background-color: #eee;
             position: relative;
         }
 
         .gps-track {
-            /* Satellite/map view with path overlay */
             background-color: #eee;
         }
     }

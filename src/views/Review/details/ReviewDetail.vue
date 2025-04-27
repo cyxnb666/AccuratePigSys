@@ -446,17 +446,6 @@ const basicInfo = reactive({
     aiTotalCount: '5'
 });
 
-// 计算是否显示偏差预警
-const showDeviation = computed(() => {
-    const reportCount = parseInt(basicInfo.totalReportCount) || 0;
-    const aiCount = parseInt(basicInfo.aiTotalCount) || 0;
-
-    if (reportCount === 0) return false;
-
-    const deviation = Math.abs(reportCount - aiCount) / reportCount * 100;
-    return deviation > 20;
-});
-
 // 模拟养殖区域数据
 const farmAreas = reactive([
     {
@@ -545,16 +534,6 @@ const calculateTotalReviewerCount = () => {
     return total;
 };
 
-// 计算应计存栏数（此处简单实现为审核员点数总和，实际业务逻辑可能更复杂）
-const calculateTotalInventory = () => {
-    // 示例：简单使用审核员总点数作为应计存栏数
-    // 实际逻辑可能需要基于其他因素计算
-    return calculateTotalReviewerCount();
-};
-
-// In the script setup section
-
-// Column definitions for outbound records
 const outboundColumns = [
     { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
     { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
@@ -563,7 +542,6 @@ const outboundColumns = [
     { title: '母猪数量', dataIndex: 'sows', key: 'sows', align: 'center' }
 ];
 
-// Column definitions for inbound records
 const inboundColumns = [
     { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
     { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
@@ -572,7 +550,6 @@ const inboundColumns = [
     { title: '母猪数量', dataIndex: 'sows', key: 'sows', align: 'center' }
 ];
 
-// Column definitions for death records
 const deathColumns = [
     { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
     { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
@@ -582,7 +559,6 @@ const deathColumns = [
     { title: '操作', key: 'action', align: 'center' }
 ];
 
-// Sample data for outbound records
 const outboundRecords = ref([
     {
         key: '1',
@@ -594,7 +570,6 @@ const outboundRecords = ref([
     }
 ]);
 
-// Sample data for inbound records
 const inboundRecords = ref([
     {
         key: '1',
@@ -606,7 +581,6 @@ const inboundRecords = ref([
     }
 ]);
 
-// Sample data for death records
 const deathRecords = ref([
     {
         key: '1',
@@ -695,8 +669,6 @@ const loadData = async () => {
         console.log('加载审核任务数据: ', props.recordId);
     }
 };
-
-// 调用加载数据函数
 loadData();
 </script>
 

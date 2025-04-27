@@ -202,24 +202,6 @@ watch(
     }
 );
 
-// 当编辑模式且有记录时，填充表单数据
-// watch(
-//     () => [props.modelValue, props.record],
-//     ([visible, record]) => {
-//         if (visible && props.isEdit && record) {
-//             // 编辑时填充表单数据
-//             Object.keys(formData).forEach(key => {
-//                 if (record[key] !== undefined) {
-//                     formData[key] = record[key];
-//                 }
-//             });
-//         } else if (visible && !props.isEdit) {
-//             // 新增时重置表单
-//             resetForm();
-//         }
-//     }
-// );
-
 const resetForm = () => {
     Object.keys(formData).forEach(key => {
         if (key === 'status') {
