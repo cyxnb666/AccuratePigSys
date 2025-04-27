@@ -35,7 +35,7 @@
             <a-button type="primary" @click="finishEditing"
                 :disabled="!isEditing || !selectedPolygon || (selectedPolygon && selectedPolygon.isDisabled)"
                 style="margin-left: 8px">编辑</a-button>
-            <!-- 新增地块失效/恢复按钮 -->
+            <!-- 地块失效/恢复按钮 -->
             <a-button type="primary" :disabled="!selectedPolygon" @click="toggleDisablePolygon"
                 style="margin-left: 8px">
                 {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
@@ -644,6 +644,24 @@ const toggleFullscreen = () => {
 // 全屏变化事件处理
 const onFullscreenChange = () => {
     isFullscreen.value = !!document.fullscreenElement;
+    
+    setTimeout(() => {
+        const sugResults = document.querySelector('.amap-sug-result');
+        const mapContainer = document.querySelector('.electronic-fence-map');
+        
+        if (sugResults && mapContainer) {
+            if (isFullscreen.value) {
+                // 全屏模式：将搜索结果移动到全屏容器内的最前面
+                mapContainer.appendChild(sugResults);
+                // 调整样式确保可见
+                sugResults.style.zIndex = '10000';
+                sugResults.style.position = 'absolute';
+            } else {
+                // 退出全屏模式：恢复原始位置
+                document.body.appendChild(sugResults);
+            }
+        }
+    }, 300); // 延迟执行，确保DOM已更新
 };
 
 onUnmounted(() => {
@@ -657,6 +675,28 @@ onUnmounted(() => {
     if (map) {
         map.destroy();
     }
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' && isFullscreen.value) {
+                const sugResults = document.querySelector('.amap-sug-result');
+                const mapContainer = document.querySelector('.electronic-fence-map');
+                
+                if (sugResults && mapContainer && !mapContainer.contains(sugResults)) {
+                    mapContainer.appendChild(sugResults);
+                    sugResults.style.zIndex = '10000';
+                    sugResults.style.position = 'absolute';
+                }
+            }
+        });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // 在组件卸载时取消观察
+    onUnmounted(() => {
+        observer.disconnect();
+    });
 });
 
 // 设置电子围栏数据
