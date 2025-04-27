@@ -143,7 +143,6 @@ const pagination = reactive({
     pageSize: 10,
     total: 50,
     showSizeChanger: true,
-    showQuickJumper: true
 });
 
 const handleTableChange = (page) => {
