@@ -1,5 +1,5 @@
 <template>
-    <div class="electronic-fence-map">
+    <div class="electronic-fence-map" ref="mapContainer">
         <div id="container" class="map-container"></div>
         <div id="myPageTop" class="search-panel">
             <table>
@@ -42,7 +42,7 @@
             </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
                 }}</a-button>
-            <a-popover placement="top" title="操作指南" trigger="hover">
+            <a-popover placement="top" title="操作指南" trigger="hover" :getPopupContainer="getContainer">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
                     <p><b>2.</b> 双击完成地块勾画</p>
@@ -108,7 +108,11 @@ const modalContainer = computed(() => {
         ? () => document.querySelector('.electronic-fence-map')
         : undefined; // 默认为document.body
 });
+const mapContainer = ref(null);
 
+const getContainer = () => {
+    return mapContainer.value || document.body;
+};
 onMounted(() => {
     // 设置安全密钥
     window._AMapSecurityConfig = {
