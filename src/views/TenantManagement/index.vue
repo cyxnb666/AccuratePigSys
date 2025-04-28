@@ -47,12 +47,7 @@
       </div>
     </div>
 
-    <tenant-dialog
-      v-model="dialogVisible"
-      :is-edit="isEdit"
-      :record="currentRecord"
-      @success="handleDialogSuccess"
-    />
+    <tenant-dialog v-model="dialogVisible" :is-edit="isEdit" :record="currentRecord" @success="handleDialogSuccess" />
   </div>
 </template>
 
