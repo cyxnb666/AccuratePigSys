@@ -171,7 +171,6 @@ const router = createRouter({
     routes: routes
 });
 
-// 路由默认重定向到租户管理
 // router.beforeEach((to, _, next) => {
 //     if (to.path === '/') {
 //         next('/tenant');

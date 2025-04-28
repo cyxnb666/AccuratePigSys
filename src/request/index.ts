@@ -131,7 +131,9 @@ axios.interceptors.response.use(
 
         // 处理响应数据
         if (res.data instanceof Object) {
-            const { code, message: msg, data } = res.data;
+            const code = res.data.retCode;
+            const msg = res.data.retMsg;
+            const data = res.data.retData;
 
             // 处理成功响应
             if (code === 200 || code === 0 || code === '0000') {

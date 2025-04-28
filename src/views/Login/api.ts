@@ -22,10 +22,10 @@ export function getVerifyCode() {
  * @returns {Promise}
  */
 export function login(data: {
-    tenantCode: string;
-    username: string;
-    password: string;
-    verificationCode: string;
+    tencentCode: string;
+    userAccount: string;
+    cipher: string;
+    verifyCode: string;
 }) {
     return request({
         url: '/web/auth/login',

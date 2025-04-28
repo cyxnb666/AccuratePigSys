@@ -58,6 +58,7 @@ import {
   ApartmentOutlined
 } from '@ant-design/icons-vue';
 import { getVerifyCode, login } from './api';
+import { MD5 } from 'crypto-js';
 
 const router = useRouter();
 const route = useRoute();
@@ -119,10 +120,12 @@ const onFinish = async () => {
   loading.value = true;
 
   try {
+    const encryptedPassword = MD5(loginForm.password).toString();
+    
     const res = await login({
       tencentCode: loginForm.tenantCode,
       userAccount: loginForm.username,
-      cipher: loginForm.password,
+      cipher: encryptedPassword,
       verifyCode: loginForm.verificationCode
     });
 
@@ -132,19 +135,15 @@ const onFinish = async () => {
       // 存储返回的数据
       sessionStorage.setItem('token', res.token);
       sessionStorage.setItem('userInfo', JSON.stringify({
-        username: res.username,
-        usercode: res.usercode,
-        tenantCode: res.tenantCode,
-        tenantName: res.tenantName
+        username: res.userName,
+        usercode: res.accountNo,
+        tenantCode: res.tencentCode,
+        tenantName: res.tencentCode,
+        roleCode: res.roleCode,
+        userMobile: res.userMobile
       }));
 
-      // 如果返回了菜单信息，保存它
-      if (res.menus) {
-        sessionStorage.setItem('menus', JSON.stringify(res.menus));
-      }
-
-      // 导航到首页或默认路由
-      router.push('/dashboard');
+      router.push('/tenant');
     }
   } catch (error) {
     console.error('登录失败:', error);
