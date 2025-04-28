@@ -34,7 +34,7 @@ export default defineConfig({
         cors: true,
         proxy: {
             '/baseURL': {
-                target: 'http://crm.piccyn.com:9527/picc_rubber/',
+                target: 'http://192.168.8.174:8099/accurate_backend/',
                 changeOrigin: true,
                 rewrite: (path) => path.replace('/baseURL', '')
             }

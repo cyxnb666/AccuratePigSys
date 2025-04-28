@@ -120,10 +120,10 @@ const onFinish = async () => {
 
   try {
     const res = await login({
-      tenantCode: loginForm.tenantCode,
-      username: loginForm.username,
-      password: loginForm.password,
-      verificationCode: loginForm.verificationCode
+      tencentCode: loginForm.tenantCode,
+      userAccount: loginForm.username,
+      cipher: loginForm.password,
+      verifyCode: loginForm.verificationCode
     });
 
     if (res) {

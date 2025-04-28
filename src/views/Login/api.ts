@@ -7,7 +7,7 @@ import { sessionManager } from '@/request/sessionManager';
  */
 export function getVerifyCode() {
     return request({
-        url: '/auth/getVerifyCode',
+        url: '/web/auth/getVerifyCode',
         method: 'get',
         responseType: 'blob',
         headers: {
@@ -28,7 +28,7 @@ export function login(data: {
     verificationCode: string;
 }) {
     return request({
-        url: '/auth/login',
+        url: '/web/auth/login',
         method: 'post',
         data,
         headers: {

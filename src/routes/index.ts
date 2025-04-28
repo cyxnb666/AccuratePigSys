@@ -172,10 +172,25 @@ const router = createRouter({
 });
 
 // 路由默认重定向到租户管理
-router.beforeEach((to, _, next) => {
-    if (to.path === '/') {
-        next('/tenant');
-    } else {
+// router.beforeEach((to, _, next) => {
+//     if (to.path === '/') {
+//         next('/tenant');
+//     } else {
+//         next();
+//     }
+// });
+
+router.beforeEach((to, from, next) => {
+    const isLoginPage = to.path === '/login';
+    
+    const isAuthenticated = !!sessionStorage.getItem('token');
+    
+    if (!isAuthenticated && !isLoginPage) {
+        next('/login');
+    } else if (isAuthenticated && isLoginPage) {
+        next('/dashboard');
+    } 
+    else {
         next();
     }
 });
