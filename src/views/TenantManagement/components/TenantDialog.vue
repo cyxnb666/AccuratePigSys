@@ -184,7 +184,6 @@ const handleSubmit = () => {
                 resetForm();
             } catch (error) {
                 console.error(`${props.isEdit ? '编辑' : '新增'}租户失败:`, error);
-                message.error(`${props.isEdit ? '编辑' : '新增'}租户失败`);
             } finally {
                 submitting.value = false;
             }

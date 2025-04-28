@@ -171,7 +171,6 @@ const fetchAreaTrees = async () => {
     }
   } catch (error) {
     console.error('获取行政区划数据失败:', error);
-    message.error('获取行政区划数据失败');
   }
 };
 
@@ -202,7 +201,6 @@ const fetchTableData = async () => {
     }
   } catch (error) {
     console.error('获取租户列表失败:', error);
-    message.error('获取租户列表失败');
   } finally {
     loading.value = false;
   }
@@ -234,7 +232,6 @@ const handleDelete = (record) => {
         fetchTableData();
       } catch (error) {
         console.error('删除租户失败:', error);
-        message.error('删除租户失败');
       }
     }
   });
@@ -256,7 +253,6 @@ const handleStatusChange = async (record) => {
     fetchTableData();
   } catch (error) {
     console.error('更新租户状态失败:', error);
-    message.error('更新租户状态失败');
   }
 };
 
@@ -283,7 +279,6 @@ const handleEdit = async (record) => {
     }
   } catch (error) {
     console.error('获取租户详情失败:', error);
-    message.error('获取租户详情失败');
   } finally {
     // 无论成功还是失败，都重置loading状态
     editLoading.value = false;

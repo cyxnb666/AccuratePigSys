@@ -51,6 +51,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { DownOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import PasswordChangeDialog from './components/PasswordChangeDialog.vue';
+import { logout } from './api';
 
 const passwordDialogVisible = ref(false);
 const router = useRouter();
@@ -104,9 +105,17 @@ const handlePasswordChangeSuccess = (data) => {
 };
 
 // 退出登录
-const outLogin = () => {
-  sessionStorage.clear();
-  router.push('/login');
+const outLogin = async () => {
+  try {
+    await logout();
+    message.success('退出登录成功');
+  } catch (error) {
+    console.error('退出登录失败:', error);
+  } finally {
+    // 无论API是否成功，都清除会话并跳转
+    sessionStorage.clear();
+    router.push('/login');
+  }
 };
 </script>
 

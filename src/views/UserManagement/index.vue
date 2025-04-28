@@ -210,7 +210,6 @@ const fetchAreaTrees = async () => {
     }
   } catch (error) {
     console.error('获取行政区划数据失败:', error);
-    message.error('获取行政区划数据失败');
   }
 };
 
@@ -223,7 +222,6 @@ const fetchRoles = async () => {
     }
   } catch (error) {
     console.error('获取角色数据失败:', error);
-    message.error('获取角色数据失败');
   }
 };
 
@@ -236,7 +234,6 @@ const fetchLivestockFarms = async () => {
     }
   } catch (error) {
     console.error('获取养殖场数据失败:', error);
-    message.error('获取养殖场数据失败');
   }
 };
 
@@ -270,7 +267,6 @@ const fetchTableData = async () => {
     }
   } catch (error) {
     console.error('获取用户列表失败:', error);
-    message.error('获取用户列表失败');
   } finally {
     loading.value = false;
   }
@@ -305,7 +301,6 @@ const handleDelete = (record) => {
         fetchTableData();
       } catch (error) {
         console.error('删除用户失败:', error);
-        message.error('删除用户失败');
       }
     }
   });
@@ -327,7 +322,6 @@ const handleStatusChange = async (record) => {
     fetchTableData();
   } catch (error) {
     console.error('更新用户状态失败:', error);
-    message.error('更新用户状态失败');
   }
 };
 
@@ -353,7 +347,6 @@ const handleEdit = async (record) => {
     }
   } catch (error) {
     console.error('获取用户详情失败:', error);
-    message.error('获取用户详情失败');
   } finally {
     // 无论成功还是失败，都重置loading状态
     editLoading.value = false;
@@ -362,14 +355,22 @@ const handleEdit = async (record) => {
 };
 
 // 重置密码
-const handleResetPassword = async (record) => {
-  try {
-    await resetPassword(record.userId);
-    message.success(`已重置${record.userName}的密码`);
-  } catch (error) {
-    console.error('重置密码失败:', error);
-    message.error('重置密码失败');
-  }
+const handleResetPassword = (record) => {
+  Modal.confirm({
+    title: '确认重置密码',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: `确定要重置用户 "${record.userName}" 的密码吗？`,
+    okText: '确认',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await resetPassword(record.userId);
+        message.success(`已重置${record.userName}的密码`);
+      } catch (error) {
+        console.error('重置密码失败:', error);
+      }
+    }
+  });
 };
 
 // 对话框提交成功回调
