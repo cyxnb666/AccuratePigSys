@@ -41,7 +41,7 @@
                 {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
             </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
-            }}</a-button>
+                }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
@@ -56,7 +56,7 @@
 
         <!-- 电子围栏对话框 -->
         <a-modal v-model:visible="fenceDialogVisible" :title="isEditMode ? '编辑电子围栏' : '新增电子围栏'" @ok="handleFenceConfirm"
-            @cancel="handleFenceCancel">
+            @cancel="handleFenceCancel" :getContainer="modalContainer">
             <a-form :model="fenceForm" :rules="fenceRules" ref="fenceFormRef" layout="vertical">
                 <a-form-item name="name" label="围栏名称" :rules="[{ required: true, message: '请输入围栏名称!' }]">
                     <a-input v-model:value="fenceForm.name" placeholder="请输入围栏名称" />
@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, reactive, nextTick } from 'vue';
+import { onMounted, onUnmounted, ref, reactive, computed } from 'vue';
 import mapConfig from '@/utils/map-config';
 import { message, Modal } from 'ant-design-vue';
 
@@ -102,6 +102,12 @@ const fenceRules = {
     name: [{ required: true, message: '请输入围栏名称!', trigger: 'blur' }]
 };
 const tempPolygon = ref(null); // 临时存储当前编辑的多边形
+
+const modalContainer = computed(() => {
+    return isFullscreen.value
+        ? () => document.querySelector('.electronic-fence-map')
+        : undefined; // 默认为document.body
+});
 
 onMounted(() => {
     // 设置安全密钥
@@ -389,11 +395,16 @@ const startEditing = () => {
 const toggleDisablePolygon = () => {
     if (!selectedPolygon.value) return;
 
+    // 确定弹窗挂载位置
+    const container = isFullscreen.value
+        ? document.querySelector('.electronic-fence-map')
+        : document.body;
+
     // 确定弹窗标题和内容
     const isCurrentlyDisabled = selectedPolygon.value.isDisabled;
     const modalTitle = isCurrentlyDisabled ? '确认恢复' : '确认失效';
-    const modalContent = isCurrentlyDisabled 
-        ? '确定要将选中地块恢复为正常状态吗？' 
+    const modalContent = isCurrentlyDisabled
+        ? '确定要将选中地块恢复为正常状态吗？'
         : '确定要将选中地块设置为失效状态吗？';
 
     // 添加确认弹窗
@@ -402,6 +413,7 @@ const toggleDisablePolygon = () => {
         content: modalContent,
         okText: '确认',
         cancelText: '取消',
+        getContainer: () => container, // 指定弹窗挂载的位置
         onOk: () => {
             // 如果当前在编辑模式，先结束编辑
             if (isEditing.value) {
@@ -428,12 +440,18 @@ const toggleDisablePolygon = () => {
 const deleteSelectedPolygon = () => {
     if (!selectedPolygon.value) return;
 
+    // 确定弹窗挂载位置 - 全屏时挂载到全屏元素
+    const container = isFullscreen.value
+        ? document.querySelector('.electronic-fence-map')
+        : document.body;
+
     // 添加确认弹窗
     Modal.confirm({
         title: '确认删除',
         content: '确定要删除选中的地块吗？',
         okText: '确认',
         cancelText: '取消',
+        getContainer: () => container, // 指定弹窗挂载的位置
         onOk: () => {
             // 用户确认后执行删除操作
             // 关闭编辑器
