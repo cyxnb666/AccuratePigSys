@@ -39,8 +39,8 @@
                 <a-col :span="12">
                     <a-form-item label="状态" name="enabled">
                         <a-select v-model:value="formData.enabled" placeholder="请选择状态">
-                            <a-select-option value="0">启用</a-select-option>
-                            <a-select-option value="1">禁用</a-select-option>
+                            <a-select-option value="1">启用</a-select-option>
+                            <a-select-option value="0">禁用</a-select-option>
                         </a-select>
                     </a-form-item>
                 </a-col>
@@ -145,7 +145,7 @@ watch(
 const resetForm = () => {
     Object.keys(formData).forEach(key => {
         if (key === 'enabled') {
-            formData[key] = '0';
+            formData[key] = '1';
         } else {
             formData[key] = '';
         }

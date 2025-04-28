@@ -31,7 +31,7 @@
         :scroll="{ y: tableHeight }">
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'enabled'">
-            <a-switch :checked="record.enabled === '0'" @change="() => handleStatusChange(record)" />
+            <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
           </template>
           <template v-if="column.key === 'remark'">
             <a-tooltip placement="topLeft" :title="record.remark">
@@ -252,7 +252,7 @@ const handleStatusChange = async (record) => {
 
   try {
     await enableTenant(record.tencentCode);
-    message.success(`${originalValue === "0" ? '禁用' : '启用'}租户成功`);
+    message.success(`${originalValue === "1" ? '禁用' : '启用'}租户成功`);
     fetchTableData();
   } catch (error) {
     console.error('更新租户状态失败:', error);
