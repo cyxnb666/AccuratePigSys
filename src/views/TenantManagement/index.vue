@@ -6,12 +6,12 @@
         <a-row :gutter="16" style="width: 100%">
           <a-col>
             <a-form-item label="租户名称:">
-              <a-input placeholder="请输入租户名称" v-model:value="searchForm.tenantName" />
+              <a-input placeholder="请输入租户名称" v-model:value="searchForm.tencentName" />
             </a-form-item>
           </a-col>
           <a-col>
             <a-form-item label="租户编码:">
-              <a-input placeholder="请输入租户编码" v-model:value="searchForm.tenantCode" />
+              <a-input placeholder="请输入租户编码" v-model:value="searchForm.tencentCode" />
             </a-form-item>
           </a-col>
           <a-col>
@@ -27,11 +27,11 @@
 
     <!-- 数据表格 -->
     <div class="data-table">
-      <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
+      <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="false" bordered row-key="id"
         :scroll="{ y: tableHeight }">
         <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-switch v-model:checked="record.status" :disabled="false" />
+          <template v-if="column.key === 'enabled'">
+            <a-switch :checked="record.enabled === '0'" @change="() => handleStatusChange(record)" />
           </template>
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)">编 辑</a-button>
@@ -42,26 +42,41 @@
 
       <!-- 分页 -->
       <div class="pagination">
-        <a-pagination v-model:current="pagination.current" :total="pagination.total" :page-size="pagination.pageSize"
-          @change="handleTableChange" show-size-changer />
+        <a-pagination v-model:current="pagination.current" v-model:pageSize="pagination.pageSize"
+          :total="pagination.total" @change="handleTableChange" show-size-changer
+          :show-total="(total) => `共 ${total} 条记录`" />
       </div>
     </div>
 
-    <tenant-dialog v-model="dialogVisible" :is-edit="isEdit" :record="currentRecord" @success="handleDialogSuccess" />
+    <tenant-dialog v-model="dialogVisible" :is-edit="isEdit" :record="currentRecord" :area-tree-data="areaTreeData"
+      @success="handleDialogSuccess" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { message, Modal } from 'ant-design-vue';
+import { createVNode } from 'vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import TenantDialog from './components/TenantDialog.vue';
+import {
+  getTenantList,
+  getAreaTrees,
+  enableTenant,
+  deleteTenant,
+  getTenantDetail
+} from './api';
 
 const dialogVisible = ref(false);
 const isEdit = ref(false);
-const currentRecord = ref({});
+const currentRecord = ref<any>({});
+const loading = ref(false);
+const areaTreeData = ref<any[]>([]);
+
 // 搜索表单
 const searchForm = reactive({
-  tenantName: '',
-  tenantCode: ''
+  tencentName: '',
+  tencentCode: ''
 });
 
 // 表格高度
@@ -78,27 +93,31 @@ const columns = [
   },
   {
     title: '租户编码',
-    dataIndex: 'code',
-    key: 'code',
+    dataIndex: 'tencentCode',
+    key: 'tencentCode',
     align: 'center'
   },
   {
     title: '租户名称',
-    dataIndex: 'name',
-    key: 'name',
+    dataIndex: 'tencentName',
+    key: 'tencentName',
     align: 'center'
   },
   {
     title: '备注',
     dataIndex: 'remark',
     key: 'remark',
-    align: 'center'
+    align: 'center',
+    customRender: (text, record) => <a-tooltip placement="topLeft" title={ record.remark } > <span class="col-sql" title = { text } > { text } < /span></a - tooltip >
   },
   {
     title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-    align: 'center'
+    dataIndex: 'enabled',
+    key: 'enabled',
+    align: 'center',
+    customRender: ({ text }) => {
+      return text === "0";
+    }
   },
   {
     title: '编辑日期',
@@ -113,51 +132,125 @@ const columns = [
   }
 ];
 
-// 模拟大量数据
-const generateData = () => {
-  const data = [];
-  for (let i = 1; i <= 50; i++) {
-    data.push({
-      id: i,
-      index: i,
-      code: `CODE-${i}`,
-      name: `租户名称 ${i}`,
-      remark: `这是租户 ${i} 的备注信息`,
-      status: i % 3 === 0,
-      updateTime: '2025-03-31'
-    });
-  }
-  return data;
-};
-
 // 表格数据
-const dataSource = ref(generateData());
+const dataSource = ref<any[]>([]);
 
 // 分页
 const pagination = reactive({
   current: 1,
   pageSize: 10,
-  total: 50
+  total: 0
 });
+
+// 转换行政区划数据为树形结构
+const transformAreaData = (areaList: any[]): any[] => {
+  return areaList.map(area => {
+    const node = {
+      title: area.areaname,
+      value: area.areacode,
+      key: area.areacode,
+      children: area.children ? transformAreaData(area.children) : []
+    };
+    return node;
+  });
+};
+
+// 获取行政区划数据
+const fetchAreaTrees = async () => {
+  try {
+    const res = await getAreaTrees();
+    if (res) {
+      areaTreeData.value = transformAreaData(res);
+    }
+  } catch (error) {
+    console.error('获取行政区划数据失败:', error);
+    message.error('获取行政区划数据失败');
+  }
+};
+
+// 获取表格数据
+const fetchTableData = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      condition: {
+        tencentCode: searchForm.tencentCode,
+        tencentName: searchForm.tencentName
+      },
+      pageNo: pagination.current,
+      pageSize: pagination.pageSize
+    };
+
+    const res = await getTenantList(params);
+
+    if (res) {
+      // 添加索引
+      const records = res.records || [];
+      dataSource.value = records.map((item: any, index: number) => ({
+        ...item,
+        index: (pagination.current - 1) * pagination.pageSize + index + 1
+      }));
+
+      pagination.total = res.total || 0;
+    }
+  } catch (error) {
+    console.error('获取租户列表失败:', error);
+    message.error('获取租户列表失败');
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 方法
 const handleSearch = () => {
-  console.log('搜索条件:', searchForm);
   pagination.current = 1;
+  fetchTableData();
 };
 
 const handleReset = () => {
-  searchForm.tenantName = '';
-  searchForm.tenantCode = '';
+  searchForm.tencentName = '';
+  searchForm.tencentCode = '';
+  handleSearch();
 };
 
 const handleDelete = (record) => {
-  console.log('删除租户:', record);
+  Modal.confirm({
+    title: '确认删除',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: `确定要删除租户 "${record.tencentName}" 吗？此操作不可恢复。`,
+    okText: '确认',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await deleteTenant(record.tencentCode);
+        message.success('删除租户成功');
+        fetchTableData();
+      } catch (error) {
+        console.error('删除租户失败:', error);
+        message.error('删除租户失败');
+      }
+    }
+  });
 };
 
-const handleTableChange = (page) => {
+const handleTableChange = (page, pageSize) => {
   pagination.current = page;
-  // 加载当前页数据
+  pagination.pageSize = pageSize;
+  fetchTableData();
+};
+
+// 切换租户状态
+const handleStatusChange = async (record) => {
+  const originalValue = record.enabled;
+
+  try {
+    await enableTenant(record.tencentCode);
+    message.success(`${originalValue === "0" ? '禁用' : '启用'}租户成功`);
+    fetchTableData();
+  } catch (error) {
+    console.error('更新租户状态失败:', error);
+    message.error('更新租户状态失败');
+  }
 };
 
 // 点击"新增租户"按钮
@@ -168,34 +261,30 @@ const handleAdd = () => {
 };
 
 // 点击"编辑"按钮
-const handleEdit = (record) => {
-  isEdit.value = true;
-  currentRecord.value = {
-    tenantName: record.name,
-    tenantCode: record.code,
-    tenantAccount: record.code, // 假设账号与编码相同
-    tenantPassword: '', // 编辑时不显示密码
-    administrativeArea: record.area,
-    status: record.status,
-    remark: record.remark
-  };
-  dialogVisible.value = true;
+const handleEdit = async (record) => {
+  try {
+    const res = await getTenantDetail(record.tencentCode);
+    if (res) {
+      console.log(res)
+      isEdit.value = true;
+      currentRecord.value = res;
+      dialogVisible.value = true;
+    }
+  } catch (error) {
+    console.error('获取租户详情失败:', error);
+    message.error('获取租户详情失败');
+  }
 };
 
 // 对话框提交成功回调
-const handleDialogSuccess = (data) => {
-  if (isEdit.value) {
-    // 处理编辑成功逻辑
-    console.log('编辑租户成功:', data);
-    // 可以在这里刷新数据或更新本地数据
-    handleSearch();
-  } else {
-    // 处理新增成功逻辑
-    console.log('新增租户成功:', data);
-    // 可以在这里刷新数据
-    handleSearch();
-  }
+const handleDialogSuccess = () => {
+  fetchTableData();
 };
+
+onMounted(() => {
+  fetchAreaTrees();
+  fetchTableData();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -235,6 +324,14 @@ const handleDialogSuccess = (data) => {
         overflow-y: auto;
       }
     }
+
+    .col-sql {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  width: 100px;
+}
 
     .pagination {
       margin-top: 16px;

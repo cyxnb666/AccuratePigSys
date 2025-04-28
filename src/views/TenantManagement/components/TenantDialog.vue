@@ -4,43 +4,43 @@
         <a-form :model="formData" ref="formRef" :rules="rules" layout="vertical">
             <a-row :gutter="16">
                 <a-col :span="12">
-                    <a-form-item label="租户名称" name="tenantName">
-                        <a-input v-model:value="formData.tenantName" placeholder="请输入租户名称" />
+                    <a-form-item label="租户名称" name="tencentName">
+                        <a-input v-model:value="formData.tencentName" placeholder="请输入租户名称" />
                     </a-form-item>
                 </a-col>
                 <a-col :span="12">
-                    <a-form-item label="租户编码" name="tenantCode">
-                        <a-input v-model:value="formData.tenantCode" placeholder="请输入租户编码" />
-                    </a-form-item>
-                </a-col>
-            </a-row>
-
-            <a-row :gutter="16">
-                <a-col :span="12">
-                    <a-form-item label="租户账号" name="tenantAccount">
-                        <a-input v-model:value="formData.tenantAccount" placeholder="请输入租户登录账号" />
-                    </a-form-item>
-                </a-col>
-                <a-col :span="12">
-                    <a-form-item label="租户密码" name="tenantPassword">
-                        <a-input-password v-model:value="formData.tenantPassword" placeholder="请输入租户登录密码" />
+                    <a-form-item label="租户编码" name="tencentCode">
+                        <a-input v-model:value="formData.tencentCode" placeholder="请输入租户编码" />
                     </a-form-item>
                 </a-col>
             </a-row>
 
             <a-row :gutter="16">
                 <a-col :span="12">
-                    <a-form-item label="行政区划" name="administrativeArea">
-                        <a-tree-select v-model:value="formData.administrativeArea" placeholder="请选择行政区划"
-                            :tree-data="areaTreeData" :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-                            tree-default-expand-all :show-search="true" :tree-node-filter-prop="'title'" />
+                    <a-form-item label="租户账号" name="tencentAccount">
+                        <a-input v-model:value="formData.tencentAccount" placeholder="请输入租户登录账号" />
                     </a-form-item>
                 </a-col>
                 <a-col :span="12">
-                    <a-form-item label="状态" name="status">
-                        <a-select v-model:value="formData.status" placeholder="请选择状态">
-                            <a-select-option :value="true">启用</a-select-option>
-                            <a-select-option :value="false">禁用</a-select-option>
+                    <a-form-item label="租户密码" name="tencentCipher">
+                        <a-input-password v-model:value="formData.tencentCipher" placeholder="请输入租户登录密码" />
+                    </a-form-item>
+                </a-col>
+            </a-row>
+
+            <a-row :gutter="16">
+                <a-col :span="12">
+                    <a-form-item label="行政区划" name="areacode">
+                        <a-tree-select v-model:value="formData.areacode" placeholder="请选择行政区划" :tree-data="areaTreeData"
+                            :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" tree-default-expand-all
+                            :show-search="true" tree-node-filter-prop="title" />
+                    </a-form-item>
+                </a-col>
+                <a-col :span="12">
+                    <a-form-item label="状态" name="enabled">
+                        <a-select v-model:value="formData.enabled" placeholder="请选择状态">
+                            <a-select-option value="0">启用</a-select-option>
+                            <a-select-option value="1">禁用</a-select-option>
                         </a-select>
                     </a-form-item>
                 </a-col>
@@ -66,6 +66,7 @@
 <script lang="ts" setup>
 import { ref, reactive, defineProps, defineEmits, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
+import { saveTenant, updateTenant } from '../api';
 
 const props = defineProps({
     modelValue: {
@@ -79,6 +80,10 @@ const props = defineProps({
     record: {
         type: Object,
         default: () => ({})
+    },
+    areaTreeData: {
+        type: Array,
+        default: () => []
     }
 });
 
@@ -93,128 +98,56 @@ const dialogVisible = computed({
 const formRef = ref();
 const submitting = ref(false);
 
-// 行政区划树形数据
-const areaTreeData = [
-    {
-        title: '四川省',
-        value: 'sichuan',
-        key: 'sichuan',
-        children: [
-            {
-                title: '成都市',
-                value: 'chengdu',
-                key: 'sichuan-chengdu',
-                children: [
-                    {
-                        title: '武侯区',
-                        value: 'wuhou',
-                        key: 'sichuan-chengdu-wuhou',
-                    },
-                    {
-                        title: '锦江区',
-                        value: 'jinjiang',
-                        key: 'sichuan-chengdu-jinjiang',
-                    }
-                ]
-            },
-            {
-                title: '绵阳市',
-                value: 'mianyang',
-                key: 'sichuan-mianyang',
-            }
-        ]
-    },
-    {
-        title: '重庆市',
-        value: 'chongqing',
-        key: 'chongqing',
-        children: [
-            {
-                title: '渝中区',
-                value: 'yuzhong',
-                key: 'chongqing-yuzhong',
-            },
-            {
-                title: '江北区',
-                value: 'jiangbei',
-                key: 'chongqing-jiangbei',
-            }
-        ]
-    },
-    {
-        title: '云南省',
-        value: 'yunnan',
-        key: 'yunnan',
-        children: [
-            {
-                title: '昆明市',
-                value: 'kunming',
-                key: 'yunnan-kunming',
-            }
-        ]
-    },
-    {
-        title: '贵州省',
-        value: 'guizhou',
-        key: 'guizhou',
-        children: [
-            {
-                title: '贵阳市',
-                value: 'guiyang',
-                key: 'guizhou-guiyang',
-            }
-        ]
-    }
-];
-
 const formData = reactive({
-    tenantName: '',
-    tenantCode: '',
-    tenantAccount: '',
-    tenantPassword: '',
-    administrativeArea: undefined, // 不设置默认值
-    status: true,
+    tencentName: '',
+    tencentCode: '',
+    tencentAccount: '',
+    tencentCipher: '',
+    areacode: '',
+    enabled: '0',
     remark: ''
 });
 
-const rules = {
-    tenantName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
-    tenantCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
-    tenantAccount: [{ required: true, message: '请输入租户账号', trigger: 'blur' }],
-    tenantPassword: [{ required: true, message: '请输入租户密码', trigger: 'blur' }],
-    administrativeArea: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
-    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-};
+const rules = computed(() => ({
+  tencentName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
+  tencentCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
+  tencentAccount: [{ required: true, message: '请输入租户账号', trigger: 'blur' }],
+  tencentCipher: props.isEdit
+    ? []
+    : [{ required: true, message: '请输入租户密码', trigger: 'blur' }],
+  areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
+  enabled: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}));
 
 // 当编辑模式且有记录时，填充表单数据
 watch(
-    () => [props.modelValue, props.record],
-    ([visible, record]) => {
-        if (visible && props.isEdit && record) {
-            // 编辑时填充表单数据
-            Object.keys(formData).forEach(key => {
-                if (record[key] !== undefined) {
-                    formData[key] = record[key];
-                }
-            });
-
-            // 编辑时不需要重新输入密码，使用占位符
-            if (props.isEdit) {
-                formData.tenantPassword = '********';
+    () => [props.modelValue, props.isEdit, props.record],
+    ([visible, isEdit, record]) => {
+        if (visible && isEdit && record) {
+            formData.tencentName = record.tencentName || '';
+            formData.tencentCode = record.tencentCode || '';
+            formData.tencentAccount = record.tencentAccount || '';
+            formData.tencentCipher = '';
+            formData.areacode = record.areacode || '';
+            formData.enabled = record.enabled || '0';
+            formData.remark = record.remark || '';
+            
+            if (formRef.value) {
+                formRef.value.clearValidate();
             }
-        } else if (visible && !props.isEdit) {
-            // 新增时重置表单
+        } else if (visible && !isEdit) {
             resetForm();
         }
-    }
+    },
+    { immediate: true }
 );
 
 const resetForm = () => {
     Object.keys(formData).forEach(key => {
-        if (key === 'status') {
-            formData[key] = true;
+        if (key === 'enabled') {
+            formData[key] = '0';
         } else {
-            formData[key] = key === 'administrativeArea' ? undefined : '';
+            formData[key] = '';
         }
     });
 
@@ -230,17 +163,29 @@ const handleCancel = () => {
 
 const handleSubmit = () => {
     formRef.value.validate()
-        .then(() => {
+        .then(async () => {
             submitting.value = true;
-
-            // 模拟API调用
-            setTimeout(() => {
+            try {
+                const submitData = { ...formData };
+                if (props.isEdit) {
+                    // 如果是编辑模式并且密码为占位符，不提交密码
+                    if (submitData.tencentCipher === '********') {
+                        delete submitData.tencentCipher;
+                    }
+                    await updateTenant(submitData);
+                } else {
+                    await saveTenant(submitData);
+                }
                 message.success(`${props.isEdit ? '编辑' : '新增'}租户成功`);
-                submitting.value = false;
                 emit('success', { ...formData });
                 dialogVisible.value = false;
                 resetForm();
-            }, 500);
+            } catch (error) {
+                console.error(`${props.isEdit ? '编辑' : '新增'}租户失败:`, error);
+                message.error(`${props.isEdit ? '编辑' : '新增'}租户失败`);
+            } finally {
+                submitting.value = false;
+            }
         })
         .catch(errorInfo => {
             console.log('验证失败:', errorInfo);
