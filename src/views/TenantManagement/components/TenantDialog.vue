@@ -109,14 +109,14 @@ const formData = reactive({
 });
 
 const rules = computed(() => ({
-  tencentName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
-  tencentCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
-  tencentAccount: [{ required: true, message: '请输入租户账号', trigger: 'blur' }],
-  tencentCipher: props.isEdit
-    ? []
-    : [{ required: true, message: '请输入租户密码', trigger: 'blur' }],
-  areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
-  enabled: [{ required: true, message: '请选择状态', trigger: 'change' }]
+    tencentName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
+    tencentCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
+    tencentAccount: [{ required: true, message: '请输入租户账号', trigger: 'blur' }],
+    tencentCipher: props.isEdit
+        ? []
+        : [{ required: true, message: '请输入租户密码', trigger: 'blur' }],
+    areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
+    enabled: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }));
 
 // 当编辑模式且有记录时，填充表单数据
@@ -131,7 +131,7 @@ watch(
             formData.areacode = record.areacode || '';
             formData.enabled = record.enabled || '0';
             formData.remark = record.remark || '';
-            
+
             if (formRef.value) {
                 formRef.value.clearValidate();
             }
@@ -168,10 +168,6 @@ const handleSubmit = () => {
             try {
                 const submitData = { ...formData };
                 if (props.isEdit) {
-                    // 如果是编辑模式并且密码为占位符，不提交密码
-                    if (submitData.tencentCipher === '********') {
-                        delete submitData.tencentCipher;
-                    }
                     await updateTenant(submitData);
                 } else {
                     await saveTenant(submitData);

@@ -39,11 +39,8 @@
             </a-tooltip>
           </template>
           <template v-if="column.key === 'action'">
-            <a-button 
-              type="link" 
-              @click="handleEdit(record)" 
-              :loading="editingId === record.tencentCode && editLoading"
-            >编 辑</a-button>
+            <a-button type="link" @click="handleEdit(record)"
+              :loading="editingId === record.tencentCode && editLoading">编 辑</a-button>
             <a-button type="link" danger @click="handleDelete(record)">删 除</a-button>
           </template>
         </template>
@@ -81,8 +78,8 @@ const isEdit = ref(false);
 const currentRecord = ref<any>({});
 const loading = ref(false);
 const areaTreeData = ref<any[]>([]);
-  const editLoading = ref(false);
-  const editingId = ref<string | null>(null);
+const editLoading = ref(false);
+const editingId = ref<string | null>(null);
 
 // 搜索表单
 const searchForm = reactive({
@@ -276,7 +273,7 @@ const handleEdit = async (record) => {
     // 设置当前正在编辑的记录ID和loading状态
     editingId.value = record.tencentCode;
     editLoading.value = true;
-    
+
     const res = await getTenantDetail(record.tencentCode);
     if (res) {
       console.log(res);
