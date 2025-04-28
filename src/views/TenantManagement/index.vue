@@ -29,12 +29,21 @@
     <div class="data-table">
       <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="false" bordered row-key="id"
         :scroll="{ y: tableHeight }">
-        <template #bodyCell="{ column, record }">
+        <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'enabled'">
             <a-switch :checked="record.enabled === '0'" @change="() => handleStatusChange(record)" />
           </template>
+          <template v-if="column.key === 'remark'">
+            <a-tooltip placement="topLeft" :title="record.remark">
+              <span class="col-sql">{{ record.remark }}</span>
+            </a-tooltip>
+          </template>
           <template v-if="column.key === 'action'">
-            <a-button type="link" @click="handleEdit(record)">编 辑</a-button>
+            <a-button 
+              type="link" 
+              @click="handleEdit(record)" 
+              :loading="editingId === record.tencentCode && editLoading"
+            >编 辑</a-button>
             <a-button type="link" danger @click="handleDelete(record)">删 除</a-button>
           </template>
         </template>
@@ -72,6 +81,8 @@ const isEdit = ref(false);
 const currentRecord = ref<any>({});
 const loading = ref(false);
 const areaTreeData = ref<any[]>([]);
+  const editLoading = ref(false);
+  const editingId = ref<string | null>(null);
 
 // 搜索表单
 const searchForm = reactive({
@@ -107,8 +118,7 @@ const columns = [
     title: '备注',
     dataIndex: 'remark',
     key: 'remark',
-    align: 'center',
-    customRender: (text, record) => <a-tooltip placement="topLeft" title={ record.remark } > <span class="col-sql" title = { text } > { text } < /span></a - tooltip >
+    align: 'center'
   },
   {
     title: '状态',
@@ -263,9 +273,13 @@ const handleAdd = () => {
 // 点击"编辑"按钮
 const handleEdit = async (record) => {
   try {
+    // 设置当前正在编辑的记录ID和loading状态
+    editingId.value = record.tencentCode;
+    editLoading.value = true;
+    
     const res = await getTenantDetail(record.tencentCode);
     if (res) {
-      console.log(res)
+      console.log(res);
       isEdit.value = true;
       currentRecord.value = res;
       dialogVisible.value = true;
@@ -273,6 +287,10 @@ const handleEdit = async (record) => {
   } catch (error) {
     console.error('获取租户详情失败:', error);
     message.error('获取租户详情失败');
+  } finally {
+    // 无论成功还是失败，都重置loading状态
+    editLoading.value = false;
+    editingId.value = null;
   }
 };
 
@@ -326,12 +344,12 @@ onMounted(() => {
     }
 
     .col-sql {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-block;
-  width: 100px;
-}
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      width: 100px;
+    }
 
     .pagination {
       margin-top: 16px;
