@@ -48,6 +48,77 @@ axios.interceptors.response.use(
 
         const status = res.status || 200;
 
+        // 验证码请求的特殊处理
+        if (res.config?.url?.includes('/auth/getVerifyCode') && status === 200) {
+            return Promise.resolve(res.data);
+        }
+
+        // blob 类型响应的处理
+        if (res.config?.responseType === 'blob' && status === 200) {
+            const contentType = res.headers['content-type'];
+
+            // 图片类型直接返回 blob 对象
+            if (contentType?.includes('image/')) {
+                return Promise.resolve(res.data);
+            }
+
+            // 通用 octet-stream 类型
+            if (contentType?.startsWith('application/octet-stream')) {
+                return Promise.resolve(res.data);
+            }
+
+            // 处理 zip 下载等情况
+            if (contentType && (
+                contentType.includes('application/zip') ||
+                contentType.includes('application/x-zip-compressed')
+            )) {
+                const blob = new Blob([res.data], { type: contentType });
+                if (res.config?.isDownload) {
+                    const aLink = document.createElement('a');
+                    aLink.style.display = 'none';
+                    aLink.href = URL.createObjectURL(blob);
+                    aLink.download = res.config.name || '下载文件.zip';
+                    document.body.appendChild(aLink);
+                    aLink.click();
+                    document.body.removeChild(aLink);
+                    URL.revokeObjectURL(aLink.href);
+                    return Promise.resolve();
+                }
+                return Promise.resolve(blob);
+            }
+
+            // 可能是错误响应，尝试读取内容
+            const reader = new FileReader();
+            reader.readAsText(res.data, 'utf-8');
+
+            return new Promise((resolve, reject) => {
+                reader.onload = function (e: any) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        if (jsonData && jsonData.code !== 200 && jsonData.code !== 0 && jsonData.code !== '0000') {
+                            notification.error({
+                                message: '提示',
+                                description: jsonData.message || '请求异常',
+                                duration: 3,
+                            });
+                            reject(jsonData.message || '请求异常');
+                            return;
+                        }
+                    } catch (error) {
+                        // 读取失败时直接返回原始 blob
+                        resolve(res.data);
+                        return;
+                    }
+                    resolve(res.data);
+                };
+
+                reader.onerror = function (error) {
+                    console.error('FileReader error:', error);
+                    reject(error);
+                };
+            });
+        }
+
         // 处理HTTP错误状态码
         if (status !== 200) {
             notification.error({

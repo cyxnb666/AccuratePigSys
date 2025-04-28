@@ -32,10 +32,8 @@
                   style="flex: 1; margin-right: 10px;">
                   <template #prefix><safety-outlined /></template>
                 </a-input>
-                <div class="verification-code"
-                  style="width: 100px; height: 40px; background-color: #eee; display: flex; align-items: center; justify-content: center;">
-                  验证码图片
-                </div>
+                <img :src="verifyCodeUrl" style="width: 100px; height: 40px; cursor: pointer;" alt="验证码"
+                  @click="refreshVerifyCode" />
               </div>
             </a-form-item>
 
@@ -50,7 +48,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import {
@@ -59,9 +57,11 @@ import {
   SafetyOutlined,
   ApartmentOutlined
 } from '@ant-design/icons-vue';
+import { getVerifyCode, login } from './api';
 
 const router = useRouter();
 const route = useRoute();
+const verifyCodeUrl = ref('');
 
 interface FormState {
   tenantCode: string;
@@ -78,6 +78,24 @@ const loginForm = reactive<FormState>({
   verificationCode: ''
 });
 
+// 刷新验证码
+const refreshVerifyCode = async () => {
+  try {
+    const blob = await getVerifyCode();
+
+    // 如果存在旧URL，释放它
+    if (verifyCodeUrl.value) {
+      URL.revokeObjectURL(verifyCodeUrl.value);
+    }
+
+    // 创建新的Blob URL
+    const newUrl = URL.createObjectURL(new Blob([blob], { type: 'image/png' }));
+    verifyCodeUrl.value = newUrl;
+  } catch (error) {
+    console.error('验证码获取失败:', error);
+  }
+};
+
 // 从URL获取租户编码并填充
 onMounted(() => {
   // 检查URL中是否有code参数
@@ -85,28 +103,57 @@ onMounted(() => {
   if (codeParam) {
     loginForm.tenantCode = codeParam as string;
   }
+
+  // 加载验证码
+  refreshVerifyCode();
+});
+
+// 释放验证码Blob URL
+onBeforeUnmount(() => {
+  if (verifyCodeUrl.value) {
+    URL.revokeObjectURL(verifyCodeUrl.value);
+  }
 });
 
 const onFinish = async () => {
   loading.value = true;
 
-  // 打印登录信息到控制台
-  console.log('登录信息:', {
-    租户编码: loginForm.tenantCode,
-    账号: loginForm.username,
-    密码: loginForm.password,
-    验证码: loginForm.verificationCode
-  });
+  try {
+    const res = await login({
+      tenantCode: loginForm.tenantCode,
+      username: loginForm.username,
+      password: loginForm.password,
+      verificationCode: loginForm.verificationCode
+    });
 
-  // 模拟登录延迟
-  setTimeout(() => {
-    message.success('登录成功');
+    if (res) {
+      message.success('登录成功');
 
-    // 直接跳转到主页
-    router.push('/dashboard');
+      // 存储返回的数据
+      sessionStorage.setItem('token', res.token);
+      sessionStorage.setItem('userInfo', JSON.stringify({
+        username: res.username,
+        usercode: res.usercode,
+        tenantCode: res.tenantCode,
+        tenantName: res.tenantName
+      }));
 
+      // 如果返回了菜单信息，保存它
+      if (res.menus) {
+        sessionStorage.setItem('menus', JSON.stringify(res.menus));
+      }
+
+      // 导航到首页或默认路由
+      router.push('/dashboard');
+    }
+  } catch (error) {
+    console.error('登录失败:', error);
+    message.error('登录失败，请检查输入信息');
+    // 刷新验证码
+    refreshVerifyCode();
+  } finally {
     loading.value = false;
-  }, 500);
+  }
 };
 
 const onFinishFailed = () => {
@@ -132,7 +179,7 @@ const onFinishFailed = () => {
     padding: 0 200px;
 
     .loginForm {
-      width: 420px; // 减小表单宽度
+      width: 420px;
       background-color: rgba(255, 255, 255, 0.8);
       border-radius: 8px;
       display: flex;
@@ -140,15 +187,15 @@ const onFinishFailed = () => {
       justify-content: center;
 
       .formBox {
-        width: 410px; // 减小内部宽度
+        width: 410px;
         background-color: #FFFFFF;
         border-radius: 8px;
-        padding: 30px 40px 40px; // 减小内边距
+        padding: 30px 40px 40px;
 
         &-header {
           display: flex;
           align-items: center;
-          justify-content: center; // 居中标题
+          justify-content: center;
 
           .title {
             font-weight: 700;
@@ -159,11 +206,11 @@ const onFinishFailed = () => {
 
         .tips {
           font-weight: 400;
-          font-size: 16px; // 减小提示文字
+          font-size: 16px;
           color: rgba(51, 51, 51, 0.6);
-          margin-top: 20px; // 减小上边距
-          margin-bottom: 20px; // 减小下边距
-          text-align: center; // 居中提示文字
+          margin-top: 20px;
+          margin-bottom: 20px;
+          text-align: center;
         }
       }
     }
@@ -172,8 +219,8 @@ const onFinishFailed = () => {
 
 .submit {
   width: 100%;
-  height: 40px; // 减小按钮高度
-  margin-top: 20px; // 减小上边距
+  height: 40px;
+  margin-top: 20px;
   border-radius: 2px;
 }
 </style>
