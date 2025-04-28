@@ -67,6 +67,7 @@
 import { ref, reactive, defineProps, defineEmits, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { saveTenant, updateTenant } from '../api';
+import { MD5 } from 'crypto-js';
 
 const props = defineProps({
     modelValue: {
@@ -167,6 +168,11 @@ const handleSubmit = () => {
             submitting.value = true;
             try {
                 const submitData = { ...formData };
+
+                if (submitData.tencentCipher) {
+                    submitData.tencentCipher = MD5(submitData.tencentCipher).toString();
+                }
+
                 if (props.isEdit) {
                     await updateTenant(submitData);
                 } else {
