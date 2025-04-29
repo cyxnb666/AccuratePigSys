@@ -38,6 +38,19 @@ export function getFarmDetail(farmId: string) {
     });
 }
 
+// 获取养殖场联系人
+export function getFarmLinkers(farmId: string) {
+    return axios({
+        url: '/web/livestock/queryLivestockFarmLinkers',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmId
+            }
+        }
+    });
+}
+
 // 新增养殖场
 export function saveFarm(data: any) {
     return axios({
@@ -82,6 +95,67 @@ export function saveReportTask(farmId: string, config: any) {
             condition: {
                 farmId: farmId,
                 config: config
+            }
+        }
+    });
+}
+
+// 启用/禁用联系人
+export function toggleContactStatus(farmLinkerId: string) {
+    return axios({
+        url: '/web/livestock/enable',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmLinkerId
+            }
+        }
+    });
+}
+
+// 设置主要联系人
+export function setAsPrimaryContact(farmLinkerId: string) {
+    return axios({
+        url: '/web/livestock/changePrimary',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmLinkerId
+            }
+        }
+    });
+}
+
+// 编辑联系人
+export function editContact(contactData: any) {
+    return axios({
+        url: '/web/livestock/editLinker',
+        method: 'post',
+        data: {
+            condition: contactData
+        }
+    });
+}
+
+// 新增联系人
+export function addContact(contactData: any) {
+    return axios({
+        url: '/web/livestock/addNewLinker',
+        method: 'post',
+        data: {
+            condition: contactData
+        }
+    });
+}
+
+// 删除联系人
+export function deleteContact(farmLinkerId: string) {
+    return axios({
+        url: '/web/sys/softRemoveSysUser',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmLinkerId
             }
         }
     });

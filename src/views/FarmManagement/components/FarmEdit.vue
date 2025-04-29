@@ -58,20 +58,44 @@
                             style="margin-left: 10px;">新增</a-button>
                     </div>
                     <a-table :columns="contactColumns" :data-source="contacts" :pagination="false" bordered>
-                        <template #bodyCell="{ column, record }">
+                        <template #bodyCell="{ column, record, index }">
+                            <template v-if="column.key === 'name'">
+                                <span v-if="!record.isEditing">{{ record.name }}</span>
+                                <a-form-item v-else :validate-status="record.nameError ? 'error' : ''"
+                                    :help="record.nameError" class="table-edit-form-item">
+                                    <a-input v-model:value="record.name" />
+                                </a-form-item>
+                            </template>
+                            <template v-if="column.key === 'phone'">
+                                <span v-if="!record.isEditing">{{ record.phone }}</span>
+                                <a-form-item v-else :validate-status="record.phoneError ? 'error' : ''"
+                                    :help="record.phoneError" class="table-edit-form-item">
+                                    <a-input v-model:value="record.phone" />
+                                </a-form-item>
+                            </template>
                             <template v-if="column.key === 'status'">
-                                <a-switch :checked="record.status === '启用'" @change="toggleContactStatus(record)"
+                                <a-switch :checked="record.status === '启用'" @change="() => toggleContactStatus(record)"
                                     :checkedChildren="'启用'" :unCheckedChildren="'禁用'" :style="{
                                         backgroundColor: record.status === '启用' ? '#52c41a' : '#f5222d'
                                     }" />
                             </template>
                             <template v-if="column.key === 'isPrimary'">
-                                <a-switch :checked="record.isPrimary" @change="setPrimaryContact(record)" :style="{
+                                <a-switch :checked="record.isPrimary" @change="() => setPrimaryContact(record)" :style="{
                                     backgroundColor: record.isPrimary ? '#1890ff' : '#d9d9d9'
                                 }" />
                             </template>
+                            <template v-if="column.key === 'remark'">
+                                <span v-if="!record.isEditing">{{ record.remark }}</span>
+                                <a-textarea v-else v-model:value="record.remark" :rows="1" />
+                            </template>
                             <template v-if="column.key === 'action'">
-                                <a-button type="link" danger @click="deleteContact(record)">删除</a-button>
+                                <a-space>
+                                    <a-button type="link" v-if="isEdit && !record.isEditing"
+                                        @click="() => startEditContact(record)">编辑</a-button>
+                                    <a-button type="link" v-if="isEdit && record.isEditing"
+                                        @click="() => saveContactChanges(record)">保存</a-button>
+                                    <a-button type="link" danger @click="() => deleteContact(record)">删除</a-button>
+                                </a-space>
                             </template>
                         </template>
                     </a-table>
@@ -100,14 +124,16 @@
             </div>
         </div>
 
-        <!-- 添加联系人对话框 记得修改这里还可以编辑！！！-->
-        <a-modal v-model:open="contactDialogVisible" title="新增用户" @ok="addContact"
+        <!-- 添加联系人对话框 -->
+        <a-modal v-model:open="contactDialogVisible" title="新增联系人" @ok="addContact"
             @cancel="contactDialogVisible = false">
             <a-form :model="newContact" layout="vertical">
-                <a-form-item label="用户名" required>
-                    <a-input v-model:value="newContact.name" placeholder="请输入用户名" />
+                <a-form-item label="联系人姓名" required :validate-status="newContactErrors.name ? 'error' : ''"
+                    :help="newContactErrors.name">
+                    <a-input v-model:value="newContact.name" placeholder="请输入联系人姓名" />
                 </a-form-item>
-                <a-form-item label="手机号" required>
+                <a-form-item label="手机号" required :validate-status="newContactErrors.phone ? 'error' : ''"
+                    :help="newContactErrors.phone">
                     <a-input v-model:value="newContact.phone" placeholder="请输入手机号" />
                 </a-form-item>
                 <a-form-item label="状态" required>
@@ -134,7 +160,18 @@ import { useRouter, useRoute } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import ElectronicFenceMap from './ElectronicFenceMap.vue';
-import { getUserAreaTrees, saveFarm, updateFarm } from '../api';
+import {
+    getUserAreaTrees,
+    saveFarm,
+    updateFarm,
+    getFarmDetail,
+    getFarmLinkers,
+    toggleContactStatus as apiToggleContactStatus,
+    setAsPrimaryContact,
+    editContact,
+    addContact as apiAddContact,
+    deleteContact as apiDeleteContact
+} from '../api';
 
 const router = useRouter();
 const route = useRoute();
@@ -178,7 +215,8 @@ const formData = reactive({
     district: undefined,
     farmName: '',
     address: '',
-    remark: ''
+    remark: '',
+    farmId: '' // 仅编辑模式使用
 });
 
 // 联系人列表配置
@@ -199,8 +237,13 @@ const newContact = reactive({
     name: '',
     phone: '',
     status: '启用',
-    isPrimary: false,
     remark: ''
+});
+
+// 新联系人表单验证错误
+const newContactErrors = reactive({
+    name: '',
+    phone: ''
 });
 
 // 方法
@@ -208,79 +251,237 @@ const goBack = () => {
     router.go(-1);
 };
 
-const showAddContactDialog = () => {
-    contactDialogVisible.value = true;
-};
-
-const addContact = () => {
-    if (!newContact.name || !newContact.phone) {
-        message.error('请填写必填项');
-        return;
-    }
-
-    const contact = {
-        key: Date.now(),
-        name: newContact.name,
-        phone: newContact.phone,
-        status: newContact.status,  // "启用" 或 "禁用"
-        isPrimary: newContact.isPrimary, // 布尔值
-        remark: newContact.remark
+// 验证联系人表单
+const validateContact = (contact) => {
+    let isValid = true;
+    const errors = {
+        name: '',
+        phone: ''
     };
 
-    if (newContact.isPrimary) {
-        // 如果设为主要联系人，更新其他联系人状态
-        contacts.value.forEach(c => c.isPrimary = false);
+    // 验证姓名
+    if (!contact.name) {
+        errors.name = '请输入联系人姓名';
+        isValid = false;
+    } else if (!/^[\u4e00-\u9fa5]{1,20}$/.test(contact.name)) {
+        errors.name = '姓名只能输入1-20个中文字符';
+        isValid = false;
     }
 
-    contacts.value.push(contact);
+    // 验证手机号
+    if (!contact.phone) {
+        errors.phone = '请输入手机号';
+        isValid = false;
+    } else if (!/^1[3-9]\d{9}$/.test(contact.phone)) {
+        errors.phone = '请输入正确的手机号格式';
+        isValid = false;
+    }
 
-    // 重置表单
+    return { isValid, errors };
+};
+
+const showAddContactDialog = () => {
+    // 重置表单和错误
     newContact.name = '';
     newContact.phone = '';
     newContact.status = '启用';
-    newContact.isPrimary = false;
     newContact.remark = '';
+    newContactErrors.name = '';
+    newContactErrors.phone = '';
+
+    contactDialogVisible.value = true;
+};
+
+const addContact = async () => {
+    // 验证表单
+    const { isValid, errors } = validateContact(newContact);
+    if (!isValid) {
+        newContactErrors.name = errors.name;
+        newContactErrors.phone = errors.phone;
+        return;
+    }
+
+    if (isEdit.value) {
+        const farmId = route.query.id as string;
+        try {
+            // 调用API添加联系人
+            const contactData = {
+                farmId: farmId,
+                userName: newContact.name,
+                userMobile: newContact.phone,
+                enabled: newContact.status === '启用' ? '1' : '0',
+                remark: newContact.remark || ''
+            };
+
+            await apiAddContact(contactData);
+            message.success('添加联系人成功');
+
+            // 重新加载联系人列表
+            const farmLinkers = await getFarmLinkers(farmId);
+            updateContactsFromAPI(farmLinkers);
+        } catch (error) {
+            console.error('添加联系人失败:', error);
+            message.error('添加联系人失败');
+        }
+    } else {
+        // 新增模式，仅在本地添加
+        const contact = {
+            key: Date.now().toString(),
+            name: newContact.name,
+            phone: newContact.phone,
+            status: newContact.status,
+            isPrimary: contacts.value.length === 0, // 如果是第一个联系人，设为主要联系人
+            remark: newContact.remark || '',
+            isEditing: false,
+            nameError: '',
+            phoneError: ''
+        };
+
+        if (contact.isPrimary) {
+            // 确保只有一个主要联系人
+            contacts.value.forEach(c => c.isPrimary = false);
+        }
+
+        contacts.value.push(contact);
+        message.success('添加联系人成功');
+    }
 
     contactDialogVisible.value = false;
-    message.success('添加联系人成功');
 };
 
-// 修改设置主要联系人的方法
-const setPrimaryContact = (record) => {
-    // 直接切换状态
-    record.isPrimary = !record.isPrimary;
+const startEditContact = (record) => {
+    // 开始编辑，标记当前记录为编辑状态
+    record.isEditing = true;
+    record.nameError = '';
+    record.phoneError = '';
 
-    // 这里可以调用API更新主要联系人状态
-    console.log(`已${record.isPrimary ? '设置' : '取消'}主要联系人: ${record.name}`);
-
-    // 模拟API调用
-    message.success(`已${record.isPrimary ? '设置' : '取消'}主要联系人: ${record.name}`);
+    // 保存原始值，用于取消编辑
+    record._originalName = record.name;
+    record._originalPhone = record.phone;
+    record._originalRemark = record.remark;
 };
 
-// 切换联系人状态
-const toggleContactStatus = (record) => {
-    // 切换状态
-    record.status = record.status === '启用' ? '禁用' : '启用';
+const saveContactChanges = async (record) => {
+    // 验证数据
+    const { isValid, errors } = validateContact(record);
+    if (!isValid) {
+        record.nameError = errors.name;
+        record.phoneError = errors.phone;
+        return;
+    }
 
-    // 这里可以调用API更新状态
-    console.log(`联系人 ${record.name} 状态已更新为: ${record.status}`);
+    try {
+        const contactData = {
+            farmLinkerId: record.key,
+            farmId: formData.farmId,
+            userName: record.name,
+            userMobile: record.phone,
+            enabled: record.status === '启用' ? '1' : '0',
+            isPrimary: record.isPrimary ? '1' : '0',
+            remark: record.remark || '',
+            userId: record.userId || ''
+        };
 
-    // 模拟API调用
-    message.success(`已${record.status === '启用' ? '启用' : '禁用'}联系人: ${record.name}`);
+        await editContact(contactData);
+        message.success('保存联系人信息成功');
+
+        // 结束编辑状态
+        record.isEditing = false;
+        record.nameError = '';
+        record.phoneError = '';
+
+    } catch (error) {
+        console.error('保存联系人信息失败:', error);
+        message.error('保存联系人信息失败');
+
+        // 恢复原始值
+        record.name = record._originalName;
+        record.phone = record._originalPhone;
+        record.remark = record._originalRemark;
+    }
 };
 
-const deleteContact = (record) => {
+const toggleContactStatus = async (record) => {
+    if (isEdit.value) {
+        try {
+            await apiToggleContactStatus(record.key);
+
+            // 切换状态
+            record.status = record.status === '启用' ? '禁用' : '启用';
+            message.success(`已${record.status === '启用' ? '启用' : '禁用'}联系人: ${record.name}`);
+        } catch (error) {
+            console.error('更新联系人状态失败:', error);
+            message.error('操作失败，请重试');
+        }
+    } else {
+        // 新增模式，仅在本地切换状态
+        record.status = record.status === '启用' ? '禁用' : '启用';
+        message.success(`已${record.status === '启用' ? '启用' : '禁用'}联系人: ${record.name}`);
+    }
+};
+
+const setPrimaryContact = async (record) => {
+    if (isEdit.value) {
+        try {
+            // 如果已经是主要联系人，不做操作
+            if (record.isPrimary) return;
+
+            await setAsPrimaryContact(record.key);
+
+            // 更新UI状态
+            contacts.value.forEach(c => c.isPrimary = c === record);
+            message.success(`已设置 ${record.name} 为主要联系人`);
+        } catch (error) {
+            console.error('设置主要联系人失败:', error);
+            message.error('操作失败，请重试');
+        }
+    } else {
+        // 新增模式，仅在本地设置主要联系人
+        contacts.value.forEach(c => c.isPrimary = c === record);
+        message.success(`已设置 ${record.name} 为主要联系人`);
+    }
+};
+
+const deleteContact = async (record) => {
     Modal.confirm({
         title: '确认删除',
         content: `确定要删除联系人 "${record.name}" 吗？`,
         okText: '确认',
         cancelText: '取消',
-        onOk: () => {
-            // 用户确认后执行删除操作
-            contacts.value = contacts.value.filter(item => item.key !== record.key);
-            message.success('删除联系人成功');
+        onOk: async () => {
+            if (isEdit.value) {
+                try {
+                    await apiDeleteContact(record.key);
+                    contacts.value = contacts.value.filter(item => item.key !== record.key);
+                    message.success('删除联系人成功');
+                } catch (error) {
+                    console.error('删除联系人失败:', error);
+                    message.error('删除联系人失败，请重试');
+                }
+            } else {
+                // 新增模式，仅在本地删除
+                contacts.value = contacts.value.filter(item => item.key !== record.key);
+                message.success('删除联系人成功');
+            }
         }
     });
+};
+
+const updateContactsFromAPI = (farmLinkers) => {
+    if (Array.isArray(farmLinkers)) {
+        contacts.value = farmLinkers.map(linker => ({
+            key: linker.farmLinkerId,
+            userId: linker.userId,
+            name: linker.userName,
+            phone: linker.userMobile,
+            status: linker.enabled === '1' ? '启用' : '禁用',
+            isPrimary: linker.isPrimary === '1',
+            remark: linker.remark || '',
+            isEditing: false,
+            nameError: '',
+            phoneError: ''
+        }));
+    }
 };
 
 const saveForm = async () => {
@@ -291,7 +492,7 @@ const saveForm = async () => {
 
     // 获取电子围栏数据
     const fenceList = fenceMapRef.value?.getFenceList() || [];
-    
+
     // 格式化围栏数据
     const formattedFences = fenceList.map(fence => {
         // 将每个围栏的路径点格式化为JSON字符串
@@ -299,7 +500,7 @@ const saveForm = async () => {
             lng: point.lng || point.getLng(),
             lat: point.lat || point.getLat()
         })));
-        
+
         return {
             coordinate: coordinatesJson,
             fenceName: fence.name,
@@ -307,59 +508,57 @@ const saveForm = async () => {
             enabled: fence.isDisabled ? "2" : "1"  // "1"表示启用，"2"表示禁用
         };
     });
-    
-    // 处理联系人数据
-    const formattedLinkers = contacts.value.map(contact => {
-        return {
-            enabled: contact.status === '启用' ? "1" : "0",
-            isPrimary: contact.isPrimary ? "1" : "0",
-            remark: contact.remark || '',
-            userMobile: contact.phone,
-            userName: contact.name
-        };
-    });
-    
+
     // 定义默认的经纬度（如果没有围栏点则使用）
     let randomLat = "39.916527";
     let randomLng = "116.397128";
-    
+
     // 从围栏点中随机选择一个点获取经纬度
     if (fenceList.length > 0) {
         const randomFence = fenceList[Math.floor(Math.random() * fenceList.length)];
         if (randomFence.path && randomFence.path.length > 0) {
             const randomPoint = randomFence.path[Math.floor(Math.random() * randomFence.path.length)];
-            
+
             // 确保获取到正确的经纬度值
-            randomLat = randomPoint.lat || 
-                         (typeof randomPoint.getLat === 'function' ? randomPoint.getLat() : randomPoint.lat) || 
-                         randomLat;
-            
-            randomLng = randomPoint.lng || 
-                         (typeof randomPoint.getLng === 'function' ? randomPoint.getLng() : randomPoint.lng) || 
-                         randomLng;
+            randomLat = randomPoint.lat ||
+                (typeof randomPoint.getLat === 'function' ? randomPoint.getLat() : randomPoint.lat) ||
+                randomLat;
+
+            randomLng = randomPoint.lng ||
+                (typeof randomPoint.getLng === 'function' ? randomPoint.getLng() : randomPoint.lng) ||
+                randomLng;
         }
     }
-    
+
     // 准备提交的数据
     const submitData = {
         districtCode: formData.district,
         farmName: formData.farmName,
         farmAddress: formData.address,
         fences: formattedFences,
-        farmLinkers: formattedLinkers,  // 添加联系人数据
         remark: formData.remark || '',
         latitude: String(randomLat),
         longitude: String(randomLng)
     };
-    
+
+    // 在新增模式下，添加联系人数据
+    if (!isEdit.value) {
+        submitData['farmLinkers'] = contacts.value.map(contact => ({
+            enabled: contact.status === '启用' ? "1" : "0",
+            isPrimary: contact.isPrimary ? "1" : "0",
+            remark: contact.remark || '',
+            userMobile: contact.phone,
+            userName: contact.name
+        }));
+    }
+
     // 输出数据结构以检查格式
     console.log('准备提交的数据:', JSON.stringify(submitData, null, 2));
-    
-    // API调用 - 已启用
+
     try {
         if (isEdit.value) {
             // 添加主键用于更新
-            submitData.primaryKey = route.query.id;
+            submitData['primaryKey'] = formData.farmId;
             await updateFarm(submitData);
         } else {
             await saveFarm(submitData);
@@ -378,90 +577,84 @@ const handleFenceEditChange = (checked) => {
     // 控制地图操作栏的显示/隐藏
     showMapToolbar.value = checked;
 
-    // 这里可以调用 API 来启用/禁用围栏编辑功能
-    // 例如: apiToggleFenceEdit(checked)
-
     // 显示消息提示
     message.success(`电子围栏编辑已${checked ? '开启' : '关闭'}`);
 };
 
-onMounted(() => {
+onMounted(async () => {
     fetchAreaTrees();
 
     if (isEdit.value) {
-        // 假设这是从API获取的养殖场数据
-        const farmId = route.query.id;
-        // 从dataSource中获取对应ID的养殖场数据
-        const farmData = {
-            district: 'sichuan',
-            farmName: '测试养殖场',
-            address: '四川省成都市武侯区',
-            remark: '这是一个测试养殖场',
-            fenceData: [
-                {
-                    id: 'fence_1',
-                    name: '围栏A区',
-                    remark: '正常使用中的围栏',
-                    path: [
-                        { lng: 116.458694, lat: 40.000431 },
-                        { lng: 116.4629, lat: 40.000628 },
-                        { lng: 116.466505, lat: 39.991949 }
-                    ],
-                    isDisabled: false
-                },
-                {
-                    id: 'fence_2',
-                    name: '围栏B区',
-                    remark: '已禁用的围栏',
-                    path: [
-                        { lng: 116.473371, lat: 39.999445 },
-                        { lng: 116.486503, lat: 39.998919 },
-                        { lng: 116.483842, lat: 39.988398 }
-                    ],
-                    isDisabled: true
-                }
-            ]
-        };
+        const farmId = route.query.id as string;
 
-        // 填充表单数据
-        formData.district = farmData.district;
-        formData.farmName = farmData.farmName;
-        formData.address = farmData.address;
-        formData.remark = farmData.remark;
+        try {
+            // 显示加载提示
+            const loadingMsg = message.loading('正在加载养殖场数据...', 0);
 
-        contacts.value = [
-            {
-                key: 1,
-                name: '张三',
-                phone: '13800138000',
-                status: '启用',
-                isPrimary: true,
-                remark: '主要联系人'
-            }
-        ];
+            // 获取养殖场详情
+            const farmDetail = await getFarmDetail(farmId);
 
-        // 在控制台输出电子围栏数据，供开发参考
-        console.log('养殖场电子围栏数据:', farmData.fenceData);
+            // 获取养殖场联系人
+            const farmLinkers = await getFarmLinkers(farmId);
 
-        // 等待地图加载完成后再设置围栏数据
-        const loadFences = () => {
-            if (fenceMapRef.value) {
-                try {
-                    fenceMapRef.value.setFenceList(farmData.fenceData);
-                    message.success('已加载2个电子围栏，其中1个为禁用状态');
-                } catch (e) {
-                    console.error('设置围栏失败:', e);
-                    // 如果失败，再次尝试
-                    setTimeout(loadFences, 1000);
-                }
-            } else {
-                console.log('地图组件尚未初始化，等待...');
+            // 关闭加载提示
+            loadingMsg();
+
+            // 填充基本信息
+            formData.district = farmDetail.districtCode;
+            formData.farmName = farmDetail.farmName;
+            formData.address = farmDetail.farmAddress;
+            formData.remark = farmDetail.remark || '';
+            formData.farmId = farmId;
+
+            // 填充联系人列表
+            updateContactsFromAPI(farmLinkers);
+
+            // 处理电子围栏数据
+            if (farmDetail.fences && farmDetail.fences.length > 0) {
+                // 延迟设置围栏数据，确保地图组件已加载
+                const loadFences = () => {
+                    if (fenceMapRef.value) {
+                        try {
+                            const fenceData = farmDetail.fences.map(fence => {
+                                // 解析围栏坐标
+                                let path = [];
+                                try {
+                                    path = JSON.parse(fence.coordinate);
+                                } catch (e) {
+                                    console.error('解析围栏坐标失败:', e);
+                                }
+
+                                return {
+                                    id: fence.fenceId,
+                                    name: fence.fenceName,
+                                    remark: fence.remark || '',
+                                    path: path,
+                                    isDisabled: fence.enabled !== '1' // "1"表示启用，其他值表示禁用
+                                };
+                            });
+
+                            fenceMapRef.value.setFenceList(fenceData);
+                            message.success(`已加载${fenceData.length}个电子围栏`);
+                        } catch (e) {
+                            console.error('设置围栏失败:', e);
+                            // 如果失败，再次尝试
+                            setTimeout(loadFences, 1000);
+                        }
+                    } else {
+                        console.log('地图组件尚未初始化，等待...');
+                        setTimeout(loadFences, 1000);
+                    }
+                };
+
+                // 延迟1秒等待地图初始化完成
                 setTimeout(loadFences, 1000);
             }
-        };
 
-        // 延迟3秒等待地图初始化完成
-        setTimeout(loadFences, 1000);
+        } catch (error) {
+            console.error('获取养殖场数据失败:', error);
+            message.error('获取养殖场数据失败，请重试');
+        }
     }
 });
 </script>
@@ -531,6 +724,19 @@ onMounted(() => {
             :deep(.ant-switch) {
                 min-width: 44px;
             }
+        }
+    }
+
+    .table-edit-form-item {
+        margin-bottom: 0 !important;
+
+        :deep(.ant-form-item-explain) {
+            position: absolute;
+            top: 100%;
+        }
+
+        :deep(.ant-form-item-control-input) {
+            min-height: 28px;
         }
     }
 

@@ -210,7 +210,7 @@ const handleAdd = () => {
 };
 
 const handleEdit = (record) => {
-  router.push(`/farm/edit?id=${record.id}`);
+  router.push(`/farm/edit?id=${record.farmId}`);
 };
 
 const handleReportConfig = (record) => {
