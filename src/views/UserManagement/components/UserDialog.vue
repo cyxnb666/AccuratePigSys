@@ -2,11 +2,11 @@
   <a-modal :title="isEdit ? '编辑用户' : '新增用户'" v-model:open="dialogVisible" :destroyOnClose="true" :maskClosable="false"
     width="800px" class="user-dialog" :footer="null">
     <a-form :model="formData" ref="formRef" :rules="rules" layout="vertical">
-      <!-- 行政区划选择 -->
+      <!-- 行政区划选择 - 编辑时禁用 -->
       <a-form-item label="行政区划" name="areacode" required>
         <a-tree-select v-model:value="formData.areacode" placeholder="请选择行政区划" :tree-data="areaTreeData" allow-clear
           :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-node-filter-prop="'title'"
-          :show-search="true" />
+          :show-search="true" :disabled="isEdit" />
       </a-form-item>
 
       <a-row :gutter="16">
@@ -17,7 +17,7 @@
         </a-col>
         <a-col :span="12">
           <a-form-item label="手机号" name="userMobile" required>
-            <a-input v-model:value="formData.userMobile" placeholder="请输入手机号" />
+            <a-input v-model:value="formData.userMobile" placeholder="请输入手机号" :disabled="isEdit" />
           </a-form-item>
         </a-col>
       </a-row>
@@ -146,7 +146,10 @@ const formData = reactive({
 const rules = computed(() => {
   const baseRules = {
     areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
-    userName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+    userName: [
+      { required: true, message: '请输入用户名', trigger: 'blur' },
+      { pattern: /^[\u4e00-\u9fa5]{1,20}$/, message: '用户名只能输入1-20个中文字符', trigger: 'blur' }
+    ],
     userMobile: [
       { required: true, message: '请输入手机号', trigger: 'blur' },
       { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
@@ -170,6 +173,17 @@ const rules = computed(() => {
         ? []
         : [{ required: true, message: '请输入登录密码', trigger: 'blur' }]
     };
+  }
+});
+
+// 当手机号变化且格式正确时，自动生成默认密码 (仅新增时生效)
+watch(() => formData.userMobile, (newVal) => {
+  // 新增模式下，手机号格式正确时自动生成密码
+  if (!props.isEdit && newVal && /^1[3-9]\d{9}$/.test(newVal)) {
+    // 获取手机号后6位
+    const last6Digits = newVal.slice(-6);
+    // 设置默认密码为 SZHY@ + 手机号后6位
+    formData.userCipher = `SZHY@${last6Digits}`;
   }
 });
 
@@ -244,9 +258,9 @@ const handleSubmit = () => {
 
         // 根据角色类型处理提交数据
         if (isFarmLinker.value) {
-          // 养殖场联系人：删除账号密码字段
-          delete submitData.userAccount;
-          delete submitData.userCipher;
+          // 养殖场联系人：使用手机号作为账号和密码
+          submitData.userAccount = submitData.userMobile;
+          submitData.userCipher = MD5(submitData.userMobile).toString();
         } else {
           // 普通用户：删除养殖场字段
           delete submitData.farmId;

@@ -10,7 +10,7 @@
                 </a-col>
                 <a-col :span="12">
                     <a-form-item label="租户编码" name="tencentCode">
-                        <a-input v-model:value="formData.tencentCode" placeholder="请输入租户编码" />
+                        <a-input v-model:value="formData.tencentCode" placeholder="请输入租户编码" :disabled="isEdit" />
                     </a-form-item>
                 </a-col>
             </a-row>
@@ -18,7 +18,7 @@
             <a-row :gutter="16">
                 <a-col :span="12">
                     <a-form-item label="租户账号" name="tencentAccount">
-                        <a-input v-model:value="formData.tencentAccount" placeholder="请输入租户登录账号" />
+                        <a-input v-model:value="formData.tencentAccount" placeholder="请输入租户登录账号" :disabled="isEdit" />
                     </a-form-item>
                 </a-col>
                 <a-col :span="12">
@@ -110,14 +110,24 @@ const formData = reactive({
 });
 
 const rules = computed(() => ({
-    tencentName: [{ required: true, message: '请输入租户名称', trigger: 'blur' }],
+    tencentName: [
+        { required: true, message: '请输入租户名称', trigger: 'blur' },
+        { pattern: /^[\u4e00-\u9fa5]{1,50}$/, message: '租户名称只能输入1-50个中文字符', trigger: 'blur' }
+    ],
     tencentCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
-    tencentAccount: [{ required: true, message: '请输入租户账号', trigger: 'blur' }],
+    tencentAccount: [
+        { required: true, message: '请输入租户账号', trigger: 'blur' },
+        { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$/, message: '租户账号必须为6-8位字母+数字组合', trigger: 'blur' }
+    ],
     tencentCipher: props.isEdit
-        ? []
-        : [{ required: true, message: '请输入租户密码', trigger: 'blur' }],
+        ? [{ pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$/, message: '租户密码必须为6-8位字母+数字组合', trigger: 'blur' }]
+        : [
+            { required: true, message: '请输入租户密码', trigger: 'blur' },
+            { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$/, message: '租户密码必须为6-8位字母+数字组合', trigger: 'blur' }
+        ],
     areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
-    enabled: [{ required: true, message: '请选择状态', trigger: 'change' }]
+    enabled: [{ required: true, message: '请选择状态', trigger: 'change' }],
+    remark: [{ pattern: /^[\u4e00-\u9fa5]{0,250}$/, message: '备注只能输入0-250个中文字符', trigger: 'blur' }]
 }));
 
 // 当编辑模式且有记录时，填充表单数据
