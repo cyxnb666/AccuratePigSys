@@ -6,12 +6,12 @@
                 <a-row :gutter="16" style="width: 100%">
                     <a-col>
                         <a-form-item label="行政区划名称:">
-                            <a-input placeholder="请输入行政区划名称" v-model:value="searchForm.districtName" />
+                            <a-input placeholder="请输入行政区划名称" v-model:value="searchForm.areaname" />
                         </a-form-item>
                     </a-col>
                     <a-col>
                         <a-form-item label="行政区划代码:">
-                            <a-input placeholder="请输入行政区划代码" v-model:value="searchForm.districtCode" />
+                            <a-input placeholder="请输入行政区划代码" v-model:value="searchForm.areacode" />
                         </a-form-item>
                     </a-col>
                     <a-col>
@@ -26,24 +26,19 @@
 
         <!-- 数据表格 -->
         <div class="data-table">
-            <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
-                :scroll="{ y: tableHeight }" :indentSize="20">
+            <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="false" bordered
+                row-key="areacode" :scroll="{ y: tableHeight }" :indentSize="20"
+                :expandable="{ onExpand: onExpandRow }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'status'">
-                        <a-switch v-model:checked="record.status" :disabled="false" />
+                        <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
                     </template>
                     <template v-if="column.key === 'action'">
-                        <a-button type="link" @click="handleEdit(record)">编 辑</a-button>
-                        <a-button type="link" danger @click="handleDelete(record)">删 除</a-button>
+                        <a-button type="link" @click="handleEdit(record)"
+                            :loading="editingId === record.areacode && editLoading">编 辑</a-button>
                     </template>
                 </template>
             </a-table>
-
-            <!-- 分页 -->
-            <div class="pagination">
-                <a-pagination v-model:current="pagination.current" :total="pagination.total"
-                    :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer />
-            </div>
         </div>
 
         <district-dialog v-model="dialogVisible" :is-edit="isEdit" :record="currentRecord"
@@ -52,17 +47,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { message } from 'ant-design-vue';
 import DistrictDialog from './components/DistrictDialog.vue';
+import { getDistrictList, getDistrictDetail } from './api';
 
 const dialogVisible = ref(false);
 const isEdit = ref(false);
-const currentRecord = ref({});
+const currentRecord = ref<any>({});
+const loading = ref(false);
+const editLoading = ref(false);
+const editingId = ref<string | null>(null);
 
 // 搜索表单
 const searchForm = reactive({
-    districtName: '',
-    districtCode: ''
+    areaname: '',
+    areacode: '',
 });
 
 // 表格高度
@@ -71,27 +71,20 @@ const tableHeight = ref('calc(80vh - 150px)');
 // 表格列
 const columns = [
     {
-        title: '序号',
-        dataIndex: 'index',
-        key: 'index',
-        width: 120,
-        align: 'center'
-    },
-    {
         title: '行政区划',
-        dataIndex: 'name',
-        key: 'name',
+        dataIndex: 'areaname',
+        key: 'areaname',
         align: 'center'
     },
     {
         title: '区划代码',
-        dataIndex: 'code',
-        key: 'code',
+        dataIndex: 'areacode',
+        key: 'areacode',
         align: 'center'
     },
     {
         title: '状态',
-        dataIndex: 'status',
+        dataIndex: 'enabled',
         key: 'status',
         align: 'center'
     },
@@ -104,128 +97,120 @@ const columns = [
     {
         title: '操作',
         key: 'action',
-        align: 'center'
+        align: 'center',
+        width: 100
     }
 ];
 
-// 模拟树形数据
-const generateTreeData = () => {
-    return [
-        {
-            id: 1,
-            index: 1,
-            name: '四川省',
-            code: '510000',
-            status: true,
-            updateTime: '2025-03-31',
-            children: [
-                {
-                    id: 2,
-                    index: 2,
-                    name: '成都市',
-                    code: '510100',
-                    status: false,
-                    updateTime: '2025-03-31',
-                    children: [
-                        {
-                            id: 3,
-                            index: 3,
-                            name: '武侯区',
-                            code: '510107',
-                            status: true,
-                            updateTime: '2025-03-31'
-                        },
-                        {
-                            id: 4,
-                            index: 4,
-                            name: '锦江区',
-                            code: '510104',
-                            status: true,
-                            updateTime: '2025-03-31'
-                        }
-                    ]
-                },
-                {
-                    id: 5,
-                    index: 5,
-                    name: '绵阳市',
-                    code: '510700',
-                    status: true,
-                    updateTime: '2025-03-31'
-                }
-            ]
-        },
-        {
-            id: 6,
-            index: 6,
-            name: '重庆市',
-            code: '500000',
-            status: true,
-            updateTime: '2025-03-31',
-            children: [
-                {
-                    id: 7,
-                    index: 7,
-                    name: '渝中区',
-                    code: '500103',
-                    status: true,
-                    updateTime: '2025-03-31'
-                }
-            ]
+// 表格数据
+const dataSource = ref<any[]>([]);
+
+// 获取表格数据
+const fetchTableData = async (isInitial = false) => {
+    loading.value = true;
+    try {
+        const params = {
+            condition: {
+                areacode: searchForm.areacode,
+                areaname: searchForm.areaname,
+                parentAreacode: isInitial ? "0" : "" // 初始加载时传"0"，查询时不传
+            }
+        };
+
+        const res = await getDistrictList(params);
+
+        if (res) {
+            dataSource.value = res || [];
         }
-    ];
+    } catch (error) {
+        console.error('获取行政区划数据失败:', error);
+    } finally {
+        loading.value = false;
+    }
 };
 
-// 表格数据
-const dataSource = ref(generateTreeData());
+// 展开行时加载子数据
+const onExpandRow = async (expanded: boolean, record: any) => {
+    if (expanded) {
+        // 如果已经加载过子节点，就不再重复加载
+        if (record.children && record.children.length > 0) {
+            return;
+        }
 
-// 分页
-const pagination = reactive({
-    current: 1,
-    pageSize: 10,
-    total: 50
-});
+        try {
+            // 调用API获取子节点数据
+            const params = {
+                condition: {
+                    parentAreacode: record.areacode
+                }
+            };
+
+            const res = await getDistrictList(params);
+
+            if (res && res.length > 0) {
+                // 设置子节点数据
+                record.children = res;
+            } else {
+                // 如果没有子节点，设置空数组
+                record.children = [];
+            }
+        } catch (error) {
+            console.error('获取子区划数据失败:', error);
+            message.error('获取子区划数据失败');
+        }
+    }
+};
 
 // 方法
 const handleSearch = () => {
-    console.log('搜索条件:', searchForm);
-    pagination.current = 1;
-    // 实际项目中这里应该调用API进行搜索
+    fetchTableData(false);
 };
 
 const handleReset = () => {
-    searchForm.districtName = '';
-    searchForm.districtCode = '';
-};
-
-const handleDelete = (record) => {
-    console.log('删除区划:', record);
-};
-
-const handleTableChange = (page) => {
-    pagination.current = page;
-    // 加载当前页数据
+    searchForm.areaname = '';
+    searchForm.areacode = '';
+    fetchTableData(true);
 };
 
 // 点击"编辑"按钮
-const handleEdit = (record) => {
-    isEdit.value = true;
-    currentRecord.value = {
-        parentDistrict: record.parentId || null,
-        districtName: record.name,
-        districtCode: record.code,
-        status: record.status ? '启用' : '禁用',
-        longitude: record.longitude || '',
-        latitude: record.latitude || ''
-    };
-    dialogVisible.value = true;
+const handleEdit = async (record) => {
+    try {
+        // 设置当前正在编辑的记录ID和loading状态
+        editingId.value = record.areacode;
+        editLoading.value = true;
+
+        const res = await getDistrictDetail(record.areacode);
+        if (res) {
+            isEdit.value = true;
+            currentRecord.value = res;
+            dialogVisible.value = true;
+        }
+    } catch (error) {
+        console.error('获取行政区划详情失败:', error);
+    } finally {
+        // 无论成功还是失败，都重置loading状态
+        editLoading.value = false;
+        editingId.value = null;
+    }
 };
 
 // 对话框提交成功回调
-const handleDialogSuccess = (data) => {
-    console.log('编辑区划成功:', data);
-    handleSearch();
+const handleDialogSuccess = () => {
+    fetchTableData(true);
 };
+
+// 状态变更
+const handleStatusChange = async (record) => {
+    // 这里假设你有启用/禁用区划的API，如果没有，可以先注释掉
+    message.info('状态变更功能暂未实现');
+
+    // 刷新数据
+    fetchTableData(true);
+};
+
+onMounted(() => {
+    fetchTableData(true);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -264,11 +249,6 @@ const handleDialogSuccess = (data) => {
                 flex: 1;
                 overflow-y: auto;
             }
-        }
-
-        .pagination {
-            margin-top: 16px;
-            text-align: right;
         }
     }
 }
