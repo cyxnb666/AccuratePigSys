@@ -222,7 +222,6 @@ const handleStatusChange = async (record) => {
         
     } catch (error) {
         console.error('更新状态失败:', error);
-        message.error('更新状态失败');
     }
 };
 
