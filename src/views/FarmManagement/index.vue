@@ -29,9 +29,14 @@
 
     <!-- 数据表格 -->
     <div class="data-table">
-      <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
+      <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered row-key="id"
         :scroll="{ y: tableHeight }">
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'remark'">
+            <a-tooltip placement="topLeft" :title="record.remark">
+              <span class="col-sql">{{ record.remark }}</span>
+            </a-tooltip>
+          </template>
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)">编辑</a-button>
             <a-button type="link" @click="handleReportConfig(record)">上报任务配置</a-button>
@@ -53,15 +58,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import ReportTaskDialog from './components/ReportTaskDialog.vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
+import { getAreaTrees, getFarmList, deleteFarm, saveReportTask } from './api';
 
 const router = useRouter();
 const reportTaskDialogVisible = ref(false);
 const currentRecord = ref({});
+const loading = ref(false);
 
 // 搜索表单
 const searchForm = reactive({
@@ -83,8 +90,8 @@ const columns = [
   },
   {
     title: '行政区划',
-    dataIndex: 'district',
-    key: 'district',
+    dataIndex: 'provinceName',
+    key: 'provinceName',
     align: 'center'
   },
   {
@@ -95,8 +102,8 @@ const columns = [
   },
   {
     title: '养殖场地址',
-    dataIndex: 'address',
-    key: 'address',
+    dataIndex: 'farmAddress',
+    key: 'farmAddress',
     align: 'center'
   },
   {
@@ -119,122 +126,83 @@ const columns = [
 ];
 
 // 行政区划树形数据
-const districtTreeData = [
-  {
-    title: '四川省',
-    value: 'sichuan',
-    key: 'sichuan',
-    children: [
-      {
-        title: '成都市',
-        value: 'chengdu',
-        key: 'sichuan-chengdu',
-        children: [
-          {
-            title: '武侯区',
-            value: 'wuhou',
-            key: 'sichuan-chengdu-wuhou',
-          },
-          {
-            title: '锦江区',
-            value: 'jinjiang',
-            key: 'sichuan-chengdu-jinjiang',
-          }
-        ]
-      },
-      {
-        title: '绵阳市',
-        value: 'mianyang',
-        key: 'sichuan-mianyang',
-      }
-    ]
-  },
-  {
-    title: '重庆市',
-    value: 'chongqing',
-    key: 'chongqing',
-    children: [
-      {
-        title: '渝中区',
-        value: 'yuzhong',
-        key: 'chongqing-yuzhong',
-      },
-      {
-        title: '江北区',
-        value: 'jiangbei',
-        key: 'chongqing-jiangbei',
-      }
-    ]
-  }
-];
+const transformAreaData = (areaList: any[]): any[] => {
+  return areaList.map(area => {
+    const node = {
+      title: area.areaname,
+      value: area.areacode,
+      key: area.areacode,
+      children: area.children ? transformAreaData(area.children) : []
+    };
+    return node;
+  });
+};
 
-// 模拟养殖场数据
-const generateData = () => {
-  const data = [];
-  for (let i = 1; i <= 20; i++) {
-    data.push({
-      id: i,
-      index: i,
-      district: i % 2 === 0 ? '四川省-成都市-武侯区' : '重庆市-渝中区',
-      farmName: `养殖场${i}号`,
-      address: `${i % 2 === 0 ? '四川省成都市武侯区' : '重庆市渝中区'}科技路${i}号`,
-      remark: `这是养殖场${i}的备注信息`,
-      updateTime: '2025-03-31',
-      reportConfig: {
-        reportPeriod: [dayjs('2025-03-01'), dayjs('2025-03-31')],
-        stockChangeCount: `${50 + i * 5}`,
-        stockChangeRatio: `${i * 2}`,
-        daysSinceLastReport: `${i + 5}`
-      },
-      // 添加电子围栏数据
-      fenceData: [
-        {
-          id: `fence_${i}_1`,
-          name: `${i}号场围栏A`,
-          remark: '正常使用中的围栏',
-          path: [
-            { lng: 116.458694, lat: 40.000431 },
-            { lng: 116.4629, lat: 40.000628 },
-            { lng: 116.466505, lat: 39.991949 }
-          ],
-          isDisabled: false
-        },
-        {
-          id: `fence_${i}_2`,
-          name: `${i}号场围栏B`,
-          remark: '已禁用的围栏',
-          path: [
-            { lng: 116.473371, lat: 39.999445 },
-            { lng: 116.486503, lat: 39.998919 },
-            { lng: 116.483842, lat: 39.988398 }
-          ],
-          isDisabled: true
-        }
-      ]
-    });
+// 行政区划树形数据
+const districtTreeData = ref([]);
+
+const fetchAreaTrees = async () => {
+  try {
+    const res = await getAreaTrees();
+    if (res) {
+      districtTreeData.value = transformAreaData(res);
+    }
+  } catch (error) {
+    console.error('获取行政区划数据失败:', error);
   }
-  return data;
 };
 
 // 表格数据
-const dataSource = ref(generateData());
+const dataSource = ref<any[]>([]);
 
 // 分页
 const pagination = reactive({
   current: 1,
   pageSize: 10,
-  total: 2
+  total: 0
 });
+
+const fetchTableData = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      condition: {
+        areacode: searchForm.district,
+        farmName: searchForm.farmName
+      },
+      pageNo: pagination.current,
+      pageSize: pagination.pageSize
+    };
+
+    const res = await getFarmList(params);
+
+    if (res) {
+      // 添加索引
+      const records = res.records || [];
+      dataSource.value = records.map((item: any, index: number) => ({
+        ...item,
+        index: (pagination.current - 1) * pagination.pageSize + index + 1
+      }));
+
+      pagination.total = res.total || 0;
+    }
+  } catch (error) {
+    console.error('获取养殖场列表失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 方法
 const handleSearch = () => {
-  console.log('搜索条件:', searchForm);
   pagination.current = 1;
+  fetchTableData();
 };
 
 const handleReset = () => {
   searchForm.district = undefined;
   searchForm.farmName = '';
+  handleSearch();
 };
 
 const handleAdd = () => {
@@ -251,16 +219,42 @@ const handleReportConfig = (record) => {
 };
 
 const handleDelete = (record) => {
-  message.success(`已删除养殖场：${record.farmName}`);
+  Modal.confirm({
+    title: '确认删除',
+    content: `确定要删除养殖场：${record.farmName}吗？`,
+    okText: '确认',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await deleteFarm(record.id);
+        message.success(`已删除养殖场：${record.farmName}`);
+        fetchTableData();
+      } catch (error) {
+        console.error('删除养殖场失败:', error);
+      }
+    }
+  });
 };
 
-const handleTableChange = (page) => {
+const handleTableChange = (page, pageSize) => {
   pagination.current = page;
+  pagination.pageSize = pageSize;
+  fetchTableData();
 };
 
-const handleReportTaskSuccess = () => {
-  message.success('上报任务配置保存成功');
+const handleReportTaskSuccess = async (config) => {
+  try {
+    await saveReportTask(currentRecord.value.id, config);
+    message.success('上报任务配置保存成功');
+  } catch (error) {
+    console.error('保存上报任务配置失败:', error);
+  }
 };
+
+onMounted(() => {
+  fetchAreaTrees();
+  fetchTableData();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -275,6 +269,14 @@ const handleReportTaskSuccess = () => {
     background-color: white;
     border-radius: 4px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .col-sql {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    width: 100px;
   }
 
   .data-table {

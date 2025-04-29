@@ -123,12 +123,10 @@ const handleSubmit = () => {
         .then(() => {
             submitting.value = true;
 
-            // 模拟API调用
-            setTimeout(() => {
-                submitting.value = false;
-                emit('success', { ...formData });
-                dialogVisible.value = false;
-            }, 500);
+            emit('success', { ...formData });
+        
+            submitting.value = false;
+            dialogVisible.value = false;
         })
         .catch(errorInfo => {
             console.log('验证失败:', errorInfo);

@@ -134,6 +134,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import ElectronicFenceMap from './ElectronicFenceMap.vue';
+import { getUserAreaTrees, saveFarm, updateFarm } from '../api';
 
 const router = useRouter();
 const route = useRoute();
@@ -143,54 +144,34 @@ const fenceEditEnabled = ref(false);
 const showMapToolbar = ref(false);
 
 // 行政区划树形数据
-const districtTreeData = [
-    {
-        title: '四川省',
-        value: 'sichuan',
-        key: 'sichuan',
-        children: [
-            {
-                title: '成都市',
-                value: 'chengdu',
-                key: 'sichuan-chengdu',
-                children: [
-                    {
-                        title: '武侯区',
-                        value: 'wuhou',
-                        key: 'sichuan-chengdu-wuhou',
-                    },
-                    {
-                        title: '锦江区',
-                        value: 'jinjiang',
-                        key: 'sichuan-chengdu-jinjiang',
-                    }
-                ]
-            },
-            {
-                title: '绵阳市',
-                value: 'mianyang',
-                key: 'sichuan-mianyang',
-            }
-        ]
-    },
-    {
-        title: '重庆市',
-        value: 'chongqing',
-        key: 'chongqing',
-        children: [
-            {
-                title: '渝中区',
-                value: 'yuzhong',
-                key: 'chongqing-yuzhong',
-            },
-            {
-                title: '江北区',
-                value: 'jiangbei',
-                key: 'chongqing-jiangbei',
-            }
-        ]
+const districtTreeData = ref([]);
+
+const fetchAreaTrees = async () => {
+    try {
+        const res = await getUserAreaTrees();
+        if (res) {
+            districtTreeData.value = transformAreaData(res);
+        }
+    } catch (error) {
+        console.error('获取行政区划数据失败:', error);
     }
-];
+};
+
+const transformAreaData = (areaList: any[]): any[] => {
+    return areaList.map(area => {
+        const node = {
+            title: area.areaname,
+            value: area.areacode,
+            key: area.areacode,
+            // 只有第四级别的行政区划可选，其他级别禁用
+            disabled: area.areaLevel !== "4",
+            // 添加选择器过滤属性，用于搜索功能
+            searchValue: area.areaname,
+            children: area.children ? transformAreaData(area.children) : []
+        };
+        return node;
+    });
+};
 
 // 表单数据
 const formData = reactive({
@@ -241,8 +222,8 @@ const addContact = () => {
         key: Date.now(),
         name: newContact.name,
         phone: newContact.phone,
-        status: newContact.status,
-        isPrimary: newContact.isPrimary,
+        status: newContact.status,  // "启用" 或 "禁用"
+        isPrimary: newContact.isPrimary, // 布尔值
         remark: newContact.remark
     };
 
@@ -302,36 +283,111 @@ const deleteContact = (record) => {
     });
 };
 
-const saveForm = () => {
+const saveForm = async () => {
     if (!formData.district || !formData.farmName || !formData.address) {
         message.error('请填写必填项');
         return;
     }
 
     // 获取电子围栏数据
-    const fenceList = fenceMapRef.value?.getFenceList();
-
-    // 在这里可以处理保存围栏数据的逻辑
-    console.log('保存围栏数据:', fenceList);
-
-    message.success(`${isEdit.value ? '编辑' : '新增'}养殖场成功`);
-    router.go(-1);
+    const fenceList = fenceMapRef.value?.getFenceList() || [];
+    
+    // 格式化围栏数据
+    const formattedFences = fenceList.map(fence => {
+        // 将每个围栏的路径点格式化为JSON字符串
+        const coordinatesJson = JSON.stringify(fence.path.map(point => ({
+            lng: point.lng || point.getLng(),
+            lat: point.lat || point.getLat()
+        })));
+        
+        return {
+            coordinate: coordinatesJson,
+            fenceName: fence.name,
+            remark: fence.remark || '',
+            enabled: fence.isDisabled ? "2" : "1"  // "1"表示启用，"2"表示禁用
+        };
+    });
+    
+    // 处理联系人数据
+    const formattedLinkers = contacts.value.map(contact => {
+        return {
+            enabled: contact.status === '启用' ? "1" : "0",
+            isPrimary: contact.isPrimary ? "1" : "0",
+            remark: contact.remark || '',
+            userMobile: contact.phone,
+            userName: contact.name
+        };
+    });
+    
+    // 定义默认的经纬度（如果没有围栏点则使用）
+    let randomLat = "39.916527";
+    let randomLng = "116.397128";
+    
+    // 从围栏点中随机选择一个点获取经纬度
+    if (fenceList.length > 0) {
+        const randomFence = fenceList[Math.floor(Math.random() * fenceList.length)];
+        if (randomFence.path && randomFence.path.length > 0) {
+            const randomPoint = randomFence.path[Math.floor(Math.random() * randomFence.path.length)];
+            
+            // 确保获取到正确的经纬度值
+            randomLat = randomPoint.lat || 
+                         (typeof randomPoint.getLat === 'function' ? randomPoint.getLat() : randomPoint.lat) || 
+                         randomLat;
+            
+            randomLng = randomPoint.lng || 
+                         (typeof randomPoint.getLng === 'function' ? randomPoint.getLng() : randomPoint.lng) || 
+                         randomLng;
+        }
+    }
+    
+    // 准备提交的数据
+    const submitData = {
+        districtCode: formData.district,
+        farmName: formData.farmName,
+        farmAddress: formData.address,
+        fences: formattedFences,
+        farmLinkers: formattedLinkers,  // 添加联系人数据
+        remark: formData.remark || '',
+        latitude: String(randomLat),
+        longitude: String(randomLng)
+    };
+    
+    // 输出数据结构以检查格式
+    console.log('准备提交的数据:', JSON.stringify(submitData, null, 2));
+    
+    // API调用 - 已启用
+    try {
+        if (isEdit.value) {
+            // 添加主键用于更新
+            submitData.primaryKey = route.query.id;
+            await updateFarm(submitData);
+        } else {
+            await saveFarm(submitData);
+        }
+        message.success(`${isEdit.value ? '编辑' : '新增'}养殖场成功`);
+        router.go(-1);
+    } catch (error) {
+        console.error(`${isEdit.value ? '编辑' : '新增'}养殖场失败:`, error);
+        message.error(`操作失败，请重试`);
+    }
 };
 
 const handleFenceEditChange = (checked) => {
     console.log('电子围栏编辑状态:', checked ? '已开启' : '已关闭');
-    
+
     // 控制地图操作栏的显示/隐藏
     showMapToolbar.value = checked;
-    
+
     // 这里可以调用 API 来启用/禁用围栏编辑功能
     // 例如: apiToggleFenceEdit(checked)
-    
+
     // 显示消息提示
     message.success(`电子围栏编辑已${checked ? '开启' : '关闭'}`);
 };
 
 onMounted(() => {
+    fetchAreaTrees();
+
     if (isEdit.value) {
         // 假设这是从API获取的养殖场数据
         const farmId = route.query.id;
