@@ -77,25 +77,39 @@ const handleMapClick = async (e: any) => {
     });
 };
 
-// 设置标记点
-const setMarker = (lnglat: any) => {
-    if (marker) {
-        map.remove(marker);
-    }
-
-    marker = new AMap.Marker({
-        position: lnglat,
-        map: map
-    });
-};
-
 // 根据经纬度更新地图中心和标记
 const updateMapPosition = (lng: number, lat: number) => {
-    if (!map) return;
+    if (!map) {
+        console.warn('地图尚未初始化，无法更新位置');
+        // 如果地图还没初始化，可以存储坐标，等初始化后再设置
+        setTimeout(() => updateMapPosition(lng, lat), 500);
+        return;
+    }
 
-    const lnglat = new AMap.LngLat(lng, lat);
-    map.setCenter(lnglat);
-    setMarker(lnglat);
+    try {
+        console.log('设置地图标记:', lng, lat);
+        const lnglat = new AMap.LngLat(lng, lat);
+        map.setCenter(lnglat);
+        setMarker(lnglat);
+    } catch (error) {
+        console.error('设置地图标记失败:', error);
+    }
+};
+const setMarker = (lnglat: any) => {
+    try {
+        if (marker) {
+            map.remove(marker);
+        }
+
+        marker = new AMap.Marker({
+            position: lnglat,
+            map: map
+        });
+        
+        console.log('标记点已设置');
+    } catch (error) {
+        console.error('设置标记点失败:', error);
+    }
 };
 
 // 暴露给父组件使用的方法

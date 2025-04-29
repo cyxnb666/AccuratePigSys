@@ -16,7 +16,7 @@ export function getDistrictDetail(areacode: string) {
         method: 'post',
         data: {
             condition: {
-                areacode
+                primaryKey: areacode
             }
         }
     });
@@ -30,5 +30,26 @@ export function updateDistrict(data: any) {
         data: {
             condition: data
         }
+    });
+}
+
+// 启用/禁用行政区划
+export function enableDistrict(areacode: string) {
+    return axios({
+        url: '/web/area/enable',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: areacode
+            }
+        }
+    });
+}
+
+// 获取行政区划树形数据
+export function getAreaTrees() {
+    return axios({
+        url: '/web/area/selectWholeAreaTrees',
+        method: 'post'
     });
 }

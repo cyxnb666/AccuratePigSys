@@ -1,13 +1,13 @@
 <template>
     <a-modal :title="'编辑行政区划'" v-model:open="dialogVisible" :destroyOnClose="true" :maskClosable="false" width="700px"
-        class="district-dialog" :footer="null">
+        class="district-dialog" :footer="null" @open="handleModalOpen">
         <a-form :model="formData" ref="formRef" :rules="rules" layout="vertical">
             <!-- 上级行政区划 (使用树结构) -->
             <a-form-item label="上级行政区划" name="parentDistrict">
                 <a-tree-select v-model:value="formData.parentDistrict" :tree-data="districtTreeData"
-                    placeholder="请选择上级行政区划" allow-clear tree-default-expand-all
+                    placeholder="请选择上级行政区划" allow-clear
                     :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-node-filter-prop="'title'"
-                    :show-search="true" />
+                    :show-search="true" :disabled="isEdit" />
             </a-form-item>
 
             <!-- 行政区划名称和代码 (Side by side) -->
@@ -19,7 +19,7 @@
                 </a-col>
                 <a-col :span="12">
                     <a-form-item label="行政区划代码" name="districtCode">
-                        <a-input v-model:value="formData.districtCode" placeholder="请输入行政区划代码" />
+                        <a-input v-model:value="formData.districtCode" placeholder="请输入行政区划代码" :disabled="isEdit" />
                     </a-form-item>
                 </a-col>
             </a-row>
@@ -65,6 +65,7 @@
 import { ref, reactive, defineProps, defineEmits, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import MapComponent from './MapComponent.vue';
+import { updateDistrict } from '../api';
 
 const mapRef = ref();
 
@@ -80,6 +81,10 @@ const props = defineProps({
     record: {
         type: Object,
         default: () => ({})
+    },
+    districtTreeData: {
+        type: Array,
+        default: () => []
     }
 });
 
@@ -94,56 +99,6 @@ const dialogVisible = computed({
 const formRef = ref();
 const submitting = ref(false);
 
-// 模拟行政区划树形数据 - 参考TenantDialog
-const districtTreeData = [
-    {
-        title: '四川省',
-        value: 'sichuan',
-        key: 'sichuan',
-        children: [
-            {
-                title: '成都市',
-                value: 'chengdu',
-                key: 'sichuan-chengdu',
-                children: [
-                    {
-                        title: '武侯区',
-                        value: 'wuhou',
-                        key: 'sichuan-chengdu-wuhou',
-                    },
-                    {
-                        title: '锦江区',
-                        value: 'jinjiang',
-                        key: 'sichuan-chengdu-jinjiang',
-                    }
-                ]
-            },
-            {
-                title: '绵阳市',
-                value: 'mianyang',
-                key: 'sichuan-mianyang',
-            }
-        ]
-    },
-    {
-        title: '重庆市',
-        value: 'chongqing',
-        key: 'chongqing',
-        children: [
-            {
-                title: '渝中区',
-                value: 'yuzhong',
-                key: 'chongqing-yuzhong',
-            },
-            {
-                title: '江北区',
-                value: 'jiangbei',
-                key: 'chongqing-jiangbei',
-            }
-        ]
-    }
-];
-
 const formData = reactive({
     parentDistrict: undefined,
     districtName: '',
@@ -155,13 +110,35 @@ const formData = reactive({
 
 const rules = {
     parentDistrict: [{ required: true, message: '请选择上级行政区划', trigger: 'change' }],
-    districtName: [{ required: true, message: '请输入行政区划名称', trigger: 'blur' }],
+    districtName: [
+        { required: true, message: '请输入行政区划名称', trigger: 'blur' },
+        { pattern: /^[\u4e00-\u9fa5]{1,50}$/, message: '行政区划名称只能输入1-50个中文字符', trigger: 'blur' }
+    ],
     districtCode: [{ required: true, message: '请输入行政区划代码', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }],
     longitude: [{ required: true, message: '请输入经度', trigger: 'blur' }],
     latitude: [{ required: true, message: '请输入纬度', trigger: 'blur' }]
 };
 
+const handleModalOpen = () => {
+    // 在对话框打开后再次尝试更新地图位置
+    if (props.isEdit && formData.longitude && formData.latitude) {
+        updateMapMarker();
+    }
+};
+
+const updateMapMarker = () => {
+    const lng = parseFloat(formData.longitude);
+    const lat = parseFloat(formData.latitude);
+    
+    if (!isNaN(lng) && !isNaN(lat)) {
+        // 增加延迟，确保地图组件已经渲染完成
+        setTimeout(() => {
+            console.log('更新地图位置:', lng, lat);
+            mapRef.value?.updateMapPosition(lng, lat);
+        }, 300); // 增加延迟时间
+    }
+};
 const handlePositionUpdate = (position: { longitude: number; latitude: number; address: string }) => {
     formData.longitude = position.longitude.toFixed(6);
     formData.latitude = position.latitude.toFixed(6);
@@ -187,17 +164,22 @@ watch(
                     formData[key] = record[key];
                 }
             });
-
-            // 如果存在经纬度，更新地图显示
-            const lng = parseFloat(record.longitude);
-            const lat = parseFloat(record.latitude);
-            if (!isNaN(lng) && !isNaN(lat)) {
-                setTimeout(() => {
-                    mapRef.value?.updateMapPosition(lng, lat);
-                }, 100);
+            
+            // 对话框打开后更新地图标记
+            if (dialogVisible.value) {
+                updateMapMarker();
             }
         } else if (visible && !props.isEdit) {
             resetForm();
+        }
+    }
+);
+
+watch(
+    () => [formData.longitude, formData.latitude],
+    () => {
+        if (dialogVisible.value && formData.longitude && formData.latitude) {
+            updateMapMarker();
         }
     }
 );
@@ -225,17 +207,31 @@ const handleCancel = () => {
 
 const handleSubmit = () => {
     formRef.value.validate()
-        .then(() => {
+        .then(async () => {
             submitting.value = true;
-
-            // 模拟API调用
-            setTimeout(() => {
+            
+            try {
+                // 构造提交数据
+                const submitData = {
+                    areacode: formData.districtCode,
+                    areaname: formData.districtName,
+                    parentAreacode: formData.parentDistrict,
+                    enabled: formData.status === '启用' ? '1' : '0',
+                    longitude: formData.longitude,
+                    latitude: formData.latitude
+                };
+                
+                await updateDistrict(submitData);
+                
                 message.success('编辑行政区划成功');
-                submitting.value = false;
                 emit('success', { ...formData });
                 dialogVisible.value = false;
                 resetForm();
-            }, 500);
+            } catch (error) {
+                console.error('编辑行政区划失败:', error);
+            } finally {
+                submitting.value = false;
+            }
         })
         .catch(errorInfo => {
             console.log('验证失败:', errorInfo);
