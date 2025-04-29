@@ -63,8 +63,8 @@
         <a-form-item label="养殖场" name="farmId" required>
           <a-select v-model:value="formData.farmId" placeholder="请选择养殖场" show-search option-filter-prop="label">
             <a-select-option v-for="farm in livestockFarms" :key="farm.farmId" :value="farm.farmId"
-              :label="farm.farmAddress">
-              {{ farm.farmAddress }}
+              :label="farm.farmName">
+              {{ farm.farmName }}
             </a-select-option>
           </a-select>
         </a-form-item>
