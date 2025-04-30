@@ -73,7 +73,7 @@ const loading = ref(false);
 
 // 搜索表单
 const searchForm = reactive({
-  district: undefined,
+  district: '',
   farmName: ''
 });
 
@@ -200,7 +200,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-  searchForm.district = undefined;
+  searchForm.district = '';
   searchForm.farmName = '';
   handleSearch();
 };

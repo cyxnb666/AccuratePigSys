@@ -67,7 +67,7 @@ const router = useRouter();
 
 // 搜索表单
 const searchForm = reactive({
-    district: undefined,
+    district: '',
     farmName: '',
     reportDate: []
 });
@@ -175,7 +175,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-    searchForm.district = undefined;
+    searchForm.district = '';
     searchForm.farmName = '';
     searchForm.reportDate = [];
 };
