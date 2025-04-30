@@ -7,7 +7,7 @@
 
       <div class="app-menu">
         <a-menu mode="horizontal" v-model:selectedKeys="state.selectedKeys" @click="clickMenu">
-          <a-menu-item v-for="item in menuItems" :key="item.name">
+          <a-menu-item v-for="item in accessibleMenuItems" :key="item.name">
             <template #icon>
               <component :is="item.meta?.icon" v-if="item.meta?.icon" />
             </template>
@@ -19,7 +19,7 @@
       <div class="header-right">
         <a-dropdown>
           <a class="ant-dropdown-link" @click.prevent>
-            管理员 <down-outlined />
+            {{ userInfo.username }} <down-outlined />
           </a>
           <template #overlay>
             <a-menu>
@@ -36,7 +36,7 @@
     </div>
 
     <!-- 内容区域 -->
-    <div class="app-content" :class="{ 'no-padding': route.name === 'dashboard' }">
+    <div class="app-content" :class="{ 'no-padding': route.name === 'HOME' }">
       <router-view></router-view>
     </div>
 
@@ -46,10 +46,10 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, watch, computed, ref } from 'vue';
+import { reactive, watch, computed, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { DownOutlined } from '@ant-design/icons-vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 import PasswordChangeDialog from './components/PasswordChangeDialog.vue';
 import { logout } from './api';
 
@@ -58,54 +58,81 @@ const router = useRouter();
 const route = useRoute();
 
 const state = reactive({
-  selectedKeys: ['tenant']
+  selectedKeys: ['HOME']
 });
 
-// 直接从路由配置获取菜单项
-const menuItems = computed(() => {
-  // 查找主路由
-  const mainRoute = router.options.routes.find(route => route.path === '/');
-  if (!mainRoute || !mainRoute.children) return [];
+// 获取用户信息
+const userInfo = computed(() => {
+  const userInfoStr = sessionStorage.getItem('userInfo');
+  return userInfoStr ? JSON.parse(userInfoStr) : {};
+});
 
-  // 返回所有子路由作为菜单项，但过滤掉hideInMenu为true的项
-  return mainRoute.children.filter(route => !route.meta?.hideInMenu);
+// 获取用户权限菜单
+const userMenuCodes = computed(() => {
+  const menusStr = sessionStorage.getItem('menus');
+  if (!menusStr) return [];
+
+  const menus = JSON.parse(menusStr);
+  return menus.map(menu => menu.menuCode);
+});
+
+// 获取所有路由项
+const allMenuItems = computed(() => {
+  // 查找主路由
+  const mainRoute = router.getRoutes().find(route => route.name === 'Main');
+  if (!mainRoute) return [];
+
+  // 获取所有子路由
+  return router.getRoutes()
+    .filter(route =>
+      route.path.startsWith('/') &&
+      route.name &&
+      route.name !== 'Main' &&
+      route.name !== 'Login' &&
+      route.name !== '404'
+    );
+});
+
+// 用户有权限访问的菜单项
+const accessibleMenuItems = computed(() => {
+  return allMenuItems.value.filter(route =>
+    route.meta?.permission &&
+    userMenuCodes.value.includes(route.meta.permission as string) &&
+    !route.meta.hideInMenu
+  );
 });
 
 // 监听路由变化，更新选中的菜单项
 watch(
   () => route.path,
   (path) => {
-    const pathParts = path.split('/');
-    if (pathParts.length > 1) {
-      state.selectedKeys = [pathParts[1]];
+    const currentRoute = router.getRoutes().find(r => r.path === path);
+    if (currentRoute && currentRoute.name) {
+      state.selectedKeys = [currentRoute.name.toString()];
     }
   },
   { immediate: true }
 );
 
+// 在组件挂载时初始化选中的菜单
+onMounted(() => {
+  const path = route.path;
+  const currentRoute = router.getRoutes().find(r => r.path === path);
+  if (currentRoute && currentRoute.name) {
+    state.selectedKeys = [currentRoute.name.toString()];
+  }
+});
+
 // 菜单点击处理
 const clickMenu = (menuInfo) => {
-  router.push(`/${menuInfo.key}`);
-};
-
-// 修改密码
-const changePassword = () => {
-  passwordDialogVisible.value = true;
-};
-
-const handlePasswordChangeSuccess = (data) => {
-  console.log('密码修改成功，新数据:', data);
-  
-  // 如果需要退出登录
-  if (data.shouldLogout) {
-    setTimeout(() => {
-      outLogin(); // 延迟一点调用退出登录，让用户看到成功消息
-    }, 1500);
+  const route = router.getRoutes().find(r => r.name && r.name.toString() === menuInfo.key);
+  if (route) {
+    router.push(route.path);
   }
 };
 
-// 退出登录
-const outLogin = async () => {
+// 实际执行退出登录的函数
+const performLogout = async () => {
   try {
     await logout();
     message.success('退出登录成功');
@@ -116,6 +143,36 @@ const outLogin = async () => {
     sessionStorage.clear();
     router.push('/login');
   }
+};
+
+// 修改密码
+const changePassword = () => {
+  passwordDialogVisible.value = true;
+};
+
+const handlePasswordChangeSuccess = (data) => {
+  console.log('密码修改成功，新数据:', data);
+
+  // 如果需要退出登录
+  if (data.shouldLogout) {
+    setTimeout(() => {
+      // 修改密码后直接退出，不需要二次确认
+      performLogout();
+    }, 1500);
+  }
+};
+
+// 退出登录
+const outLogin = () => {
+  Modal.confirm({
+    title: '确认退出',
+    content: '您确定要退出登录吗？',
+    okText: '确认',
+    cancelText: '取消',
+    onOk: () => {
+      performLogout();
+    }
+  });
 };
 </script>
 
@@ -176,6 +233,7 @@ const outLogin = async () => {
       margin-left: 20px;
 
       .ant-dropdown-link {
+        font-size: medium;
         color: white;
         cursor: pointer;
       }

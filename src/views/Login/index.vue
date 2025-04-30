@@ -59,6 +59,7 @@ import {
 } from '@ant-design/icons-vue';
 import { getVerifyCode, login } from './api';
 import { MD5 } from 'crypto-js';
+import { addDynamicRoutes } from '@/routes';
 
 const router = useRouter();
 const route = useRoute();
@@ -142,8 +143,19 @@ const onFinish = async () => {
         roleCode: res.roleCode,
         userMobile: res.userMobile
       }));
-
-      router.push('/tenant');
+      
+      // 保存菜单权限
+      sessionStorage.setItem('menus', JSON.stringify(res.menus));
+      
+      // 添加动态路由
+      addDynamicRoutes(res.menus);
+      
+      // 跳转到第一个有权限的菜单
+      if (res.menus.length > 0) {
+        router.push(`/${res.menus[0].menuCode}`);
+      } else {
+        router.push('/login');
+      }
     }
   } catch (error) {
     console.error('登录失败:', error);
