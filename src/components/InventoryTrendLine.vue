@@ -70,7 +70,6 @@ const initChart = () => {
         legend: {
             data: props.trendData.series.map(item => item.name),
             top: 'bottom',
-            // padding: [20, 0, 0, 0]
         },
         grid: {
             left: '3%',

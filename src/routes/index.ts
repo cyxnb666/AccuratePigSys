@@ -171,14 +171,6 @@ const router = createRouter({
     routes: routes
 });
 
-// router.beforeEach((to, _, next) => {
-//     if (to.path === '/') {
-//         next('/tenant');
-//     } else {
-//         next();
-//     }
-// });
-
 router.beforeEach((to, from, next) => {
     const isLoginPage = to.path === '/login';
     

@@ -223,7 +223,7 @@ const initMap = () => {
         fenceDialogVisible.value = true;
     });
 
-    // 监听编辑结束事件，确保我们获取最新的编辑后的多边形点
+    // 监听编辑结束事件，确保获取最新的编辑后的多边形点
     polyEditor.on('end', function (event) {
         if (selectedPolygon.value) {
             const editedPath = selectedPolygon.value.getPath();
@@ -917,10 +917,8 @@ defineExpose({
         position: absolute;
         top: 10px;
         left: 10px;
-        // background-color: #fff;
         padding: 10px;
         border-radius: 4px;
-        // box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
     .layer-switcher {
