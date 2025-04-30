@@ -67,7 +67,7 @@ const searchForm = reactive({
 });
 
 // 表格高度 - 调整为固定高度
-const tableHeight = ref('calc(80vh - 210px)');
+const tableHeight = ref('calc(80vh - 175px)');
 
 // 更新表格列
 const columns = [
