@@ -58,7 +58,8 @@
                         <a-button type="primary" size="small" @click="showAddContactDialog"
                             style="margin-left: 10px;">新增</a-button>
                     </div>
-                    <a-table :columns="contactColumns" :data-source="contacts" :pagination="false" bordered>
+                    <a-table :columns="contactColumns" :data-source="contacts" :pagination="false"
+                        :loading="contactsTableLoading" bordered>
                         <template #bodyCell="{ column, record, index }">
                             <template v-if="column.key === 'name'">
                                 <span v-if="!record.isEditing">{{ record.name }}</span>
@@ -151,7 +152,7 @@
             </a-form>
             <template #footer>
                 <a-button @click="contactDialogVisible = false">取 消</a-button>
-                <a-button type="primary" @click="addContact">确 定</a-button>
+                <a-button type="primary" @click="addContact" :loading="contactDialogLoading">确 定</a-button>
             </template>
         </a-modal>
     </div>
@@ -182,6 +183,8 @@ const isEdit = ref(route.query.id !== undefined);
 const fenceMapRef = ref<any>(null);
 const fenceEditEnabled = ref(false);
 const showMapToolbar = ref(false);
+const contactDialogLoading = ref(false);
+const contactsTableLoading = ref(false);
 
 // 行政区划树形数据
 const districtTreeData = ref([]);
@@ -323,6 +326,7 @@ const addContact = async () => {
 
     if (isEdit.value) {
         const farmId = route.query.id as string;
+        contactDialogLoading.value = true;
         try {
             // 调用API添加联系人
             const contactData = {
@@ -337,10 +341,15 @@ const addContact = async () => {
             message.success('添加联系人成功');
 
             // 重新加载联系人列表
+            contactsTableLoading.value = true;
             const farmLinkers = await getFarmLinkers(farmId);
             updateContactsFromAPI(farmLinkers);
+            contactsTableLoading.value = false;
+            contactDialogVisible.value = false;
         } catch (error) {
             console.error('添加联系人失败:', error);
+        } finally {
+            contactDialogLoading.value = false;
         }
     } else {
         // 新增模式，仅在本地添加
@@ -363,6 +372,7 @@ const addContact = async () => {
 
         contacts.value.push(contact);
         message.success('添加联系人成功');
+        contactDialogVisible.value = false;
     }
 
     contactDialogVisible.value = false;
@@ -523,7 +533,7 @@ const saveForm = async () => {
             coordinate: coordinatesJson,
             fenceName: fence.name,
             remark: fence.remark || '',
-            enabled: fence.isDisabled ? "2" : "1"  // "1"表示启用，"2"表示禁用
+            enabled: fence.isDisabled ? "0" : "1"  // "1"表示启用，"0"表示禁用
         };
     });
 
@@ -570,7 +580,6 @@ const saveForm = async () => {
         }));
     }
 
-    // 输出数据结构以检查格式
     console.log('准备提交的数据:', JSON.stringify(submitData, null, 2));
 
     try {
@@ -607,6 +616,7 @@ onMounted(async () => {
         try {
             // 显示加载提示
             const loadingMsg = message.loading('正在加载养殖场数据...', 0);
+            contactsTableLoading.value = true;
 
             // 获取养殖场详情
             const farmDetail = await getFarmDetail(farmId);
@@ -616,6 +626,7 @@ onMounted(async () => {
 
             // 关闭加载提示
             loadingMsg();
+            contactsTableLoading.value = false;
 
             // 填充基本信息
             formData.district = farmDetail.districtCode;
@@ -669,6 +680,7 @@ onMounted(async () => {
             }
 
         } catch (error) {
+            contactsTableLoading.value = false;
             console.error('获取养殖场数据失败:', error);
         }
     }
