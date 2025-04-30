@@ -160,3 +160,16 @@ export function deleteContact(farmLinkerId: string) {
         }
     });
 }
+
+// 开启-关闭围栏编辑开关
+export function toggleFenceEdit(primaryKey: string) {
+    return axios({
+        url: '/web/livestock/openOrCloseFenceEdit',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey
+            }
+        }
+    });
+}

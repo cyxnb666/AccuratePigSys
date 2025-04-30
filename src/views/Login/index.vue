@@ -147,7 +147,6 @@ const onFinish = async () => {
     }
   } catch (error) {
     console.error('登录失败:', error);
-    message.error('登录失败，请检查输入信息');
     // 刷新验证码
     refreshVerifyCode();
   } finally {

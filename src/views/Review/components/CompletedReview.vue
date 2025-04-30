@@ -260,7 +260,7 @@ const handleTableChange = (page) => {
     gap: 16px;
 
     .search-form {
-        padding: 16px;
+        // padding: 16px;
         background-color: white;
         border-radius: 4px;
     }

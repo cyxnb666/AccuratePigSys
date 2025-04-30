@@ -109,12 +109,12 @@
                 <div class="fence-section">
                     <div class="section-header">
                         <span class="section-title">养殖场电子围栏编辑</span>
-                        <div class="fence-edit-switch">
+                        <div class="fence-edit-switch" v-if="hasEditPermission">
                             <span>开启电子围栏编辑</span>
                             <a-switch v-model:checked="fenceEditEnabled" @change="handleFenceEditChange" />
                         </div>
                     </div>
-                    <electronic-fence-map ref="fenceMapRef" :showToolbar="showMapToolbar" />
+                    <electronic-fence-map ref="fenceMapRef" :showToolbar="toolbarVisible" />
                 </div>
 
                 <!-- 底部空白区域，确保电子围栏完全可见 -->
@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
@@ -174,7 +174,8 @@ import {
     setAsPrimaryContact,
     editContact,
     addContact as apiAddContact,
-    deleteContact as apiDeleteContact
+    deleteContact as apiDeleteContact,
+    toggleFenceEdit
 } from '../api';
 
 const router = useRouter();
@@ -185,6 +186,7 @@ const fenceEditEnabled = ref(false);
 const showMapToolbar = ref(false);
 const contactDialogLoading = ref(false);
 const contactsTableLoading = ref(false);
+const editFenceStatus = ref('0');
 
 // 行政区划树形数据
 const districtTreeData = ref([]);
@@ -215,6 +217,32 @@ const transformAreaData = (areaList: any[]): any[] => {
         return node;
     });
 };
+
+// 检查用户是否有权限编辑围栏
+const hasEditPermission = computed(() => {
+    try {
+        const userInfoStr = sessionStorage.getItem('userInfo');
+        if (!userInfoStr) return false;
+        
+        const userInfo = JSON.parse(userInfoStr);
+        const allowedRoles = ['BUSI_MANAGER', 'SURVEY_MANAGER'];
+        
+        return allowedRoles.includes(userInfo.roleCode);
+    } catch (error) {
+        console.error('Error checking user permissions:', error);
+        return false;
+    }
+});
+// 专门计算操作栏可见性的计算属性
+const toolbarVisible = computed(() => {
+  // 有特定权限的用户始终可以看到操作栏
+  if (hasEditPermission.value) {
+    return true;
+  }
+  
+  // 对于其他用户，根据editFence状态决定
+  return editFenceStatus.value === '1';
+});
 
 // 表单数据
 const formData = reactive({
@@ -477,7 +505,7 @@ const deleteContact = async (record) => {
         onOk: async () => {
             if (isEdit.value) {
                 try {
-                    await apiDeleteContact(record.key);
+                    await apiDeleteContact(record.userId);
                     contacts.value = contacts.value.filter(item => item.key !== record.key);
                     message.success('删除联系人成功');
                 } catch (error) {
@@ -597,18 +625,45 @@ const saveForm = async () => {
     }
 };
 
-const handleFenceEditChange = (checked) => {
-    console.log('电子围栏编辑状态:', checked ? '已开启' : '已关闭');
-
-    // 控制地图操作栏的显示/隐藏
+// 围栏编辑状态变化
+const handleFenceEditChange = async (checked) => {
+  // 检查权限
+  if (!hasEditPermission.value) {
+    message.error('您没有权限操作电子围栏编辑功能');
+    fenceEditEnabled.value = false; // 重置开关状态
+    return;
+  }
+  
+  try {
+    const farmId = route.query.id as string;
+    if (!farmId) {
+      message.error('养殖场ID不存在');
+      return;
+    }
+    
+    // 调用API更新服务器上的状态
+    await toggleFenceEdit(farmId);
+    
+    // 更新本地状态
+    editFenceStatus.value = checked ? '1' : '0';
     showMapToolbar.value = checked;
-
-    // 显示消息提示
+    
+    console.log('电子围栏编辑状态:', checked ? '已开启' : '已关闭');
     message.success(`电子围栏编辑已${checked ? '开启' : '关闭'}`);
+  } catch (error) {
+    console.error('切换电子围栏编辑状态失败:', error);
+    // 操作失败时回滚UI状态
+    fenceEditEnabled.value = !checked;
+  }
 };
 
 onMounted(async () => {
     fetchAreaTrees();
+
+    if (!hasEditPermission.value) {
+        fenceEditEnabled.value = false;
+        showMapToolbar.value = false;
+    }
 
     if (isEdit.value) {
         const farmId = route.query.id as string;
@@ -634,6 +689,11 @@ onMounted(async () => {
             formData.address = farmDetail.farmAddress;
             formData.remark = farmDetail.remark || '';
             formData.farmId = farmId;
+
+            // 存储并设置围栏编辑状态
+            editFenceStatus.value = farmDetail.editFence || '0';
+            fenceEditEnabled.value = editFenceStatus.value === '1';
+            showMapToolbar.value = fenceEditEnabled.value;
 
             // 填充联系人列表
             updateContactsFromAPI(farmLinkers);
