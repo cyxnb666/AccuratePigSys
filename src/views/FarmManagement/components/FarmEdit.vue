@@ -527,9 +527,9 @@ const saveForm = async () => {
         };
     });
 
-    // 定义默认的经纬度（如果没有围栏点则使用）
-    let randomLat = "39.916527";
-    let randomLng = "116.397128";
+    // 如果没有围栏点就--
+    let randomLat = "0.0";
+    let randomLng = "0.0";
 
     // 从围栏点中随机选择一个点获取经纬度
     if (fenceList.length > 0) {
