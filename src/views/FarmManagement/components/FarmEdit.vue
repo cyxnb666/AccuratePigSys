@@ -19,30 +19,31 @@
             <div class="scrollable-content">
                 <!-- 基本信息 -->
                 <div class="form-section">
-                    <a-form :model="formData" layout="vertical">
+                    <a-form :model="formData" layout="vertical" ref="formRef" :rules="formRules">
                         <a-row :gutter="16">
                             <a-col :span="12">
-                                <a-form-item label="行政区划" required>
+                                <a-form-item label="行政区划" name="district" required>
                                     <a-tree-select v-model:value="formData.district" placeholder="请选择"
                                         :tree-data="districtTreeData" allow-clear
                                         :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-                                        :tree-node-filter-prop="'title'" :show-search="true" style="width: 100%" />
+                                        :tree-node-filter-prop="'title'" :show-search="true" style="width: 100%"
+                                        :disabled="isEdit" />
                                 </a-form-item>
                             </a-col>
                             <a-col :span="12">
-                                <a-form-item label="养殖场名称" required>
+                                <a-form-item label="养殖场名称" name="farmName" required>
                                     <a-input v-model:value="formData.farmName" placeholder="请输入" />
                                 </a-form-item>
                             </a-col>
                         </a-row>
                         <a-row :gutter="16">
                             <a-col :span="12">
-                                <a-form-item label="养殖场地址" required>
+                                <a-form-item label="养殖场地址" name="address" required>
                                     <a-input v-model:value="formData.address" placeholder="请输入" />
                                 </a-form-item>
                             </a-col>
                             <a-col :span="12">
-                                <a-form-item label="备注">
+                                <a-form-item label="备注" name="remark">
                                     <a-input v-model:value="formData.remark" placeholder="请输入" />
                                 </a-form-item>
                             </a-col>
@@ -85,7 +86,9 @@
                                 }" />
                             </template>
                             <template v-if="column.key === 'remark'">
-                                <span v-if="!record.isEditing">{{ record.remark }}</span>
+                                <a-tooltip v-if="!record.isEditing" placement="topLeft" :title="record.remark">
+                                    <span class="col-sql">{{ record.remark }}</span>
+                                </a-tooltip>
                                 <a-textarea v-else v-model:value="record.remark" :rows="1" />
                             </template>
                             <template v-if="column.key === 'action'">
@@ -218,6 +221,23 @@ const formData = reactive({
     remark: '',
     farmId: '' // 仅编辑模式使用
 });
+const formRef = ref(null);
+const formRules = {
+    district: [
+        { required: true, message: '请选择行政区划', trigger: 'change' }
+    ],
+    farmName: [
+        { required: true, message: '请输入养殖场名称', trigger: 'blur' },
+        { pattern: /^[\u4e00-\u9fa5]{1,50}$/, message: '养殖场名称只能输入1-50个中文字符', trigger: 'blur' }
+    ],
+    address: [
+        { required: true, message: '请输入养殖场地址', trigger: 'blur' },
+        { pattern: /^[\u4e00-\u9fa5]{1,150}$/, message: '养殖场地址只能输入1-150个中文字符', trigger: 'blur' }
+    ],
+    remark: [
+        { pattern: /^[\u4e00-\u9fa5]{0,250}$/, message: '备注只能输入0-250个中文字符', trigger: 'blur' }
+    ]
+};
 
 // 联系人列表配置
 const contactColumns = [
@@ -321,7 +341,6 @@ const addContact = async () => {
             updateContactsFromAPI(farmLinkers);
         } catch (error) {
             console.error('添加联系人失败:', error);
-            message.error('添加联系人失败');
         }
     } else {
         // 新增模式，仅在本地添加
@@ -392,7 +411,6 @@ const saveContactChanges = async (record) => {
 
     } catch (error) {
         console.error('保存联系人信息失败:', error);
-        message.error('保存联系人信息失败');
 
         // 恢复原始值
         record.name = record._originalName;
@@ -411,7 +429,6 @@ const toggleContactStatus = async (record) => {
             message.success(`已${record.status === '启用' ? '启用' : '禁用'}联系人: ${record.name}`);
         } catch (error) {
             console.error('更新联系人状态失败:', error);
-            message.error('操作失败，请重试');
         }
     } else {
         // 新增模式，仅在本地切换状态
@@ -433,7 +450,6 @@ const setPrimaryContact = async (record) => {
             message.success(`已设置 ${record.name} 为主要联系人`);
         } catch (error) {
             console.error('设置主要联系人失败:', error);
-            message.error('操作失败，请重试');
         }
     } else {
         // 新增模式，仅在本地设置主要联系人
@@ -456,7 +472,6 @@ const deleteContact = async (record) => {
                     message.success('删除联系人成功');
                 } catch (error) {
                     console.error('删除联系人失败:', error);
-                    message.error('删除联系人失败，请重试');
                 }
             } else {
                 // 新增模式，仅在本地删除
@@ -485,8 +500,11 @@ const updateContactsFromAPI = (farmLinkers) => {
 };
 
 const saveForm = async () => {
-    if (!formData.district || !formData.farmName || !formData.address) {
-        message.error('请填写必填项');
+    // 表单验证
+    try {
+        await formRef.value.validate();
+    } catch (error) {
+        message.error('请正确填写表单信息');
         return;
     }
 
@@ -567,7 +585,6 @@ const saveForm = async () => {
         router.go(-1);
     } catch (error) {
         console.error(`${isEdit.value ? '编辑' : '新增'}养殖场失败:`, error);
-        message.error(`操作失败，请重试`);
     }
 };
 
@@ -653,7 +670,6 @@ onMounted(async () => {
 
         } catch (error) {
             console.error('获取养殖场数据失败:', error);
-            message.error('获取养殖场数据失败，请重试');
         }
     }
 });
@@ -695,6 +711,14 @@ onMounted(async () => {
 
     .form-section {
         margin-bottom: 16px;
+    }
+
+    .col-sql {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        width: 100px;
     }
 
     .section-header {

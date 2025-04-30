@@ -47,8 +47,9 @@
 
       <!-- 分页 -->
       <div class="pagination">
-        <a-pagination v-model:current="pagination.current" :total="pagination.total" :page-size="pagination.pageSize"
-          @change="handleTableChange" show-size-changer />
+        <a-pagination v-model:current="pagination.current" v-model:pageSize="pagination.pageSize"
+          :total="pagination.total" @change="handleTableChange" show-size-changer
+          :show-total="(total) => `共 ${total} 条记录`" />
       </div>
     </div>
 
