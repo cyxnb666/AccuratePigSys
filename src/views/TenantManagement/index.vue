@@ -174,7 +174,6 @@ const fetchAreaTrees = async () => {
   }
 };
 
-// 获取表格数据
 const fetchTableData = async () => {
   loading.value = true;
   try {
@@ -206,7 +205,6 @@ const fetchTableData = async () => {
   }
 };
 
-// 方法
 const handleSearch = () => {
   pagination.current = 1;
   fetchTableData();
@@ -256,14 +254,12 @@ const handleStatusChange = async (record) => {
   }
 };
 
-// 点击"新增租户"按钮
 const handleAdd = () => {
   isEdit.value = false;
   currentRecord.value = {};
   dialogVisible.value = true;
 };
 
-// 点击"编辑"按钮
 const handleEdit = async (record) => {
   try {
     // 设置当前正在编辑的记录ID和loading状态
@@ -280,13 +276,11 @@ const handleEdit = async (record) => {
   } catch (error) {
     console.error('获取租户详情失败:', error);
   } finally {
-    // 无论成功还是失败，都重置loading状态
     editLoading.value = false;
     editingId.value = null;
   }
 };
 
-// 对话框提交成功回调
 const handleDialogSuccess = () => {
   fetchTableData();
 };

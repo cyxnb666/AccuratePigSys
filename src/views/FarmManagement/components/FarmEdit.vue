@@ -297,7 +297,6 @@ const newContactErrors = reactive({
     phone: ''
 });
 
-// 方法
 const goBack = () => {
     router.go(-1);
 };
