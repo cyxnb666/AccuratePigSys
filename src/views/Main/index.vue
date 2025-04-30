@@ -191,6 +191,8 @@ const outLogin = () => {
     color: white;
 
     .header-left {
+      flex-shrink: 0;
+
       .logo {
         font-size: 18px;
         font-weight: bold;
@@ -201,10 +203,20 @@ const outLogin = () => {
 
     .app-menu {
       flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      -ms-overflow-style: none;
+      scrollbar-width: none;
 
       :deep(.ant-menu) {
         background-color: transparent;
         border-bottom: none;
+        white-space: nowrap;
 
         &.ant-menu-horizontal {
           .ant-menu-item {
@@ -231,6 +243,7 @@ const outLogin = () => {
 
     .header-right {
       margin-left: 20px;
+      flex-shrink: 0;
 
       .ant-dropdown-link {
         font-size: medium;
