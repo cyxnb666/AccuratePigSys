@@ -2,21 +2,52 @@
     <div class="review-container">
         <a-tabs v-model:activeKey="activeKey" class="review-tabs">
             <a-tab-pane key="pending" tab="待审核任务">
-                <pending-review v-if="activeKey === 'pending'" />
+                <pending-review v-if="activeKey === 'pending'" :area-tree-data="areaTreeData" />
             </a-tab-pane>
             <a-tab-pane key="completed" tab="已审核任务">
-                <completed-review v-if="activeKey === 'completed'" />
+                <completed-review v-if="activeKey === 'completed'" :area-tree-data="areaTreeData" />
             </a-tab-pane>
         </a-tabs>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import PendingReview from './components/PendingReview.vue';
 import CompletedReview from './components/CompletedReview.vue';
+import { getAreaTrees } from './api';
 
 const activeKey = ref('pending');
+const areaTreeData = ref<any[]>([]);
+
+// 转换行政区划数据为树形结构
+const transformAreaData = (areaList: any[]): any[] => {
+    return areaList.map(area => {
+        const node = {
+            title: area.areaname,
+            value: area.areacode,
+            key: area.areacode,
+            children: area.children ? transformAreaData(area.children) : []
+        };
+        return node;
+    });
+};
+
+// 获取行政区划数据
+const fetchAreaTrees = async () => {
+    try {
+        const res = await getAreaTrees();
+        if (res) {
+            areaTreeData.value = transformAreaData(res);
+        }
+    } catch (error) {
+        console.error('获取行政区划数据失败:', error);
+    }
+};
+
+onMounted(() => {
+    fetchAreaTrees();
+});
 </script>
 
 <style lang="scss" scoped>

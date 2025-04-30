@@ -6,7 +6,7 @@
                 <a-row :gutter="16" style="width: 100%">
                     <a-col>
                         <a-form-item label="行政区划:">
-                            <a-tree-select v-model:value="searchForm.district" :tree-data="districtTreeData"
+                            <a-tree-select v-model:value="searchForm.district" :tree-data="areaTreeData"
                                 placeholder="请选择行政区划" allow-clear
                                 :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
                                 :tree-node-filter-prop="'title'" :show-search="true" style="min-width: 200px" />
@@ -50,17 +50,19 @@
 
             <!-- 分页 -->
             <div class="pagination">
-                <a-pagination v-model:current="pagination.current" :total="pagination.total"
-                    :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer />
+                <a-pagination v-model:current="pagination.current" v-model:pageSize="pagination.pageSize"
+                    :total="pagination.total" @change="handleTableChange" show-size-changer
+                    :show-total="(total) => `共 ${total} 条记录`" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
+import { getAreaTrees } from './api';
 
 const router = useRouter();
 
@@ -73,6 +75,34 @@ const searchForm = reactive({
 
 // 表格高度
 const tableHeight = ref('calc(80vh - 150px)');
+
+// 行政区划树形数据
+const areaTreeData = ref<any[]>([]);
+
+// 转换行政区划数据为树形结构
+const transformAreaData = (areaList: any[]): any[] => {
+    return areaList.map(area => {
+        const node = {
+            title: area.areaname,
+            value: area.areacode,
+            key: area.areacode,
+            children: area.children ? transformAreaData(area.children) : []
+        };
+        return node;
+    });
+};
+
+// 获取行政区划数据
+const fetchAreaTrees = async () => {
+    try {
+        const res = await getAreaTrees();
+        if (res) {
+            areaTreeData.value = transformAreaData(res);
+        }
+    } catch (error) {
+        console.error('获取行政区划数据失败:', error);
+    }
+};
 
 // 表格列
 const columns = [
@@ -123,56 +153,6 @@ const columns = [
         title: '操作',
         key: 'action',
         align: 'center'
-    }
-];
-
-// 行政区划树形数据
-const districtTreeData = [
-    {
-        title: '四川省',
-        value: 'sichuan',
-        key: 'sichuan',
-        children: [
-            {
-                title: '成都市',
-                value: 'chengdu',
-                key: 'sichuan-chengdu',
-                children: [
-                    {
-                        title: '武侯区',
-                        value: 'wuhou',
-                        key: 'sichuan-chengdu-wuhou',
-                    },
-                    {
-                        title: '锦江区',
-                        value: 'jinjiang',
-                        key: 'sichuan-chengdu-jinjiang',
-                    }
-                ]
-            },
-            {
-                title: '绵阳市',
-                value: 'mianyang',
-                key: 'sichuan-mianyang',
-            }
-        ]
-    },
-    {
-        title: '重庆市',
-        value: 'chongqing',
-        key: 'chongqing',
-        children: [
-            {
-                title: '渝中区',
-                value: 'yuzhong',
-                key: 'chongqing-yuzhong',
-            },
-            {
-                title: '江北区',
-                value: 'jiangbei',
-                key: 'chongqing-jiangbei',
-            }
-        ]
     }
 ];
 
@@ -239,10 +219,15 @@ const viewDetails = (record) => {
     });
 };
 
-const handleTableChange = (page) => {
+const handleTableChange = (page, pageSize) => {
     pagination.current = page;
+    pagination.pageSize = pageSize;
     // 加载当前页数据
 };
+
+onMounted(() => {
+    fetchAreaTrees();
+});
 </script>
 
 <style lang="scss" scoped>

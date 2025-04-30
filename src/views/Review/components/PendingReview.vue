@@ -6,7 +6,7 @@
                 <a-row :gutter="16" style="width: 100%">
                     <a-col>
                         <a-form-item label="行政区划:">
-                            <a-tree-select v-model:value="searchForm.district" :tree-data="districtTreeData"
+                            <a-tree-select v-model:value="searchForm.district" :tree-data="areaTreeData"
                                 placeholder="请选择行政区划" allow-clear
                                 :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
                                 :tree-node-filter-prop="'title'" :show-search="true" style="min-width: 200px" />
@@ -43,19 +43,25 @@
                 </template>
             </a-table>
 
-            <!-- 分页 -->
             <div class="pagination">
-                <a-pagination v-model:current="pagination.current" :total="pagination.total"
-                    :page-size="pagination.pageSize" @change="handleTableChange" show-size-changer />
+                <a-pagination v-model:current="pagination.current" v-model:pageSize="pagination.pageSize"
+                    :total="pagination.total" @change="handleTableChange" show-size-changer
+                    :show-total="(total) => `共 ${total} 条记录`" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { message } from 'ant-design-vue';
+import { ref, reactive, defineProps } from 'vue';
+import { useRouter } from 'vue-router';
+
+const props = defineProps({
+    areaTreeData: {
+        type: Array,
+        default: () => []
+    }
+});
 
 const router = useRouter();
 
@@ -66,10 +72,10 @@ const searchForm = reactive({
     reportDate: []
 });
 
-// 表格高度 - 调整为固定高度
+// 表格高度
 const tableHeight = ref('calc(80vh - 175px)');
 
-// 更新表格列
+// 表格列
 const columns = [
     {
         title: '序号',
@@ -134,35 +140,7 @@ const columns = [
     }
 ];
 
-// 行政区划树形数据
-const districtTreeData = [
-    {
-        title: '四川省',
-        value: 'sichuan',
-        key: 'sichuan',
-        children: [
-            {
-                title: '成都市',
-                value: 'chengdu',
-                key: 'sichuan-chengdu',
-                children: [
-                    {
-                        title: '武侯区',
-                        value: 'wuhou',
-                        key: 'sichuan-chengdu-wuhou',
-                    },
-                    {
-                        title: '锦江区',
-                        value: 'jinjiang',
-                        key: 'sichuan-chengdu-jinjiang',
-                    }
-                ]
-            }
-        ]
-    }
-];
-
-// 更新模拟数据以匹配新列
+// 生成模拟数据
 const generateData = () => {
     const data = [];
     for (let i = 1; i <= 10; i++) {
@@ -182,17 +160,15 @@ const generateData = () => {
     return data;
 };
 
-// 表格数据
 const dataSource = ref(generateData());
 
 // 分页
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 5
+    total: 22
 });
 
-// 方法
 const handleSearch = () => {
     console.log('搜索条件:', searchForm);
     pagination.current = 1;
@@ -211,8 +187,9 @@ const handleReview = (record) => {
     });
 };
 
-const handleTableChange = (page) => {
+const handleTableChange = (page, pageSize) => {
     pagination.current = page;
+    pagination.pageSize = pageSize;
 };
 </script>
 
@@ -224,7 +201,6 @@ const handleTableChange = (page) => {
     gap: 16px;
 
     .search-form {
-        // padding: 16px;
         background-color: white;
         border-radius: 4px;
     }
@@ -232,7 +208,6 @@ const handleTableChange = (page) => {
     .data-table {
         background-color: white;
         border-radius: 4px;
-        // padding: 16px;
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -258,7 +233,6 @@ const handleTableChange = (page) => {
     }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
     .ant-table-thead>tr>th {
         background-color: #F3F5F9;
