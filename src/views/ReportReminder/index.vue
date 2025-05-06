@@ -183,7 +183,7 @@ const pagination = reactive({
 const handleSearch = () => {
     console.log('搜索条件:', searchForm);
     pagination.current = 1;
-    // 实际项目中这里应该调用API进行搜索1
+    // 实际项目中这里应该调用API进行搜索
 };
 
 const handleReset = () => {
