@@ -192,7 +192,7 @@ const handleReset = () => {
 };
 
 const viewReminderDetails = (record) => {
-    router.push(`/Report/detail/${record.id}`);
+    router.push(`/WARN/detail/${record.id}`);
 };
 
 const handleTableChange = (page, pageSize) => {

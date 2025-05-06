@@ -228,7 +228,7 @@ const handleViewDetail = (record) => {
 };
 const viewMoreInventory = () => {
     if (props.farmData && props.farmData.id) {
-        router.push(`/archive/details/${props.farmData.id}`);
+        router.push(`/KEEP/details/${props.farmData.id}`);
     } else {
         message.info('无法获取养殖场ID，请稍后再试');
     }

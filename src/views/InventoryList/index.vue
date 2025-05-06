@@ -357,7 +357,7 @@ const handleDownload = () => {
 };
 
 const viewDetails = (record) => {
-    router.push(`/archive/details/${record.id}`);
+    router.push(`/KEEP/details/${record.id}`);
 };
 
 onMounted(() => {

@@ -146,7 +146,7 @@ const viewTask = (record) => {
         const viewMode = record.isReviewCompleted;
 
         router.push({
-            path: `/review/detail/${record.relatedTaskId}`,
+            path: `/AUDITD/detail/${record.relatedTaskId}`,
             query: { viewMode: viewMode.toString() }
         });
     }

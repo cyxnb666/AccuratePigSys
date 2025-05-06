@@ -213,7 +213,7 @@ const handleReset = () => {
 
 const viewDetails = (record) => {
     router.push({
-        path: `/review/detail/${record.id}`,
+        path: `/AUDITD/detail/${record.id}`,
         query: { viewMode: 'true' }
     });
 };
