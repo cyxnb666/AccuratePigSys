@@ -235,6 +235,11 @@ const hasEditPermission = computed(() => {
 });
 // 专门计算操作栏可见性的计算属性
 const toolbarVisible = computed(() => {
+  // 新增模式下始终显示操作栏
+  if (!isEdit.value) {
+    return true;
+  }
+  
   // 有特定权限的用户始终可以看到操作栏
   if (hasEditPermission.value) {
     return true;
@@ -613,6 +618,7 @@ const saveForm = async () => {
         if (isEdit.value) {
             // 添加主键用于更新
             submitData['primaryKey'] = formData.farmId;
+            submitData['farmId'] = formData.farmId;
             await updateFarm(submitData);
         } else {
             await saveFarm(submitData);

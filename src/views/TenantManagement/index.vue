@@ -16,8 +16,8 @@
           </a-col>
           <a-col>
             <a-form-item>
-              <a-button type="primary" @click="handleSearch">查 询</a-button>
-              <a-button style="margin-left: 8px" @click="handleReset">重 置</a-button>
+              <a-button type="primary" @click="handleSearch">查询</a-button>
+              <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
               <a-button type="primary" style="margin-left: 8px" @click="handleAdd">新增租户</a-button>
             </a-form-item>
           </a-col>
@@ -40,8 +40,8 @@
           </template>
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)"
-              :loading="editingId === record.tencentCode && editLoading">编 辑</a-button>
-            <a-button type="link" danger @click="handleDelete(record)">删 除</a-button>
+              :loading="editingId === record.tencentCode && editLoading">编辑</a-button>
+            <a-button type="link" danger @click="handleDelete(record)">删除</a-button>
           </template>
         </template>
       </a-table>

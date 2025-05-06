@@ -41,14 +41,15 @@
                 {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
             </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
-                }}</a-button>
+            }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover" :getPopupContainer="getContainer">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
                     <p><b>2.</b> 双击完成地块勾画</p>
-                    <p><b>3.</b> 双击选中地块后可点击"地块失效"使其不可编辑</p>
+                    <p><b>3.</b> 单击选中地块后可点击"地块失效"使其不可编辑</p>
                     <p><b>4.</b> 单击选中失效地块后可点击"地块恢复"恢复编辑功能</p>
                     <p><b>5.</b> 单击选中地块后可点击"删除地块"功能</p>
+                    <p><b>6.</b> 双击选中地块后可修改地块区域和点击"编辑"功能修改名称及备注</p>
                 </template>
                 <a-button type="link" style="margin-left: 8px">操作指南</a-button>
             </a-popover>
@@ -504,6 +505,54 @@ const deleteSelectedPolygon = () => {
     });
 };
 
+// 专门用于直接删除多边形，不显示确认对话框
+const directlyDeletePolygon = () => {
+    if (!selectedPolygon.value) return;
+
+    // 关闭编辑器
+    polyEditor.close();
+    polyEditor.setTarget(null);
+
+    // 查找关联的标签并删除
+    const associatedLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
+    if (associatedLabel && associatedLabel.labelMarker) {
+        map.remove(associatedLabel.labelMarker);
+        labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
+    }
+
+    // 尝试所有可能的删除方法
+    try {
+        selectedPolygon.value.remove();
+    } catch (e) {
+        console.error('删除多边形时出错:', e);
+        try {
+            selectedPolygon.value.destroy();
+        } catch (e) {
+            console.error('销毁多边形时出错:', e);
+            try {
+                map.remove([selectedPolygon.value]);
+            } catch (e) {
+                console.error('从地图移除多边形时出错:', e);
+            }
+        }
+    }
+
+    // 从数组中移除引用
+    polygons.value = polygons.value.filter(p => p !== selectedPolygon.value);
+
+    // 最后手动刷新地图
+    if (polygons.value.length > 0) {
+        map.setFitView(polygons.value);
+    }
+
+    console.log('多边形已删除');
+    console.log('剩余多边形数量:', polygons.value.length);
+
+    // 重置选中状态
+    selectedPolygon.value = null;
+    isEditing.value = false;
+};
+
 // 编辑
 const finishEditing = () => {
     if (!isEditing.value || !selectedPolygon.value) {
@@ -652,9 +701,9 @@ const handleFenceCancel = () => {
 
     // 只有在新增模式下，如果用户取消，才需要删除多边形
     if (!isEditMode.value && tempPolygon.value) {
-        // 如果是新建的多边形，则删除它
+        // 如果是新建的多边形，则直接删除它，不显示确认对话框
         selectedPolygon.value = tempPolygon.value;
-        deleteSelectedPolygon();
+        directlyDeletePolygon();
     } else {
         // 编辑模式下只需关闭编辑状态
         polyEditor.close();

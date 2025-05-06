@@ -16,8 +16,8 @@
                     </a-col>
                     <a-col>
                         <a-form-item>
-                            <a-button type="primary" @click="handleSearch">查 询</a-button>
-                            <a-button style="margin-left: 8px" @click="handleReset">重 置</a-button>
+                            <a-button type="primary" @click="handleSearch">查询</a-button>
+                            <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
                         </a-form-item>
                     </a-col>
                 </a-row>
@@ -40,7 +40,7 @@
                         <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
                     </template>
                     <template v-if="column.key === 'action'">
-                        <a-button type="link" @click="handleEdit(record)" :loading="editingId === record.areacode && editLoading">编 辑</a-button>
+                        <a-button type="link" @click="handleEdit(record)" :loading="editingId === record.areacode && editLoading">编辑</a-button>
                     </template>
                 </template>
             </a-table>
@@ -128,7 +128,28 @@ const fetchAreaTrees = async () => {
     try {
         const res = await getAreaTrees();
         if (res) {
-            areaTreeData.value = transformAreaData(res);
+            // 添加"中国"作为顶级节点
+            const transformedData = transformAreaData(res);
+            
+            // 检查是否已存在value为"0"的节点
+            const hasRootNode = transformedData.some(node => node.value === "0");
+            
+            if (!hasRootNode) {
+                // 如果不存在，添加"中国"作为顶级节点
+                transformedData.unshift({
+                    title: "中国",
+                    value: "0",
+                    key: "0"
+                });
+            } else {
+                // 如果存在，将title修改为"中国"
+                const rootNode = transformedData.find(node => node.value === "0");
+                if (rootNode) {
+                    rootNode.title = "中国";
+                }
+            }
+            
+            areaTreeData.value = transformedData;
         }
     } catch (error) {
         console.error('获取行政区划树形数据失败:', error);

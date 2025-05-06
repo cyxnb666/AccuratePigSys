@@ -18,8 +18,8 @@
           </a-col>
           <a-col>
             <a-form-item>
-              <a-button type="primary" @click="handleSearch">查 询</a-button>
-              <a-button style="margin-left: 8px" @click="handleReset">重 置</a-button>
+              <a-button type="primary" @click="handleSearch">查询</a-button>
+              <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
               <a-button type="primary" style="margin-left: 8px" @click="handleAdd">新增养殖场</a-button>
             </a-form-item>
           </a-col>
@@ -40,7 +40,7 @@
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)">编辑</a-button>
             <a-button type="link" @click="handleReportConfig(record)">上报任务配置</a-button>
-            <a-button type="link" danger @click="handleDelete(record)">删 除</a-button>
+            <a-button type="link" danger @click="handleDelete(record)">删除</a-button>
           </template>
         </template>
       </a-table>
@@ -226,7 +226,7 @@ const handleDelete = (record) => {
     cancelText: '取消',
     async onOk() {
       try {
-        await deleteFarm(record.id);
+        await deleteFarm(record.farmId);
         message.success(`已删除养殖场：${record.farmName}`);
         fetchTableData();
       } catch (error) {
@@ -288,7 +288,6 @@ onMounted(() => {
     flex-direction: column;
     flex: 1;
 
-    /* 确保表格能够撑满容器 */
     :deep(.ant-table-wrapper) {
       flex: 1;
 

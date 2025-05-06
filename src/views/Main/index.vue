@@ -221,7 +221,7 @@ const outLogin = () => {
         &.ant-menu-horizontal {
           .ant-menu-item {
             color: rgba(255, 255, 255, 0.8);
-            margin: 0 4px;
+            // margin: 0 4px;
 
             &:hover {
               color: white;
