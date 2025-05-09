@@ -16,8 +16,10 @@
 
         <!-- 内容区域 -->
         <div class="content-container">
-            <div class="scrollable-content">
-
+            <div class="loading-overlay" v-if="loading">
+                <a-spin tip="加载中..."/>
+            </div>
+            <div class="scrollable-content" v-if="dataLoaded">
                 <!-- 基础信息部分 -->
                 <div class="info-section">
                     <div class="section-header">
@@ -71,7 +73,7 @@
                             <div class="info-item">
                                 <span class="label">AI点数总数:</span>
                                 <span class="value">{{ basicInfo.aiTotalCount }}</span>
-                                <span class="deviation-warning">
+                                <span v-if="aiPersionDiffRate > 0.2" class="deviation-warning">
                                     (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
                                 </span>
                             </div>
@@ -108,7 +110,7 @@
                                     <div class="price-point-details">
                                         <!-- 育肥区/仔猪区/母猪区子标签 -->
                                         <a-tabs v-model:activeKey="activeSubTab">
-                                            <a-tab-pane key="fattening" tab="育肥区">
+                                            <a-tab-pane v-if="hasFenceType('PORKER')" key="fattening" tab="育肥区">
                                                 <div class="count-row">
                                                     <div class="count-items-container">
                                                         <div class="count-item">
@@ -172,7 +174,7 @@
                                                 </div>
                                             </a-tab-pane>
 
-                                            <a-tab-pane key="piglets" tab="仔猪区">
+                                            <a-tab-pane v-if="hasFenceType('PIGLET')" key="piglets" tab="仔猪区">
                                                 <div class="count-row">
                                                     <div class="count-items-container">
                                                         <div class="count-item">
@@ -228,14 +230,16 @@
                                                         <div class="track-item">
                                                             <div class="track-header">GPS轨迹</div>
                                                             <div class="track-content gps-track">
-                                                                <!-- GPS轨迹图占位符 -->
+                                                                <plot-g-p-s :fence-data="fenceData"
+                                                                    :tracking-data="trackingData"
+                                                                    :area-type="activeSubTab" />
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </a-tab-pane>
 
-                                            <a-tab-pane key="sows" tab="母猪区">
+                                            <a-tab-pane v-if="hasFenceType('BROOD_SOW')" key="sows" tab="母猪区">
                                                 <div class="count-row">
                                                     <div class="count-items-container">
                                                         <div class="count-item">
@@ -290,7 +294,9 @@
                                                         <div class="track-item">
                                                             <div class="track-header">GPS轨迹</div>
                                                             <div class="track-content gps-track">
-                                                                <!-- GPS轨迹图占位符 -->
+                                                                <plot-g-p-s :fence-data="fenceData"
+                                                                    :tracking-data="trackingData"
+                                                                    :area-type="activeSubTab" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -338,9 +344,12 @@
                 <!-- 底部空白区域，确保内容不被底部按钮遮挡 -->
                 <div class="bottom-spacer"></div>
             </div>
+            <div v-else-if="!loading" class="empty-state">
+                <a-empty description="无数据" />
+            </div>
 
             <!-- 底部操作栏 -->
-            <div class="form-actions">
+            <div class="form-actions" v-if="dataLoaded">
                 <div class="review-row">
                     <div class="row-title">
                         <div class="title">审核信息</div>
@@ -383,38 +392,25 @@
                 </div>
             </div>
         </div>
-        <death-detail-dialog v-model="deathDetailVisible" :record="currentDeathRecord" :is-view-mode="props.isViewMode"
+        <death-detail-dialog v-model="deathDetailVisible" :record="currentDeathRecord" :is-view-mode="isViewMode"
             @confirm="handleDeathDetailConfirm" />
     </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-
-const fenceData = reactive({
-    path: [
-        { lng: 116.458694, lat: 40.000431 },
-        { lng: 116.4629, lat: 40.000628 },
-        { lng: 116.466505, lat: 39.991949 }
-    ]
-});
-
-const trackingData = reactive([
-    { lng: 116.462, lat: 39.997, timestamp: '0s' },
-    { lng: 116.463, lat: 39.996, timestamp: '4s' },
-    { lng: 116.464, lat: 39.995, timestamp: '8s' },
-    { lng: 116.465, lat: 39.994, timestamp: '12s' },
-    { lng: 116.4655, lat: 39.9935, timestamp: '15s' }
-]);
+import { getAuditDetail } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
+const loading = ref(false);
+const dataLoaded = ref(false);
+const aiPersionDiffRate = ref(0);
 
 const props = defineProps({
     isViewMode: {
@@ -437,101 +433,126 @@ const currentAreaIndex = ref(0);
 
 // 基础信息
 const basicInfo = reactive({
-    district: '四川省成都市武侯区',
-    farmName: 'XXXXX养殖场',
-    address: 'XXXXXXXXXXXXXXXXXXXXXXX',
-    reportUser: '张三',
-    reportTime: '2025-04-15 14:30:00',
-    totalReportCount: '6',
-    aiTotalCount: '5'
+    district: '',
+    farmName: '',
+    address: '',
+    reportUser: '',
+    reportTime: '',
+    totalReportCount: '',
+    aiTotalCount: ''
 });
 
-// 模拟养殖区域数据
-const farmAreas = reactive([
-    {
-        name: '养殖区域1',
-        fatteningData: {
-            reportCount: 6,
-            aiCount: 5,
-            reviewerCount: props.isViewMode ? 6 : 0,
-            lastReportCount: 6
-        },
-        pigletsData: {
-            reportCount: 4,
-            aiCount: 3,
-            reviewerCount: props.isViewMode ? 4 : 0,
-            lastReportCount: 4
-        },
-        sowsData: {
-            reportCount: 2,
-            aiCount: 2,
-            reviewerCount: props.isViewMode ? 2 : 0,
-            lastReportCount: 2
-        }
-    },
-    {
-        name: '养殖区域2',
-        fatteningData: {
-            reportCount: 8,
-            aiCount: 7,
-            reviewerCount: props.isViewMode ? 7 : 0,
-            lastReportCount: 7
-        },
-        pigletsData: {
-            reportCount: 5,
-            aiCount: 4,
-            reviewerCount: props.isViewMode ? 5 : 0,
-            lastReportCount: 4
-        },
-        sowsData: {
-            reportCount: 3,
-            aiCount: 3,
-            reviewerCount: props.isViewMode ? 3 : 0,
-            lastReportCount: 2
-        }
-    },
-    {
-        name: '养殖区域3',
-        fatteningData: {
-            reportCount: 4,
-            aiCount: 3,
-            reviewerCount: props.isViewMode ? 4 : 0,
-            lastReportCount: 5
-        },
-        pigletsData: {
-            reportCount: 3,
-            aiCount: 2,
-            reviewerCount: props.isViewMode ? 3 : 0,
-            lastReportCount: 3
-        },
-        sowsData: {
-            reportCount: 1,
-            aiCount: 1,
-            reviewerCount: props.isViewMode ? 1 : 0,
-            lastReportCount: 1
-        }
-    }
-]);
+// 养殖区域数据
+const farmAreas = ref([]);
 
 // 当前选中的养殖区域
-const currentArea = computed(() => farmAreas[currentAreaIndex.value]);
+const currentArea = computed(() => {
+    return farmAreas.value[currentAreaIndex.value] || {
+        name: '',
+        coordinate: [],
+        fences: [],
+        fatteningData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+        pigletsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+        sowsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
+    };
+});
 
 // 审核数据
 const reviewData = reactive({
     result: props.isViewMode ? 1 : null,  // 1通过, 0不通过
     comment: '',
-    expectedInventory: 12
+    expectedInventory: 0
 });
 
-// 计算审核员点数总和
-const calculateTotalReviewerCount = () => {
-    let total = 0;
-    farmAreas.forEach(area => {
-        total += (area.fatteningData.reviewerCount || 0);
-        total += (area.pigletsData.reviewerCount || 0);
-        total += (area.sowsData.reviewerCount || 0);
-    });
-    return total;
+// 获取当前区域的围栏数据
+const fenceData = computed(() => {
+    if (!currentArea.value || !currentArea.value.coordinate) {
+        return { path: [] };
+    }
+    
+    try {
+        let pathData;
+        if (typeof currentArea.value.coordinate === 'string') {
+            pathData = JSON.parse(currentArea.value.coordinate);
+            return { path: pathData };
+        } else {
+            return { path: currentArea.value.coordinate || [] };
+        }
+    } catch (e) {
+        console.error('解析围栏坐标失败:', e);
+        return { path: [] };
+    }
+});
+
+// 获取当前区域的GPS轨迹数据
+const getTrackingData = (breedCode) => {
+    if (!currentArea.value || !currentArea.value.fences) {
+        return [];
+    }
+
+    // 在当前区域的fences中找到对应类型的栏舍数据
+    const fence = currentArea.value.fences.find(f => f.breedCode === breedCode);
+    
+    if (fence && fence.gpss && fence.gpss.length > 0) {
+        return fence.gpss.map(gps => ({
+            lng: parseFloat(gps.longitude),
+            lat: parseFloat(gps.latitude),
+            timestamp: `${gps.timestamp}s`
+        }));
+    }
+    
+    return [];
+};
+
+// Computed property for current tracking data based on active tab
+const trackingData = computed(() => {
+    const breedMap = {
+        'fattening': 'PORKER',
+        'piglets': 'PIGLET',
+        'sows': 'BROOD_SOW'
+    };
+    
+    return getTrackingData(breedMap[activeSubTab.value]);
+});
+
+// Helper to check if a fence type exists in the current area
+const hasFenceType = (breedCode) => {
+    if (!currentArea.value || !currentArea.value.fences) {
+        return false;
+    }
+    
+    // Ensure fences is an array
+    const fences = Array.isArray(currentArea.value.fences) ? 
+        currentArea.value.fences : [];
+    
+    console.log(`Checking for ${breedCode} in fences:`, fences);
+    return fences.some(f => f.breedCode === breedCode);
+};
+
+// Watch for changes in currentAreaIndex to update active subtab
+watch(currentAreaIndex, () => {
+    setDefaultActiveSubTab();
+});
+
+// 设置默认选中的子标签
+const setDefaultActiveSubTab = () => {
+    if (currentArea.value && Array.isArray(currentArea.value.fences)) {
+        console.log('Setting default active subtab based on:', currentArea.value.fences);
+        
+        if (hasFenceType('PORKER')) {
+            activeSubTab.value = 'fattening';
+        } else if (hasFenceType('PIGLET')) {
+            activeSubTab.value = 'piglets';
+        } else if (hasFenceType('BROOD_SOW')) {
+            activeSubTab.value = 'sows';
+        } else {
+            console.log('No valid breed types found, defaulting to first tab');
+            // Default to first tab if no valid breed types found
+            activeSubTab.value = 'fattening';
+        }
+        
+        console.log('Selected active subtab:', activeSubTab.value);
+    }
 };
 
 const outboundColumns = [
@@ -608,6 +629,19 @@ const deathRecords = ref([
     }
 ]);
 
+// 计算审核员点数总和
+const calculateTotalReviewerCount = () => {
+    let total = 0;
+    if (farmAreas.value && Array.isArray(farmAreas.value)) {
+        farmAreas.value.forEach(area => {
+            total += (area.fatteningData.reviewerCount || 0);
+            total += (area.pigletsData.reviewerCount || 0);
+            total += (area.sowsData.reviewerCount || 0);
+        });
+    }
+    return total;
+};
+
 const viewDeathDetail = (record) => {
     currentDeathRecord.value = record;
     deathDetailVisible.value = true;
@@ -620,7 +654,7 @@ const handleDeathDetailConfirm = (reviewData) => {
 
 const goToDetailedComparison = (tabType: string) => {
     router.push({
-        path: `/review/super-detail/${props.recordId}`,
+        path: `/AUDITD/super-detail/${route.params.id}`,
         query: {
             area: currentAreaIndex.value,
             tab: tabType
@@ -642,11 +676,11 @@ const submitReview = () => {
 
     // 检查是否所有区域都已填写审核员点数
     let hasEmptyCount = false;
-    farmAreas.forEach(area => {
+    farmAreas.value.forEach(area => {
         if (
-            area.fatteningData.reviewerCount === 0 ||
-            area.pigletsData.reviewerCount === 0 ||
-            area.sowsData.reviewerCount === 0
+            (hasFenceType('PORKER') && area.fatteningData.reviewerCount === 0) ||
+            (hasFenceType('PIGLET') && area.pigletsData.reviewerCount === 0) ||
+            (hasFenceType('BROOD_SOW') && area.sowsData.reviewerCount === 0)
         ) {
             hasEmptyCount = true;
         }
@@ -659,17 +693,128 @@ const submitReview = () => {
 
     // 提交审核数据
     message.success('审核完成');
-    router.push('/review');
+    router.push('/AUDITD');
 };
 
 // 在组件挂载时加载数据
 const loadData = async () => {
-    if (props.recordId) {
-        // 实际项目中，这里会调用API获取审核任务的详细数据
-        console.log('加载审核任务数据: ', props.recordId);
+    // 从路由参数中直接获取 ID
+    const auditId = route.params.id;
+    
+    if (auditId) {
+        loading.value = true;
+        dataLoaded.value = false;
+        try {
+            console.log('正在获取审核详情, ID:', auditId);
+            // 调用API获取审核任务的详细数据
+            const res = await getAuditDetail(auditId.toString());
+            console.log('审核详情数据:', res);
+            
+            if (res) {
+                // 填充基础信息
+                basicInfo.district = res.farmAddress || '';
+                basicInfo.farmName = res.farmName || '';
+                basicInfo.address = res.farmAddress || '';
+                basicInfo.reportUser = res.applyUserName || '';
+                basicInfo.reportTime = res.applyTime || '';
+                basicInfo.totalReportCount = res.persionalCheckCount?.toString() || '0';
+                basicInfo.aiTotalCount = res.aiCheckCount?.toString() || '0';
+                
+                // 保存偏差率到变量，用于条件显示偏差警告
+                aiPersionDiffRate.value = res.aiPersionDiffRate || 0;
+                reviewData.expectedInventory = res.leaveCount || 0;
+                
+                // 处理养殖区域数据
+                if (res.auditFences && res.auditFences.length > 0) {
+                    farmAreas.value = res.auditFences.map(fence => {
+                        console.log('Fence data:', fence.fenceId, 'coordinate:', fence.coordinate);
+                        
+                        // 确保坐标数据有效
+                        let validCoordinate = fence.coordinate;
+                        if (!validCoordinate || (typeof validCoordinate === 'string' && validCoordinate.trim() === '')) {
+                            validCoordinate = '[]';
+                        }
+                        
+                        // 创建区域对象
+                        const areaData = {
+                            name: fence.fenceName || '未命名区域',
+                            id: fence.fenceId,
+                            coordinate: validCoordinate,
+                            fences: fence.fences || [],
+                            fatteningData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+                            pigletsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+                            sowsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
+                        };
+                        
+                        // Log the available breeds in each fence for debugging
+                        if (fence.fences && fence.fences.length > 0) {
+                            fence.fences.forEach(subFence => {
+                                console.log(`Area ${fence.fenceName} has breed: ${subFence.breedCode}`);
+                            });
+                        }
+                        
+                        // 处理各类型猪的数据
+                        if (fence.fences && fence.fences.length > 0) {
+                            fence.fences.forEach(subFence => {
+                                if (subFence.breedCode === 'PORKER') {
+                                    areaData.fatteningData = {
+                                        reportCount: subFence.persionalCheckCount || 0,
+                                        aiCount: subFence.aiCheckCount || 0,
+                                        reviewerCount: props.isViewMode ? 
+                                            (subFence.auditPersionalCheckCount || 0) : 
+                                            (subFence.auditPersionalCheckCount || 0),
+                                        lastReportCount: subFence.lastPersionalCheckCount || 0
+                                    };
+                                } else if (subFence.breedCode === 'PIGLET') {
+                                    areaData.pigletsData = {
+                                        reportCount: subFence.persionalCheckCount || 0,
+                                        aiCount: subFence.aiCheckCount || 0,
+                                        reviewerCount: props.isViewMode ? 
+                                            (subFence.auditPersionalCheckCount || 0) : 
+                                            (subFence.auditPersionalCheckCount || 0),
+                                        lastReportCount: subFence.lastPersionalCheckCount || 0
+                                    };
+                                } else if (subFence.breedCode === 'BROOD_SOW') {
+                                    areaData.sowsData = {
+                                        reportCount: subFence.persionalCheckCount || 0,
+                                        aiCount: subFence.aiCheckCount || 0,
+                                        reviewerCount: props.isViewMode ? 
+                                            (subFence.auditPersionalCheckCount || 0) : 
+                                            (subFence.auditPersionalCheckCount || 0),
+                                        lastReportCount: subFence.lastPersionalCheckCount || 0
+                                    };
+                                }
+                            });
+                        }
+                        
+                        return areaData;
+                    });
+                    
+                    // 默认选择第一个区域
+                    currentAreaIndex.value = 0;
+                    
+                    // 根据数据设置默认选中的子标签
+                    setDefaultActiveSubTab();
+                }
+                
+                // 设置数据已加载标志
+                dataLoaded.value = true;
+            }
+        } catch (error) {
+            console.error('获取审核详情失败:', error);
+            message.error('获取审核详情失败');
+        } finally {
+            loading.value = false;
+        }
+    } else {
+        console.error('未找到审核ID');
+        message.error('未找到审核ID');
     }
 };
-loadData();
+
+onMounted(() => {
+    loadData();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -684,6 +829,18 @@ loadData();
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         padding: 16px;
         margin-bottom: 16px;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
     }
 
     .content-container {

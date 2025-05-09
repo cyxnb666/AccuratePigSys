@@ -34,8 +34,8 @@
 
         <!-- 数据表格 -->
         <div class="data-table">
-            <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
-                :scroll="{ y: tableHeight }">
+            <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
+                row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'action'">
                         <a-button type="link" @click="handleReview(record)">审核</a-button>
@@ -53,8 +53,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, defineProps } from 'vue';
+import { ref, reactive, defineProps, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getAuditList } from '../api';
+import dayjs from 'dayjs';
 
 const props = defineProps({
     areaTreeData: {
@@ -64,6 +66,7 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const loading = ref(false);
 
 // 搜索表单
 const searchForm = reactive({
@@ -86,14 +89,14 @@ const columns = [
     },
     {
         title: '任务号',
-        dataIndex: 'taskId',
-        key: 'taskId',
+        dataIndex: 'registId',
+        key: 'registId',
         align: 'center'
     },
     {
         title: '行政区划',
-        dataIndex: 'district',
-        key: 'district',
+        dataIndex: 'farmAddress',
+        key: 'farmAddress',
         align: 'center'
     },
     {
@@ -104,32 +107,32 @@ const columns = [
     },
     {
         title: '上报用户',
-        dataIndex: 'reportUser',
-        key: 'reportUser',
+        dataIndex: 'applyUserName',
+        key: 'applyUserName',
         align: 'center'
     },
     {
         title: '育肥猪',
-        dataIndex: 'fatteningPigs',
-        key: 'fatteningPigs',
+        dataIndex: 'porkerCount',
+        key: 'porkerCount',
         align: 'center'
     },
     {
         title: '仔猪',
-        dataIndex: 'piglets',
-        key: 'piglets',
+        dataIndex: 'pigletCount',
+        key: 'pigletCount',
         align: 'center'
     },
     {
         title: '母猪',
-        dataIndex: 'sows',
-        key: 'sows',
+        dataIndex: 'sowCount',
+        key: 'sowCount',
         align: 'center'
     },
     {
         title: '上报时间',
-        dataIndex: 'reportTime',
-        key: 'reportTime',
+        dataIndex: 'applyTime',
+        key: 'applyTime',
         align: 'center'
     },
     {
@@ -140,49 +143,74 @@ const columns = [
     }
 ];
 
-// 生成模拟数据
-const generateData = () => {
-    const data = [];
-    for (let i = 1; i <= 10; i++) {
-        data.push({
-            id: i,
-            index: i,
-            taskId: `Task-${2025040000 + i}`,
-            district: '四川省成都市武侯区',
-            farmName: `测试养殖场 ${i}`,
-            reportUser: `用户${i}`,
-            fatteningPigs: 300 + i * 10,
-            piglets: 150 + i * 5,
-            sows: 50 + i * 2,
-            reportTime: '2025-04-15 14:30:00'
-        });
-    }
-    return data;
-};
-
-const dataSource = ref(generateData());
+const dataSource = ref([]);
 
 // 分页
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 22
+    total: 0
 });
 
+// 获取表格数据
+const fetchTableData = async () => {
+    loading.value = true;
+    try {
+        // 处理日期范围
+        let startDate = '';
+        let endDate = '';
+        if (searchForm.reportDate && searchForm.reportDate.length === 2) {
+            startDate = searchForm.reportDate[0] ? dayjs(searchForm.reportDate[0]).format('YYYY-MM-DD') : '';
+            endDate = searchForm.reportDate[1] ? dayjs(searchForm.reportDate[1]).format('YYYY-MM-DD') : '';
+        }
+
+        const params = {
+            condition: {
+                areacodes: searchForm.district ? [searchForm.district] : [],
+                auditStatus: 'AUDITING', // 待审核状态
+                startDate: startDate,
+                endDate: endDate,
+                farmName: searchForm.farmName
+            },
+            pageNo: pagination.current,
+            pageSize: pagination.pageSize
+        };
+
+        const res = await getAuditList(params);
+
+        if (res) {
+            // 添加索引
+            const records = res.records || [];
+            dataSource.value = records.map((item, index) => ({
+                ...item,
+                index: (pagination.current - 1) * pagination.pageSize + index + 1
+            }));
+
+            pagination.total = res.total || 0;
+        }
+    } catch (error) {
+        console.error('获取待审核列表失败:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
 const handleSearch = () => {
-    console.log('搜索条件:', searchForm);
     pagination.current = 1;
+    fetchTableData();
 };
 
 const handleReset = () => {
     searchForm.district = '';
     searchForm.farmName = '';
     searchForm.reportDate = [];
+    pagination.current = 1;
+    fetchTableData();
 };
 
 const handleReview = (record) => {
     router.push({
-        path: `/AUDITD/detail/${record.id}`,
+        path: `/AUDITD/detail/${record.auditId}`,
         query: { viewMode: 'false' }
     });
 };
@@ -190,7 +218,12 @@ const handleReview = (record) => {
 const handleTableChange = (page, pageSize) => {
     pagination.current = page;
     pagination.pageSize = pageSize;
+    fetchTableData();
 };
+
+onMounted(() => {
+    fetchTableData();
+});
 </script>
 
 <style lang="scss" scoped>
