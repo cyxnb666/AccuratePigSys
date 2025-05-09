@@ -38,8 +38,11 @@
                 row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'auditStatus'">
-                        <a-tag :color="record.auditStatus === '通过' ? 'success' : 'error'">
-                            {{ record.auditStatus }}
+                        <a-tag :color="record.auditStatus === 'AUDITSUCC' || record.auditStatus === '审核通过' ? 'success' :
+                            record.auditStatus === 'AUDITING' || record.auditStatus === '待审核' ? 'processing' : 'error'">
+                            {{ record.auditStatus === 'AUDITSUCC' ? '审核通过' :
+                                record.auditStatus === 'AUDITING' ? '待审核' :
+                                    record.auditStatus === 'AUDITFAIL' ? '审核驳回' : record.auditStatus }}
                         </a-tag>
                     </template>
                     <template v-if="column.key === 'action'">
