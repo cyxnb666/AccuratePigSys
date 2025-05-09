@@ -62,6 +62,10 @@ axios.interceptors.response.use(
                 return Promise.resolve(res.data);
             }
 
+            if (contentType?.includes('video/')) {
+                return Promise.resolve(res.data);
+            }
+
             // 通用 octet-stream 类型
             if (contentType?.startsWith('application/octet-stream')) {
                 return Promise.resolve(res.data);
