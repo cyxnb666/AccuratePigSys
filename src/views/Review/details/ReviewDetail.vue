@@ -144,7 +144,6 @@
                                                 </div>
 
                                                 <!-- 视频展示区域 -->
-                                                <!-- 视频展示区域 -->
                                                 <div class="video-container">
                                                     <div v-if="currentVideoURL" class="video-content">
                                                         <video controls width="100%" height="100%">
@@ -293,7 +292,6 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- 视频展示区域 -->
                                                 <!-- 视频展示区域 -->
                                                 <div class="video-container">
                                                     <div v-if="currentVideoURL" class="video-content">
@@ -623,9 +621,8 @@ const loadFilePreview = async () => {
             console.log(`获取文件预览，fileId: ${fileId}`);
             const response = await getFilePreview(fileId);
 
-            // 查找该文件的类型和后缀
+            // 查找该文件的类型
             let fileType = '';
-            let fileSuffix = '';
 
             // 遍历查找文件信息
             fileLoop: for (const area of farmAreas.value) {
@@ -635,7 +632,6 @@ const loadFilePreview = async () => {
                             for (const file of fence.files) {
                                 if (file.fileId === fileId) {
                                     fileType = file.fileType;
-                                    fileSuffix = file.fileSuffix;
                                     break fileLoop;
                                 }
                             }
@@ -644,27 +640,10 @@ const loadFilePreview = async () => {
                 }
             }
 
-            // 根据文件后缀确定MIME类型
-            let mimeType = 'application/octet-stream';
-            if (fileType === 'SENCE_AI') {
-                if (fileSuffix?.toLowerCase() === 'mp4') {
-                    mimeType = 'video/mp4';
-                } else if (fileSuffix?.toLowerCase() === 'webm') {
-                    mimeType = 'video/webm';
-                } else if (fileSuffix?.toLowerCase() === 'ogg') {
-                    mimeType = 'video/ogg';
-                }
-            } else if (fileType === 'SENSOR') {
-                if (['jpg', 'jpeg', 'png', 'gif'].includes(fileSuffix?.toLowerCase())) {
-                    mimeType = `image/${fileSuffix.toLowerCase()}`;
-                }
-            }
+            // 直接使用响应中的Blob，而不是创建新的Blob
+            const url = URL.createObjectURL(response);
 
-            // 创建指定MIME类型的Blob
-            const blob = new Blob([response], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-
-            console.log(`创建文件URL成功，fileId: ${fileId}, 类型: ${fileType}, MIME: ${mimeType}`);
+            console.log(`创建文件URL成功，fileId: ${fileId}, 类型: ${fileType}`);
 
             // 存储URL
             if (fileType === 'SENCE_AI') {
@@ -1211,18 +1190,13 @@ onUnmounted(() => {
         border-radius: 4px;
     }
 
-    .placeholder-text {
-        font-size: 16px;
-        opacity: 0.7;
-    }
-
     .video-content {
-        width: 100%;
-        height: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #000;
+        // width: 100%;
+        // height: 300px;
+        // display: flex;
+        // align-items: center;
+        // justify-content: center;
+        // background-color: #000;
     }
 
     .placeholder-text {
