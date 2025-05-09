@@ -36,6 +36,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, defineProps, defineEmits, watch, computed } from 'vue';
+import dayjs from 'dayjs';
+import { saveReportTaskConfig } from '../api';
 
 const props = defineProps({
     modelValue: {
@@ -88,16 +90,20 @@ const rules = {
 watch(
     () => [props.modelValue, props.record],
     ([visible, record]) => {
-        if (visible && record.reportConfig) {
-            // 填充已有的上报配置数据
-            Object.keys(formData).forEach(key => {
-                if (record.reportConfig[key] !== undefined) {
-                    formData[key] = record.reportConfig[key];
-                }
-            });
-        } else if (visible) {
-            // 默认值
-            resetForm();
+        if (visible && record) {
+            if (record.reportConfig) {
+                const config = record.reportConfig;
+                const startDate = config.rptStartDate ? dayjs(config.rptStartDate) : null;
+                const endDate = config.rptEndDate ? dayjs(config.rptEndDate) : null;
+                
+                formData.reportPeriod = startDate && endDate ? [startDate, endDate] : [];
+                formData.stockChangeCount = config.keepChangeCount?.toString() || '';
+                formData.stockChangeRatio = config.keepChangeRate?.toString() || '';
+                formData.daysSinceLastReport = config.nrptDay?.toString() || '';
+            } else {
+                // 默认
+                resetForm();
+            }
         }
     }
 );
@@ -120,13 +126,34 @@ const handleCancel = () => {
 
 const handleSubmit = () => {
     formRef.value.validate()
-        .then(() => {
+        .then(async () => {
             submitting.value = true;
-
-            emit('success', { ...formData });
-        
-            submitting.value = false;
-            dialogVisible.value = false;
+            
+            try {
+                const configData = {
+                    farmId: props.record.farmId,
+                    rptStartDate: formData.reportPeriod[0]?.format('YYYY-MM-DD') || '',
+                    rptEndDate: formData.reportPeriod[1]?.format('YYYY-MM-DD') || '',
+                    keepChangeCount: parseInt(formData.stockChangeCount),
+                    keepChangeRate: parseFloat(formData.stockChangeRatio),
+                    nrptDay: parseInt(formData.daysSinceLastReport)
+                };
+                
+                // 如果有configId就保留
+                if (props.record.reportConfig?.configId) {
+                    configData.configId = props.record.reportConfig.configId;
+                }
+                
+                await saveReportTaskConfig(configData);
+                
+                emit('success', configData);
+                dialogVisible.value = false;
+                resetForm();
+            } catch (error) {
+                console.error('保存上报任务配置失败:', error);
+            } finally {
+                submitting.value = false;
+            }
         })
         .catch(errorInfo => {
             console.log('验证失败:', errorInfo);
@@ -161,9 +188,7 @@ const handleSubmit = () => {
             position: absolute;
             left: -10px;
             top: -25px;
-            /* 调整这个值使标记与标签文本对齐 */
             height: 16px;
-            /* 标记的高度，与标签文本高度相近 */
             width: 4px;
             background-color: #5276E5;
             border-radius: 2px;

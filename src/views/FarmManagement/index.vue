@@ -39,7 +39,7 @@
           </template>
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)">编辑</a-button>
-            <a-button type="link" @click="handleReportConfig(record)">上报任务配置</a-button>
+            <a-button type="link" @click="handleReportConfig(record)" :loading="reportConfigLoadingMap[record.farmId]">上报任务配置</a-button>
             <a-button type="link" danger @click="handleDelete(record)">删除</a-button>
           </template>
         </template>
@@ -64,12 +64,13 @@ import ReportTaskDialog from './components/ReportTaskDialog.vue';
 import { message, Modal } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
-import { getAreaTrees, getFarmList, deleteFarm, saveReportTask } from './api';
+import { getAreaTrees, getFarmList, deleteFarm, getEffectiveTaskConfig } from './api';
 
 const router = useRouter();
 const reportTaskDialogVisible = ref(false);
 const currentRecord = ref({});
 const loading = ref(false);
+const reportConfigLoadingMap = ref({});
 
 // 搜索表单
 const searchForm = reactive({
@@ -213,9 +214,26 @@ const handleEdit = (record) => {
   router.push(`/farm/edit?id=${record.farmId}`);
 };
 
-const handleReportConfig = (record) => {
-  currentRecord.value = { ...record };
-  reportTaskDialogVisible.value = true;
+const handleReportConfig = async (record) => {
+  // 加载状态
+  reportConfigLoadingMap.value[record.farmId] = true;
+  
+  try {
+    const res = await getEffectiveTaskConfig(record.farmId);
+    
+    // 设置当前记录和配置信息
+    currentRecord.value = { 
+      ...record,
+      reportConfig: res
+    };
+    
+    reportTaskDialogVisible.value = true;
+  } catch (error) {
+    console.error('获取上报任务配置失败:', error);
+    message.error('获取上报任务配置失败');
+  } finally {
+    reportConfigLoadingMap.value[record.farmId] = false;
+  }
 };
 
 const handleDelete = (record) => {
@@ -242,13 +260,9 @@ const handleTableChange = (page, pageSize) => {
   fetchTableData();
 };
 
-const handleReportTaskSuccess = async (config) => {
-  try {
-    await saveReportTask(currentRecord.value.id, config);
-    message.success('上报任务配置保存成功');
-  } catch (error) {
-    console.error('保存上报任务配置失败:', error);
-  }
+const handleReportTaskSuccess = (config) => {
+  message.success('上报任务配置保存成功');
+  fetchTableData();
 };
 
 onMounted(() => {

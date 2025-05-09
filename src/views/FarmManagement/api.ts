@@ -173,3 +173,27 @@ export function toggleFenceEdit(primaryKey: string) {
         }
     });
 }
+
+// 获取养殖场有效上报任务配置
+export function getEffectiveTaskConfig(farmId: string) {
+    return axios({
+        url: '/web/farm/getEffectiveTaskConfigByFarmId',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmId
+            }
+        }
+    });
+}
+
+// 保存上报任务配置
+export function saveReportTaskConfig(configData: any) {
+    return axios({
+        url: '/web/farm/saveLivestockTaskConfig',
+        method: 'post',
+        data: {
+            condition: configData
+        }
+    });
+}
