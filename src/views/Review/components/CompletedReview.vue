@@ -37,9 +37,9 @@
             <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
                 row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'reviewResult'">
-                        <a-tag :color="record.reviewResult === '通过' ? 'success' : 'error'">
-                            {{ record.reviewResult }}
+                    <template v-if="column.key === 'auditStatus'">
+                        <a-tag :color="record.auditStatus === '通过' ? 'success' : 'error'">
+                            {{ record.auditStatus }}
                         </a-tag>
                     </template>
                     <template v-if="column.key === 'action'">
@@ -141,20 +141,20 @@ const columns = [
     },
     {
         title: '审核人',
-        dataIndex: 'reviewer',
-        key: 'reviewer',
+        dataIndex: 'auditUserName',
+        key: 'auditUserName',
         align: 'center'
     },
     {
         title: '审核结果',
-        dataIndex: 'reviewResult',
-        key: 'reviewResult',
+        dataIndex: 'auditStatus',
+        key: 'auditStatus',
         align: 'center'
     },
     {
         title: '审核时间',
-        dataIndex: 'reviewTime',
-        key: 'reviewTime',
+        dataIndex: 'auditTime',
+        key: 'auditTime',
         align: 'center'
     },
     {
