@@ -115,12 +115,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.fatteningData.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.fatteningData.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -134,7 +134,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.fatteningData.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -189,12 +189,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.pigletsData.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.pigletsData.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -203,13 +203,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.pigletsData.reviewerCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.pigletsData.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -264,12 +264,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.sowsData.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.sowsData.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -278,12 +278,12 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.sowsData.reviewerCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -433,7 +433,7 @@ import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview } from '../api';
+import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -939,6 +939,30 @@ const loadData = async () => {
 
                     // 根据数据设置默认选中的子标签
                     setDefaultActiveSubTab();
+                }
+
+                const [deathsRes, restocksRes, slaughtersRes] = await Promise.all([
+                    queryRangeRegistDeads(auditId.toString()),
+                    queryRangeRegistRestocks(auditId.toString()),
+                    queryRangeRegistSlaughters(auditId.toString())
+                ]);
+
+                // 处理死亡记录数据
+                if (deathsRes) {
+                    console.log('获取到死亡记录数据:', deathsRes);
+                    // 待确定数据格式后处理
+                }
+
+                // 处理补栏记录数据
+                if (restocksRes) {
+                    console.log('获取到补栏记录数据:', restocksRes);
+                    // 待确定数据格式后处理
+                }
+
+                // 处理出栏记录数据
+                if (slaughtersRes) {
+                    console.log('获取到出栏记录数据:', slaughtersRes);
+                    // 待确定数据格式后处理
                 }
 
                 await loadFilePreview();
