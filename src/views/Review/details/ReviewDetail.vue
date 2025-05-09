@@ -16,10 +16,10 @@
 
         <!-- 内容区域 -->
         <div class="content-container">
-            <div class="loading-overlay" v-if="loading || (dataLoaded && !filePreviewsLoaded)">
-                <a-spin tip="加载中..." />
+            <div class="loading-overlay" v-if="loading">
+                <a-spin tip="加载中..."/>
             </div>
-            <div class="scrollable-content" v-if="dataLoaded && filePreviewsLoaded">
+            <div class="scrollable-content" v-if="dataLoaded">
                 <!-- 基础信息部分 -->
                 <div class="info-section">
                     <div class="section-header">
@@ -108,6 +108,7 @@
                                     <div class="price-point-header">{{ currentArea.name }}</div>
 
                                     <div class="price-point-details">
+                                        <!-- 育肥区/仔猪区/母猪区子标签 -->
                                         <a-tabs v-model:activeKey="activeSubTab">
                                             <a-tab-pane v-if="hasFenceType('PORKER')" key="fattening" tab="育肥区">
                                                 <div class="count-row">
@@ -115,12 +116,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.fatteningData.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.fatteningData.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -134,7 +135,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.fatteningData.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -145,14 +146,9 @@
 
                                                 <!-- 视频展示区域 -->
                                                 <div class="video-container">
-                                                    <div v-if="currentVideoURL" class="video-content">
-                                                        <video controls width="100%" height="100%">
-                                                            <source :src="currentVideoURL" type="video/mp4">
-                                                            您的浏览器不支持 video 标签。
-                                                        </video>
-                                                    </div>
-                                                    <div v-else class="video-placeholder">
-                                                        <div class="placeholder-text">暂无视频数据</div>
+                                                    <div class="video-placeholder">
+                                                        <!-- 实际项目中替换为真实视频 -->
+                                                        <div class="placeholder-text">上报拍摄视频</div>
                                                     </div>
                                                 </div>
 
@@ -163,12 +159,7 @@
                                                         <div class="track-item">
                                                             <div class="track-header">传感器轨迹</div>
                                                             <div class="track-content sensor-track">
-                                                                <img v-if="currentSensorImageURL"
-                                                                    :src="currentSensorImageURL" alt="传感器轨迹"
-                                                                    style="width: 100%; height: 100%; object-fit: contain;" />
-                                                                <div v-else class="placeholder-text"
-                                                                    style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                                                                    暂无传感器轨迹数据</div>
+                                                                <!-- 传感器轨迹图占位符 -->
                                                             </div>
                                                         </div>
                                                         <div class="track-item">
@@ -189,12 +180,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.pigletsData.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.pigletsData.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -203,13 +194,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.pigletsData.reviewerCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.pigletsData.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -220,14 +211,9 @@
 
                                                 <!-- 视频展示区域 -->
                                                 <div class="video-container">
-                                                    <div v-if="currentVideoURL" class="video-content">
-                                                        <video controls width="100%" height="100%">
-                                                            <source :src="currentVideoURL" type="video/mp4">
-                                                            您的浏览器不支持 video 标签。
-                                                        </video>
-                                                    </div>
-                                                    <div v-else class="video-placeholder">
-                                                        <div class="placeholder-text">暂无视频数据</div>
+                                                    <div class="video-placeholder">
+                                                        <!-- 实际项目中替换为真实视频 -->
+                                                        <div class="placeholder-text">上报拍摄视频</div>
                                                     </div>
                                                 </div>
 
@@ -238,12 +224,7 @@
                                                         <div class="track-item">
                                                             <div class="track-header">传感器轨迹</div>
                                                             <div class="track-content sensor-track">
-                                                                <img v-if="currentSensorImageURL"
-                                                                    :src="currentSensorImageURL" alt="传感器轨迹"
-                                                                    style="width: 100%; height: 100%; object-fit: contain;" />
-                                                                <div v-else class="placeholder-text"
-                                                                    style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                                                                    暂无传感器轨迹数据</div>
+                                                                <!-- 传感器轨迹图占位符 -->
                                                             </div>
                                                         </div>
                                                         <div class="track-item">
@@ -264,12 +245,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.sowsData.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.sowsData.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -278,12 +259,12 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.sowsData.reviewerCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -294,14 +275,9 @@
 
                                                 <!-- 视频展示区域 -->
                                                 <div class="video-container">
-                                                    <div v-if="currentVideoURL" class="video-content">
-                                                        <video controls width="100%" height="100%">
-                                                            <source :src="currentVideoURL" type="video/mp4">
-                                                            您的浏览器不支持 video 标签。
-                                                        </video>
-                                                    </div>
-                                                    <div v-else class="video-placeholder">
-                                                        <div class="placeholder-text">暂无视频数据</div>
+                                                    <div class="video-placeholder">
+                                                        <!-- 实际项目中替换为真实视频 -->
+                                                        <div class="placeholder-text">上报拍摄视频</div>
                                                     </div>
                                                 </div>
 
@@ -312,12 +288,7 @@
                                                         <div class="track-item">
                                                             <div class="track-header">传感器轨迹</div>
                                                             <div class="track-content sensor-track">
-                                                                <img v-if="currentSensorImageURL"
-                                                                    :src="currentSensorImageURL" alt="传感器轨迹"
-                                                                    style="width: 100%; height: 100%; object-fit: contain;" />
-                                                                <div v-else class="placeholder-text"
-                                                                    style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                                                                    暂无传感器轨迹数据</div>
+                                                                <!-- 传感器轨迹图占位符 -->
                                                             </div>
                                                         </div>
                                                         <div class="track-item">
@@ -427,13 +398,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters } from '../api';
+import { getAuditDetail } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -486,8 +457,6 @@ const currentArea = computed(() => {
     };
 });
 
-const filePreviewsLoaded = ref(false);
-
 // 审核数据
 const reviewData = reactive({
     result: props.isViewMode ? 1 : null,  // 1通过, 0不通过
@@ -500,7 +469,7 @@ const fenceData = computed(() => {
     if (!currentArea.value || !currentArea.value.coordinate) {
         return { path: [] };
     }
-
+    
     try {
         let pathData;
         if (typeof currentArea.value.coordinate === 'string') {
@@ -523,7 +492,7 @@ const getTrackingData = (breedCode) => {
 
     // 在当前区域的fences中找到对应类型的栏舍数据
     const fence = currentArea.value.fences.find(f => f.breedCode === breedCode);
-
+    
     if (fence && fence.gpss && fence.gpss.length > 0) {
         return fence.gpss.map(gps => ({
             lng: parseFloat(gps.longitude),
@@ -531,160 +500,36 @@ const getTrackingData = (breedCode) => {
             timestamp: `${gps.timestamp}s`
         }));
     }
-
+    
     return [];
 };
 
-
-const fileURLs = reactive({
-    videos: {} as Record<string, string>, // fileId -> URL 映射
-    sensors: {} as Record<string, string>, // fileId -> URL 映射
-});
-
-const currentVideoURL = computed(() => {
-    const breedCode = getCurrentBreedCode();
-
-    const files = getCurrentFiles(breedCode);
-    const videoFile = files.find(f => f.fileType === 'SENCE_AI');
-
-    if (videoFile) {
-        console.log(`找到视频文件: ${videoFile.fileId}, 类型: ${videoFile.fileType}, 名称: ${videoFile.fileName}`);
-        if (fileURLs.videos[videoFile.fileId]) {
-            console.log(`该视频文件已存在URL: ${fileURLs.videos[videoFile.fileId]}`);
-            return fileURLs.videos[videoFile.fileId];
-        } else {
-            console.log(`该视频文件没有对应的URL`);
-        }
-    } else {
-        console.log(`没有找到类型为 SENCE_AI 的视频文件`);
-    }
-
-    return null;
-});
-
-// 获取当前传感器图URL
-const currentSensorImageURL = computed(() => {
-    const breedCode = getCurrentBreedCode();
-    const files = getCurrentFiles(breedCode);
-    const sensorFile = files.find(f => f.fileType === 'SENSOR');
-    return sensorFile && fileURLs.sensors[sensorFile.fileId] ? fileURLs.sensors[sensorFile.fileId] : null;
-});
-
-// 获取当前选中区域和类型的文件
-const getCurrentFiles = (breedCode: string) => {
-    if (!currentArea.value || !currentArea.value.fences) {
-        return [];
-    }
-    const fence = currentArea.value.fences.find(f => f.breedCode === breedCode);
-    const files = fence?.files || [];
-    return files;
-};
-
-// 根据活动标签获取当前breed code
-const getCurrentBreedCode = () => {
-    const breedMap = {
-        'fattening': 'PORKER',
-        'piglets': 'PIGLET',
-        'sows': 'BROOD_SOW'
-    };
-    return breedMap[activeSubTab.value];
-};
-
-// 加载所有文件预览
-const loadFilePreview = async () => {
-    // 重置加载状态
-    filePreviewsLoaded.value = false;
-
-    // 收集所有文件ID
-    const allFileIds = new Set<string>();
-
-    // 遍历所有区域和围栏，收集文件ID
-    if (farmAreas.value && farmAreas.value.length > 0) {
-        for (const area of farmAreas.value) {
-            if (area.fences && area.fences.length > 0) {
-                for (const fence of area.fences) {
-                    if (fence.files && fence.files.length > 0) {
-                        for (const file of fence.files) {
-                            allFileIds.add(file.fileId);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    console.log(`找到 ${allFileIds.size} 个需要预览的文件`);
-
-    // 对每个文件ID调用API获取预览
-    const filePreviewPromises = Array.from(allFileIds).map(async (fileId) => {
-        try {
-            console.log(`获取文件预览，fileId: ${fileId}`);
-            const response = await getFilePreview(fileId);
-
-            // 查找该文件的类型
-            let fileType = '';
-
-            // 遍历查找文件信息
-            fileLoop: for (const area of farmAreas.value) {
-                if (area.fences) {
-                    for (const fence of area.fences) {
-                        if (fence.files) {
-                            for (const file of fence.files) {
-                                if (file.fileId === fileId) {
-                                    fileType = file.fileType;
-                                    break fileLoop;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 直接使用响应中的Blob，而不是创建新的Blob
-            const url = URL.createObjectURL(response);
-
-            console.log(`创建文件URL成功，fileId: ${fileId}, 类型: ${fileType}`);
-
-            // 存储URL
-            if (fileType === 'SENCE_AI') {
-                fileURLs.videos[fileId] = url;
-            } else if (fileType === 'SENSOR') {
-                fileURLs.sensors[fileId] = url;
-            }
-        } catch (error) {
-            console.error(`获取文件预览失败，fileId: ${fileId}`, error);
-        }
-    });
-
-    // 等待所有文件预览请求完成
-    await Promise.all(filePreviewPromises);
-
-    // 标记文件预览加载完成
-    filePreviewsLoaded.value = true;
-    console.log('所有文件预览加载完成');
-};
-
+// Computed property for current tracking data based on active tab
 const trackingData = computed(() => {
     const breedMap = {
         'fattening': 'PORKER',
         'piglets': 'PIGLET',
         'sows': 'BROOD_SOW'
     };
-
+    
     return getTrackingData(breedMap[activeSubTab.value]);
 });
 
+// Helper to check if a fence type exists in the current area
 const hasFenceType = (breedCode) => {
     if (!currentArea.value || !currentArea.value.fences) {
         return false;
     }
-
-    const fences = Array.isArray(currentArea.value.fences) ?
+    
+    // Ensure fences is an array
+    const fences = Array.isArray(currentArea.value.fences) ? 
         currentArea.value.fences : [];
-
+    
+    console.log(`Checking for ${breedCode} in fences:`, fences);
     return fences.some(f => f.breedCode === breedCode);
 };
 
+// Watch for changes in currentAreaIndex to update active subtab
 watch(currentAreaIndex, () => {
     setDefaultActiveSubTab();
 });
@@ -692,7 +537,8 @@ watch(currentAreaIndex, () => {
 // 设置默认选中的子标签
 const setDefaultActiveSubTab = () => {
     if (currentArea.value && Array.isArray(currentArea.value.fences)) {
-
+        console.log('Setting default active subtab based on:', currentArea.value.fences);
+        
         if (hasFenceType('PORKER')) {
             activeSubTab.value = 'fattening';
         } else if (hasFenceType('PIGLET')) {
@@ -700,9 +546,11 @@ const setDefaultActiveSubTab = () => {
         } else if (hasFenceType('BROOD_SOW')) {
             activeSubTab.value = 'sows';
         } else {
+            console.log('No valid breed types found, defaulting to first tab');
             activeSubTab.value = 'fattening';
         }
-
+        
+        console.log('Selected active subtab:', activeSubTab.value);
     }
 };
 
@@ -799,6 +647,7 @@ const viewDeathDetail = (record) => {
 };
 
 const handleDeathDetailConfirm = (reviewData) => {
+    console.log('Review data for death record:', reviewData);
     message.success('死亡登记审核已保存');
 };
 
@@ -846,17 +695,20 @@ const submitReview = () => {
     router.push('/AUDITD');
 };
 
-// 加载数据
+// 在组件挂载时加载数据
 const loadData = async () => {
+    // 从路由参数中直接获取 ID
     const auditId = route.params.id;
-
+    
     if (auditId) {
         loading.value = true;
         dataLoaded.value = false;
         try {
+            console.log('正在获取审核详情, ID:', auditId);
             // 调用API获取审核任务的详细数据
             const res = await getAuditDetail(auditId.toString());
-
+            console.log('审核详情数据:', res);
+            
             if (res) {
                 // 填充基础信息
                 basicInfo.district = res.farmAddress || '';
@@ -866,21 +718,22 @@ const loadData = async () => {
                 basicInfo.reportTime = res.applyTime || '';
                 basicInfo.totalReportCount = res.persionalCheckCount?.toString() || '0';
                 basicInfo.aiTotalCount = res.aiCheckCount?.toString() || '0';
-
+                
                 // 保存偏差率到变量，用于条件显示偏差警告
                 aiPersionDiffRate.value = res.aiPersionDiffRate || 0;
                 reviewData.expectedInventory = res.leaveCount || 0;
-
+                
                 // 处理养殖区域数据
                 if (res.auditFences && res.auditFences.length > 0) {
                     farmAreas.value = res.auditFences.map(fence => {
-
+                        console.log('Fence data:', fence.fenceId, 'coordinate:', fence.coordinate);
+                        
                         // 确保坐标数据有效
                         let validCoordinate = fence.coordinate;
                         if (!validCoordinate || (typeof validCoordinate === 'string' && validCoordinate.trim() === '')) {
                             validCoordinate = '[]';
                         }
-
+                        
                         // 创建区域对象
                         const areaData = {
                             name: fence.fenceName || '未命名区域',
@@ -891,12 +744,14 @@ const loadData = async () => {
                             pigletsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
                             sowsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
                         };
-
+                        
+                        // Log the available breeds in each fence for debugging
                         if (fence.fences && fence.fences.length > 0) {
                             fence.fences.forEach(subFence => {
+                                console.log(`Area ${fence.fenceName} has breed: ${subFence.breedCode}`);
                             });
                         }
-
+                        
                         // 处理各类型猪的数据
                         if (fence.fences && fence.fences.length > 0) {
                             fence.fences.forEach(subFence => {
@@ -904,8 +759,8 @@ const loadData = async () => {
                                     areaData.fatteningData = {
                                         reportCount: subFence.persionalCheckCount || 0,
                                         aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: props.isViewMode ?
-                                            (subFence.auditPersionalCheckCount || 0) :
+                                        reviewerCount: props.isViewMode ? 
+                                            (subFence.auditPersionalCheckCount || 0) : 
                                             (subFence.auditPersionalCheckCount || 0),
                                         lastReportCount: subFence.lastPersionalCheckCount || 0
                                     };
@@ -913,8 +768,8 @@ const loadData = async () => {
                                     areaData.pigletsData = {
                                         reportCount: subFence.persionalCheckCount || 0,
                                         aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: props.isViewMode ?
-                                            (subFence.auditPersionalCheckCount || 0) :
+                                        reviewerCount: props.isViewMode ? 
+                                            (subFence.auditPersionalCheckCount || 0) : 
                                             (subFence.auditPersionalCheckCount || 0),
                                         lastReportCount: subFence.lastPersionalCheckCount || 0
                                     };
@@ -922,50 +777,26 @@ const loadData = async () => {
                                     areaData.sowsData = {
                                         reportCount: subFence.persionalCheckCount || 0,
                                         aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: props.isViewMode ?
-                                            (subFence.auditPersionalCheckCount || 0) :
+                                        reviewerCount: props.isViewMode ? 
+                                            (subFence.auditPersionalCheckCount || 0) : 
                                             (subFence.auditPersionalCheckCount || 0),
                                         lastReportCount: subFence.lastPersionalCheckCount || 0
                                     };
                                 }
                             });
                         }
-
+                        
                         return areaData;
                     });
-
+                    
                     // 默认选择第一个区域
                     currentAreaIndex.value = 0;
-
+                    
                     // 根据数据设置默认选中的子标签
                     setDefaultActiveSubTab();
                 }
-
-                const [deathsRes, restocksRes, slaughtersRes] = await Promise.all([
-                    queryRangeRegistDeads(auditId.toString()),
-                    queryRangeRegistRestocks(auditId.toString()),
-                    queryRangeRegistSlaughters(auditId.toString())
-                ]);
-
-                // 处理死亡记录数据
-                if (deathsRes) {
-                    console.log('获取到死亡记录数据:', deathsRes);
-                    // 待确定数据格式后处理
-                }
-
-                // 处理补栏记录数据
-                if (restocksRes) {
-                    console.log('获取到补栏记录数据:', restocksRes);
-                    // 待确定数据格式后处理
-                }
-
-                // 处理出栏记录数据
-                if (slaughtersRes) {
-                    console.log('获取到出栏记录数据:', slaughtersRes);
-                    // 待确定数据格式后处理
-                }
-
-                await loadFilePreview();
+                
+                // 设置数据已加载标志
                 dataLoaded.value = true;
             }
         } catch (error) {
@@ -982,15 +813,6 @@ const loadData = async () => {
 
 onMounted(() => {
     loadData();
-});
-onUnmounted(() => {
-    // 释放所有创建的 Blob URL
-    Object.values(fileURLs.videos).forEach(url => {
-        URL.revokeObjectURL(url);
-    });
-    Object.values(fileURLs.sensors).forEach(url => {
-        URL.revokeObjectURL(url);
-    });
 });
 </script>
 
@@ -1214,19 +1036,9 @@ onUnmounted(() => {
         border-radius: 4px;
     }
 
-    .video-content {
-        // width: 100%;
-        // height: 300px;
-        // display: flex;
-        // align-items: center;
-        // justify-content: center;
-        // background-color: #000;
-    }
-
     .placeholder-text {
-        color: #999;
-        font-size: 14px;
-        text-align: center;
+        font-size: 16px;
+        opacity: 0.7;
     }
 
     .track-section {
