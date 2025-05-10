@@ -16,10 +16,10 @@
 
         <!-- 内容区域 -->
         <div class="content-container">
-            <div class="loading-overlay" v-if="loading || currentFenceLoading">
+            <div class="loading-overlay" v-if="loading">
                 <a-spin tip="加载中..." />
             </div>
-            <div class="scrollable-content" v-if="dataLoaded && filePreviewsLoaded">
+            <div class="scrollable-content" v-if="dataLoaded">
                 <!-- 基础信息部分 -->
                 <div class="info-section">
                     <div class="section-header">
@@ -108,230 +108,234 @@
                                     <div class="price-point-header">{{ currentArea.name }}</div>
 
                                     <div class="price-point-details">
-                                        <a-tabs v-model:activeKey="activeSubTab">
-                                            <a-tab-pane v-if="hasFenceType('PORKER')" key="fattening" tab="育肥区">
-                                                <div class="count-row">
-                                                    <div class="count-items-container">
-                                                        <div class="count-item">
-                                                            <span class="label">上报数量：</span>
-                                                            <span class="value">{{ currentArea.fatteningData.reportCount
+                                        <div class="loading-overlay" v-if="currentFenceLoading">
+                                            <a-spin tip="加载中..." />
+                                        </div>
+                                        <div v-if="filePreviewsLoaded">
+                                            <a-tabs v-model:activeKey="activeSubTab">
+                                                <a-tab-pane v-if="hasFenceType('PORKER')" key="fattening" tab="育肥区">
+                                                    <div class="count-row">
+                                                        <div class="count-items-container">
+                                                            <div class="count-item">
+                                                                <span class="label">上报数量：</span>
+                                                                <span class="value">{{ currentArea.fattening.reportCount
                                                                 }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">AI点数：</span>
-                                                            <span class="value">{{ currentArea.fatteningData.aiCount
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">AI点数：</span>
+                                                                <span class="value">{{ currentArea.fattening.aiCount
                                                                 }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">审核员点数：</span>
-                                                            <a-input-number v-if="!isViewMode"
-                                                                v-model:value="currentArea.fatteningData.reviewerCount"
-                                                                :min="0" style="width: 120px" />
-                                                            <span v-else class="value">{{
-                                                                currentArea.fatteningData.reviewerCount }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">上次上报数量：</span>
-                                                            <span class="value">{{
-                                                                currentArea.fatteningData.lastReportCount
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">审核员点数：</span>
+                                                                <a-input-number v-if="!isViewMode"
+                                                                    v-model:value="currentArea.fattening.reviewerCount"
+                                                                    :min="0" style="width: 120px" />
+                                                                <span v-else class="value">{{
+                                                                    currentArea.fattening.reviewerCount }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">上次上报数量：</span>
+                                                                <span class="value">{{
+                                                                    currentArea.fattening.lastReportCount
                                                                 }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="detail-button-container">
-                                                        <a-button type="primary" size="small"
-                                                            @click="goToDetailedComparison('fattening')">详细对比</a-button>
-                                                    </div>
-                                                </div>
-
-                                                <!-- 视频展示区域 -->
-                                                <div class="video-container">
-                                                    <div v-if="currentVideoURL" class="video-content">
-                                                        <video controls width="100%" height="100%">
-                                                            <source :src="currentVideoURL" type="video/mp4">
-                                                            您的浏览器不支持 video 标签。
-                                                        </video>
-                                                    </div>
-                                                    <div v-else class="video-placeholder">
-                                                        <div class="placeholder-text">暂无视频数据</div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- 轨迹图展示 -->
-                                                <div class="track-section">
-                                                    <div class="track-title">视频拍摄轨迹图</div>
-                                                    <div class="track-container">
-                                                        <div class="track-item">
-                                                            <div class="track-header">传感器轨迹</div>
-                                                            <div class="track-content sensor-track">
-                                                                <img v-if="currentSensorImageURL"
-                                                                    :src="currentSensorImageURL" alt="传感器轨迹"
-                                                                    style="width: 100%; height: 100%; object-fit: contain;" />
-                                                                <div v-else class="placeholder-text"
-                                                                    style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                                                                    暂无传感器轨迹数据</div>
                                                             </div>
                                                         </div>
-                                                        <div class="track-item">
-                                                            <div class="track-header">GPS轨迹</div>
-                                                            <div class="track-content gps-track">
-                                                                <plot-g-p-s :fence-data="fenceData"
-                                                                    :tracking-data="trackingData"
-                                                                    :area-type="activeSubTab" />
+                                                        <div class="detail-button-container">
+                                                            <a-button type="primary" size="small"
+                                                                @click="goToDetailedComparison('fattening')">详细对比</a-button>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 视频展示区域 -->
+                                                    <div class="video-container">
+                                                        <div v-if="currentVideoURL" class="video-content">
+                                                            <video controls width="100%" height="100%">
+                                                                <source :src="currentVideoURL" type="video/mp4">
+                                                                您的浏览器不支持 video 标签。
+                                                            </video>
+                                                        </div>
+                                                        <div v-else class="video-placeholder">
+                                                            <div class="placeholder-text">暂无视频数据</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 轨迹图展示 -->
+                                                    <div class="track-section">
+                                                        <div class="track-title">视频拍摄轨迹图</div>
+                                                        <div class="track-container">
+                                                            <div class="track-item">
+                                                                <div class="track-header">传感器轨迹</div>
+                                                                <div class="track-content sensor-track">
+                                                                    <img v-if="currentSensorImageURL"
+                                                                        :src="currentSensorImageURL" alt="传感器轨迹"
+                                                                        style="width: 100%; height: 100%; object-fit: contain;" />
+                                                                    <div v-else class="placeholder-text"
+                                                                        style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                                                                        暂无传感器轨迹数据</div>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </a-tab-pane>
-
-                                            <a-tab-pane v-if="hasFenceType('PIGLET')" key="piglets" tab="仔猪区">
-                                                <div class="count-row">
-                                                    <div class="count-items-container">
-                                                        <div class="count-item">
-                                                            <span class="label">上报数量：</span>
-                                                            <span class="value">{{ currentArea.pigletsData.reportCount
-                                                                }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">AI点数：</span>
-                                                            <span class="value">{{ currentArea.pigletsData.aiCount
-                                                                }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">审核员点数：</span>
-                                                            <a-input-number v-if="!isViewMode"
-                                                                v-model:value="currentArea.pigletsData.reviewerCount"
-                                                                :min="0" style="width: 120px" />
-                                                            <span v-else class="value">{{
-                                                                currentArea.pigletsData.reviewerCount
-                                                                }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">上次上报数量：</span>
-                                                            <span class="value">{{
-                                                                currentArea.pigletsData.lastReportCount
-                                                                }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="detail-button-container">
-                                                        <a-button type="primary" size="small"
-                                                            @click="goToDetailedComparison('piglets')">详细对比</a-button>
-                                                    </div>
-                                                </div>
-
-                                                <!-- 视频展示区域 -->
-                                                <div class="video-container">
-                                                    <div v-if="currentVideoURL" class="video-content">
-                                                        <video controls width="100%" height="100%">
-                                                            <source :src="currentVideoURL" type="video/mp4">
-                                                            您的浏览器不支持 video 标签。
-                                                        </video>
-                                                    </div>
-                                                    <div v-else class="video-placeholder">
-                                                        <div class="placeholder-text">暂无视频数据</div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- 轨迹图展示 -->
-                                                <div class="track-section">
-                                                    <div class="track-title">视频拍摄轨迹图</div>
-                                                    <div class="track-container">
-                                                        <div class="track-item">
-                                                            <div class="track-header">传感器轨迹</div>
-                                                            <div class="track-content sensor-track">
-                                                                <img v-if="currentSensorImageURL"
-                                                                    :src="currentSensorImageURL" alt="传感器轨迹"
-                                                                    style="width: 100%; height: 100%; object-fit: contain;" />
-                                                                <div v-else class="placeholder-text"
-                                                                    style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                                                                    暂无传感器轨迹数据</div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="track-item">
-                                                            <div class="track-header">GPS轨迹</div>
-                                                            <div class="track-content gps-track">
-                                                                <plot-g-p-s :fence-data="fenceData"
-                                                                    :tracking-data="trackingData"
-                                                                    :area-type="activeSubTab" />
+                                                            <div class="track-item">
+                                                                <div class="track-header">GPS轨迹</div>
+                                                                <div class="track-content gps-track">
+                                                                    <plot-g-p-s :fence-data="fenceData"
+                                                                        :tracking-data="trackingData"
+                                                                        :area-type="activeSubTab" />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </a-tab-pane>
+                                                </a-tab-pane>
 
-                                            <a-tab-pane v-if="hasFenceType('BROOD_SOW')" key="sows" tab="母猪区">
-                                                <div class="count-row">
-                                                    <div class="count-items-container">
-                                                        <div class="count-item">
-                                                            <span class="label">上报数量：</span>
-                                                            <span class="value">{{ currentArea.sowsData.reportCount
-                                                            }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">AI点数：</span>
-                                                            <span class="value">{{ currentArea.sowsData.aiCount
-                                                            }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">审核员点数：</span>
-                                                            <a-input-number v-if="!isViewMode"
-                                                                v-model:value="currentArea.sowsData.reviewerCount"
-                                                                :min="0" style="width: 120px" />
-                                                            <span v-else class="value">{{
-                                                                currentArea.sowsData.reviewerCount
-                                                            }}</span>
-                                                        </div>
-                                                        <div class="count-item">
-                                                            <span class="label">上次上报数量：</span>
-                                                            <span class="value">{{ currentArea.sowsData.lastReportCount
-                                                            }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="detail-button-container">
-                                                        <a-button type="primary" size="small"
-                                                            @click="goToDetailedComparison('sows')">详细对比</a-button>
-                                                    </div>
-                                                </div>
-
-                                                <!-- 视频展示区域 -->
-                                                <div class="video-container">
-                                                    <div v-if="currentVideoURL" class="video-content">
-                                                        <video controls width="100%" height="100%">
-                                                            <source :src="currentVideoURL" type="video/mp4">
-                                                            您的浏览器不支持 video 标签。
-                                                        </video>
-                                                    </div>
-                                                    <div v-else class="video-placeholder">
-                                                        <div class="placeholder-text">暂无视频数据</div>
-                                                    </div>
-                                                </div>
-
-                                                <!-- 轨迹图展示 -->
-                                                <div class="track-section">
-                                                    <div class="track-title">视频拍摄轨迹图</div>
-                                                    <div class="track-container">
-                                                        <div class="track-item">
-                                                            <div class="track-header">传感器轨迹</div>
-                                                            <div class="track-content sensor-track">
-                                                                <img v-if="currentSensorImageURL"
-                                                                    :src="currentSensorImageURL" alt="传感器轨迹"
-                                                                    style="width: 100%; height: 100%; object-fit: contain;" />
-                                                                <div v-else class="placeholder-text"
-                                                                    style="height: 100%; display: flex; align-items: center; justify-content: center;">
-                                                                    暂无传感器轨迹数据</div>
+                                                <a-tab-pane v-if="hasFenceType('PIGLET')" key="piglets" tab="仔猪区">
+                                                    <div class="count-row">
+                                                        <div class="count-items-container">
+                                                            <div class="count-item">
+                                                                <span class="label">上报数量：</span>
+                                                                <span class="value">{{ currentArea.piglets.reportCount
+                                                                }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">AI点数：</span>
+                                                                <span class="value">{{ currentArea.piglets.aiCount
+                                                                }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">审核员点数：</span>
+                                                                <a-input-number v-if="!isViewMode"
+                                                                    v-model:value="currentArea.piglets.reviewerCount"
+                                                                    :min="0" style="width: 120px" />
+                                                                <span v-else class="value">{{
+                                                                    currentArea.piglets.reviewerCount }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">上次上报数量：</span>
+                                                                <span class="value">{{
+                                                                    currentArea.piglets.lastReportCount
+                                                                }}</span>
                                                             </div>
                                                         </div>
-                                                        <div class="track-item">
-                                                            <div class="track-header">GPS轨迹</div>
-                                                            <div class="track-content gps-track">
-                                                                <plot-g-p-s :fence-data="fenceData"
-                                                                    :tracking-data="trackingData"
-                                                                    :area-type="activeSubTab" />
+                                                        <div class="detail-button-container">
+                                                            <a-button type="primary" size="small"
+                                                                @click="goToDetailedComparison('piglets')">详细对比</a-button>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 视频展示区域 -->
+                                                    <div class="video-container">
+                                                        <div v-if="currentVideoURL" class="video-content">
+                                                            <video controls width="100%" height="100%">
+                                                                <source :src="currentVideoURL" type="video/mp4">
+                                                                您的浏览器不支持 video 标签。
+                                                            </video>
+                                                        </div>
+                                                        <div v-else class="video-placeholder">
+                                                            <div class="placeholder-text">暂无视频数据</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 轨迹图展示 -->
+                                                    <div class="track-section">
+                                                        <div class="track-title">视频拍摄轨迹图</div>
+                                                        <div class="track-container">
+                                                            <div class="track-item">
+                                                                <div class="track-header">传感器轨迹</div>
+                                                                <div class="track-content sensor-track">
+                                                                    <img v-if="currentSensorImageURL"
+                                                                        :src="currentSensorImageURL" alt="传感器轨迹"
+                                                                        style="width: 100%; height: 100%; object-fit: contain;" />
+                                                                    <div v-else class="placeholder-text"
+                                                                        style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                                                                        暂无传感器轨迹数据</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="track-item">
+                                                                <div class="track-header">GPS轨迹</div>
+                                                                <div class="track-content gps-track">
+                                                                    <plot-g-p-s :fence-data="fenceData"
+                                                                        :tracking-data="trackingData"
+                                                                        :area-type="activeSubTab" />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </a-tab-pane>
-                                        </a-tabs>
+                                                </a-tab-pane>
+
+                                                <a-tab-pane v-if="hasFenceType('BROOD_SOW')" key="sows" tab="母猪区">
+                                                    <div class="count-row">
+                                                        <div class="count-items-container">
+                                                            <div class="count-item">
+                                                                <span class="label">上报数量：</span>
+                                                                <span class="value">{{ currentArea.sows.reportCount
+                                                                }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">AI点数：</span>
+                                                                <span class="value">{{ currentArea.sows.aiCount
+                                                                }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">审核员点数：</span>
+                                                                <a-input-number v-if="!isViewMode"
+                                                                    v-model:value="currentArea.sows.reviewerCount"
+                                                                    :min="0" style="width: 120px" />
+                                                                <span v-else class="value">{{
+                                                                    currentArea.sows.reviewerCount
+                                                                }}</span>
+                                                            </div>
+                                                            <div class="count-item">
+                                                                <span class="label">上次上报数量：</span>
+                                                                <span class="value">{{ currentArea.sows.lastReportCount
+                                                                }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="detail-button-container">
+                                                            <a-button type="primary" size="small"
+                                                                @click="goToDetailedComparison('sows')">详细对比</a-button>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 视频展示区域 -->
+                                                    <div class="video-container">
+                                                        <div v-if="currentVideoURL" class="video-content">
+                                                            <video controls width="100%" height="100%">
+                                                                <source :src="currentVideoURL" type="video/mp4">
+                                                                您的浏览器不支持 video 标签。
+                                                            </video>
+                                                        </div>
+                                                        <div v-else class="video-placeholder">
+                                                            <div class="placeholder-text">暂无视频数据</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 轨迹图展示 -->
+                                                    <div class="track-section">
+                                                        <div class="track-title">视频拍摄轨迹图</div>
+                                                        <div class="track-container">
+                                                            <div class="track-item">
+                                                                <div class="track-header">传感器轨迹</div>
+                                                                <div class="track-content sensor-track">
+                                                                    <img v-if="currentSensorImageURL"
+                                                                        :src="currentSensorImageURL" alt="传感器轨迹"
+                                                                        style="width: 100%; height: 100%; object-fit: contain;" />
+                                                                    <div v-else class="placeholder-text"
+                                                                        style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                                                                        暂无传感器轨迹数据</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="track-item">
+                                                                <div class="track-header">GPS轨迹</div>
+                                                                <div class="track-content gps-track">
+                                                                    <plot-g-p-s :fence-data="fenceData"
+                                                                        :tracking-data="trackingData"
+                                                                        :area-type="activeSubTab" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </a-tab-pane>
+                                            </a-tabs>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -459,7 +463,11 @@ const route = useRoute();
 const activeMainTab = ref('inventory');
 const activeSubTab = ref('fattening');
 const currentAreaIndex = ref(0);
-
+const tabConfig = [
+    { key: 'fattening', title: '育肥区', breedCode: 'PORKER' },
+    { key: 'piglets', title: '仔猪区', breedCode: 'PIGLET' },
+    { key: 'sows', title: '母猪区', breedCode: 'BROOD_SOW' }
+];
 // 基础信息
 const basicInfo = reactive({
     district: '',
@@ -480,9 +488,9 @@ const currentArea = computed(() => {
         name: '',
         coordinate: [],
         fences: [],
-        fatteningData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-        pigletsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-        sowsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
+        fattening: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+        piglets: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+        sows: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
     };
 });
 
@@ -546,7 +554,7 @@ const currentVideoURL = computed(() => {
     if (!currentFenceDetail.value || !currentFenceDetail.value.files) {
         return null;
     }
-    
+
     const videoFile = currentFenceDetail.value.files.find(f => f.fileType === 'SENCE_AI');
     return videoFile ? videoFile.fileUrl : null;
 });
@@ -555,17 +563,17 @@ const currentSensorImageURL = computed(() => {
     if (!currentFenceDetail.value || !currentFenceDetail.value.files) {
         return null;
     }
-    
+
     const sensorFile = currentFenceDetail.value.files.find(f => f.fileType === 'SENSOR');
     return sensorFile ? sensorFile.fileUrl : null;
 });
 
-// 修改轨迹数据计算属性
+// 轨迹数据计算属性
 const trackingData = computed(() => {
     if (!currentFenceDetail.value || !currentFenceDetail.value.gpss) {
         return [];
     }
-    
+
     return currentFenceDetail.value.gpss.map(gps => ({
         lng: parseFloat(gps.longitude),
         lat: parseFloat(gps.latitude),
@@ -593,11 +601,40 @@ const getCurrentBreedCode = () => {
     return breedMap[activeSubTab.value];
 };
 
+// 加载文件预览
+const loadFilePreviews = async (files) => {
+    try {
+        const filePreviewPromises = files.map(async (file) => {
+            try {
+                const fileResponse = await getFilePreview(file.fileId);
+                const url = URL.createObjectURL(fileResponse);
+
+                // 根据文件类型存储URL
+                if (file.fileType === 'SENCE_AI') {
+                    fileURLs.videos[file.fileId] = url;
+                    file.fileUrl = url;
+                } else if (file.fileType === 'SENSOR') {
+                    fileURLs.sensors[file.fileId] = url;
+                    file.fileUrl = url;
+                }
+            } catch (error) {
+                console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
+            }
+        });
+
+        await Promise.all(filePreviewPromises);
+        filePreviewsLoaded.value = true;
+    } catch (error) {
+        console.error('加载文件预览失败:', error);
+        filePreviewsLoaded.value = true;
+    }
+};
+
 const loadCurrentFenceDetail = async () => {
     // 重置状态
     filePreviewsLoaded.value = false;
     currentFenceDetail.value = null;
-    
+
     // 清除之前的URL缓存
     Object.values(fileURLs.videos).forEach(url => {
         URL.revokeObjectURL(url);
@@ -607,25 +644,24 @@ const loadCurrentFenceDetail = async () => {
     });
     fileURLs.videos = {};
     fileURLs.sensors = {};
-    
+
     const breedCode = getCurrentBreedCode();
     const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
-    
+
     if (!currentFence || !currentFence.fenceRegistId) {
         console.log('没有找到当前围栏信息或ID');
         filePreviewsLoaded.value = true; // 标记加载完成，避免一直显示加载中
         return;
     }
-    
+
     currentFenceLoading.value = true;
-    
+
     try {
         const response = await getLeaveFence(currentFence.fenceRegistId);
-        
+
         if (response) {
-            console.log('获取到围栏详情:', response);
             currentFenceDetail.value = response;
-            
+
             // 如果有文件，加载文件预览
             if (response.files && response.files.length > 0) {
                 // 为每个文件加载预览
@@ -663,9 +699,9 @@ watch(currentAreaIndex, () => {
 watch([currentAreaIndex, activeSubTab], () => {
     loadCurrentFenceDetail();
 }, { immediate: false });
+
 // 设置默认选中的子标签
 const setDefaultActiveSubTab = () => {
-    // 原有代码保持不变
     if (currentArea.value && Array.isArray(currentArea.value.fences)) {
         if (hasFenceType('PORKER')) {
             activeSubTab.value = 'fattening';
@@ -677,9 +713,6 @@ const setDefaultActiveSubTab = () => {
             activeSubTab.value = 'fattening';
         }
     }
-    
-    // 添加以下代码
-    loadCurrentFenceDetail();
 };
 
 const outboundColumns = [
@@ -716,9 +749,9 @@ const calculateTotalReviewerCount = () => {
     let total = 0;
     if (farmAreas.value && Array.isArray(farmAreas.value)) {
         farmAreas.value.forEach(area => {
-            total += (area.fatteningData.reviewerCount || 0);
-            total += (area.pigletsData.reviewerCount || 0);
-            total += (area.sowsData.reviewerCount || 0);
+            total += (area.fattening.reviewerCount || 0);
+            total += (area.piglets.reviewerCount || 0);
+            total += (area.sows.reviewerCount || 0);
         });
     }
     return total;
@@ -772,7 +805,6 @@ const viewDeathDetail = async (record) => {
         deathDetailVisible.value = true;
     } catch (error) {
         console.error('获取死亡登记详情失败:', error);
-        message.error('获取死亡登记详情失败');
     } finally {
         loading.value = false;
     }
@@ -808,9 +840,9 @@ const submitReview = () => {
     let hasEmptyCount = false;
     farmAreas.value.forEach(area => {
         if (
-            (hasFenceType('PORKER') && area.fatteningData.reviewerCount === 0) ||
-            (hasFenceType('PIGLET') && area.pigletsData.reviewerCount === 0) ||
-            (hasFenceType('BROOD_SOW') && area.sowsData.reviewerCount === 0)
+            (hasFenceType('PORKER') && area.fattening.reviewerCount === 0) ||
+            (hasFenceType('PIGLET') && area.piglets.reviewerCount === 0) ||
+            (hasFenceType('BROOD_SOW') && area.sows.reviewerCount === 0)
         ) {
             hasEmptyCount = true;
         }
@@ -854,7 +886,6 @@ const loadData = async () => {
                 // 处理养殖区域数据
                 if (res.auditFences && res.auditFences.length > 0) {
                     farmAreas.value = res.auditFences.map(fence => {
-
                         // 确保坐标数据有效
                         let validCoordinate = fence.coordinate;
                         if (!validCoordinate || (typeof validCoordinate === 'string' && validCoordinate.trim() === '')) {
@@ -867,44 +898,37 @@ const loadData = async () => {
                             id: fence.fenceId,
                             coordinate: validCoordinate,
                             fences: fence.fences || [],
-                            fatteningData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-                            pigletsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-                            sowsData: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
+                            fattening: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+                            piglets: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
+                            sows: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
                         };
-
-                        if (fence.fences && fence.fences.length > 0) {
-                            fence.fences.forEach(subFence => {
-                            });
-                        }
 
                         // 处理各类型猪的数据
                         if (fence.fences && fence.fences.length > 0) {
                             fence.fences.forEach(subFence => {
+                                const reviewerCount = props.isViewMode ?
+                                    (subFence.auditPersionalCheckCount || 0) :
+                                    (subFence.auditPersionalCheckCount || 0);
+
                                 if (subFence.breedCode === 'PORKER') {
-                                    areaData.fatteningData = {
+                                    areaData.fattening = {
                                         reportCount: subFence.persionalCheckCount || 0,
                                         aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: props.isViewMode ?
-                                            (subFence.auditPersionalCheckCount || 0) :
-                                            (subFence.auditPersionalCheckCount || 0),
+                                        reviewerCount: reviewerCount,
                                         lastReportCount: subFence.lastPersionalCheckCount || 0
                                     };
                                 } else if (subFence.breedCode === 'PIGLET') {
-                                    areaData.pigletsData = {
+                                    areaData.piglets = {
                                         reportCount: subFence.persionalCheckCount || 0,
                                         aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: props.isViewMode ?
-                                            (subFence.auditPersionalCheckCount || 0) :
-                                            (subFence.auditPersionalCheckCount || 0),
+                                        reviewerCount: reviewerCount,
                                         lastReportCount: subFence.lastPersionalCheckCount || 0
                                     };
                                 } else if (subFence.breedCode === 'BROOD_SOW') {
-                                    areaData.sowsData = {
+                                    areaData.sows = {
                                         reportCount: subFence.persionalCheckCount || 0,
                                         aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: props.isViewMode ?
-                                            (subFence.auditPersionalCheckCount || 0) :
-                                            (subFence.auditPersionalCheckCount || 0),
+                                        reviewerCount: reviewerCount,
                                         lastReportCount: subFence.lastPersionalCheckCount || 0
                                     };
                                 }
@@ -955,19 +979,18 @@ const loadData = async () => {
             }
         } catch (error) {
             console.error('获取审核详情失败:', error);
-            message.error('获取审核详情失败');
         } finally {
             loading.value = false;
         }
     } else {
         console.error('未找到审核ID');
-        message.error('未找到审核ID');
     }
 };
 
 onMounted(() => {
     loadData();
 });
+
 onUnmounted(() => {
     // 释放所有创建的 Blob URL
     Object.values(fileURLs.videos).forEach(url => {
@@ -1003,6 +1026,23 @@ onUnmounted(() => {
         justify-content: center;
         align-items: center;
         z-index: 100;
+    }
+
+    .price-point-details.relative {
+        position: relative;
+        min-height: 200px;
+    }
+
+    .price-point-details .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
     }
 
     .content-container {
