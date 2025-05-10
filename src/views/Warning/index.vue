@@ -34,7 +34,7 @@
 
         <!-- 数据表格 -->
         <div class="data-table">
-            <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
+            <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered row-key="id"
                 :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'deviationRate'">
@@ -62,9 +62,11 @@
 import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
-import { getAreaTrees } from './api';
+import { getAreaTrees, getWarningList } from './api';
+import dayjs from 'dayjs';
 
 const router = useRouter();
+const loading = ref(false);
 
 // 搜索表单
 const searchForm = reactive({
@@ -115,8 +117,8 @@ const columns = [
     },
     {
         title: '行政区划',
-        dataIndex: 'district',
-        key: 'district',
+        dataIndex: 'areaname',
+        key: 'areaname',
         align: 'center'
     },
     {
@@ -127,20 +129,20 @@ const columns = [
     },
     {
         title: '上报时间',
-        dataIndex: 'reportTime',
-        key: 'reportTime',
+        dataIndex: 'registTime',
+        key: 'registTime',
         align: 'center'
     },
     {
         title: '上报总数',
-        dataIndex: 'totalReported',
-        key: 'totalReported',
+        dataIndex: 'persionalCheckCount',
+        key: 'persionalCheckCount',
         align: 'center'
     },
     {
         title: '人工审核数量',
-        dataIndex: 'manualReviewCount',
-        key: 'manualReviewCount',
+        dataIndex: 'auditPersionalCheckCount',
+        key: 'auditPersionalCheckCount',
         align: 'center'
     },
     {
@@ -164,51 +166,70 @@ const getDeviationColor = (rate) => {
     return '#52C41A';                   // 绿色 - 低偏差
 };
 
-// 模拟数据
-const generateData = () => {
-    const data = [];
-    for (let i = 1; i <= 15; i++) {
-        // 生成随机的偏差率，介于0-20%之间
-        const deviationRate = (Math.random() * 20).toFixed(2);
-        const totalReported = 500 + i * 20;
-
-        // 根据偏差率计算人工审核数量
-        const manualReviewCount = Math.round(totalReported * (1 - parseFloat(deviationRate) / 100));
-
-        data.push({
-            id: i,
-            index: i,
-            district: '四川省成都市' + (i % 2 === 0 ? '武侯区' : '锦江区'),
-            farmName: `养殖场 ${i}`,
-            reportTime: `2025-04-${10 + i % 20}`,
-            totalReported: totalReported,
-            manualReviewCount: manualReviewCount,
-            deviationRate: deviationRate
-        });
-    }
-    return data;
-};
-
 // 表格数据
-const dataSource = ref(generateData());
+const dataSource = ref([]);
 
 // 分页
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 15
+    total: 0
 });
 
+// 获取异常预警数据
+const fetchWarningData = async () => {
+    loading.value = true;
+    try {
+        // 处理日期范围
+        let startDate = '';
+        let endDate = '';
+        if (searchForm.reportTimeRange && searchForm.reportTimeRange.length === 2) {
+            startDate = searchForm.reportTimeRange[0] ? dayjs(searchForm.reportTimeRange[0]).format('YYYY-MM-DD') : '';
+            endDate = searchForm.reportTimeRange[1] ? dayjs(searchForm.reportTimeRange[1]).format('YYYY-MM-DD') : '';
+        }
+
+        const params = {
+            condition: {
+                areacode: searchForm.district,
+                farmName: searchForm.farmName,
+                startDate: startDate,
+                endDate: endDate
+            },
+            pageNo: pagination.current,
+            pageSize: pagination.pageSize
+        };
+
+        const res = await getWarningList(params);
+
+        if (res) {
+            // 处理返回的数据
+            const records = res.records || [];
+            dataSource.value = records.map((item, index) => ({
+                ...item,
+                index: (pagination.current - 1) * pagination.pageSize + index + 1
+            }));
+
+            pagination.total = res.total || 0;
+        }
+    } catch (error) {
+        console.error('获取异常预警数据失败:', error);
+        message.error('获取异常预警数据失败');
+    } finally {
+        loading.value = false;
+    }
+};
+
 const handleSearch = () => {
-    console.log('搜索条件:', searchForm);
     pagination.current = 1;
-    // 实际项目中这里应该调用API进行搜索
+    fetchWarningData();
 };
 
 const handleReset = () => {
     searchForm.district = '';
     searchForm.farmName = '';
     searchForm.reportTimeRange = [];
+    pagination.current = 1;
+    fetchWarningData();
 };
 
 const viewDetails = (record) => {
@@ -221,11 +242,12 @@ const viewDetails = (record) => {
 const handleTableChange = (page, pageSize) => {
     pagination.current = page;
     pagination.pageSize = pageSize;
-    // 加载当前页数据
+    fetchWarningData();
 };
 
 onMounted(() => {
     fetchAreaTrees();
+    fetchWarningData();
 });
 </script>
 

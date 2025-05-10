@@ -7,3 +7,12 @@ export function getAreaTrees() {
         method: 'post'
     });
 }
+
+// 分页查询异常预警列表
+export function getWarningList(params: any) {
+    return axios({
+        url: '/web/warn/queryErrorFarmWarns',
+        method: 'post',
+        data: params
+    });
+}

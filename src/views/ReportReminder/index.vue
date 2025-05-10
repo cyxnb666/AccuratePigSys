@@ -29,8 +29,8 @@
 
         <!-- 数据表格 -->
         <div class="data-table">
-            <a-table :columns="columns" :data-source="dataSource" :pagination="false" bordered row-key="id"
-                :scroll="{ y: tableHeight }">
+            <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
+                row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'action'">
                         <a-button type="link" @click="viewReminderDetails(record)">详情</a-button>
@@ -52,9 +52,10 @@
 import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
-import { getAreaTrees } from './api';
+import { getAreaTrees, getReportReminderStatistics } from './api';
 
 const router = useRouter();
+const loading = ref(false);
 
 // 搜索表单
 const searchForm = reactive({
@@ -104,8 +105,8 @@ const columns = [
     },
     {
         title: '行政区划',
-        dataIndex: 'district',
-        key: 'district',
+        dataIndex: 'areaname',
+        key: 'areaname',
         align: 'center'
     },
     {
@@ -116,32 +117,32 @@ const columns = [
     },
     {
         title: '上次上报存栏数量',
-        dataIndex: 'lastReportQuantity',
-        key: 'lastReportQuantity',
+        dataIndex: 'persionalCheckCount',
+        key: 'persionalCheckCount',
         align: 'center'
     },
     {
         title: '上次上报时间',
-        dataIndex: 'lastReportTime',
-        key: 'lastReportTime',
+        dataIndex: 'registTime',
+        key: 'registTime',
         align: 'center'
     },
     {
         title: '提醒上报次数',
-        dataIndex: 'reminderCount',
-        key: 'reminderCount',
+        dataIndex: 'totalWarnCount',
+        key: 'totalWarnCount',
         align: 'center'
     },
     {
         title: '提醒未上报次数',
-        dataIndex: 'missedReportCount',
-        key: 'missedReportCount',
+        dataIndex: 'nregistCount',
+        key: 'nregistCount',
         align: 'center'
     },
     {
         title: '实际上报次数',
-        dataIndex: 'actualReportCount',
-        key: 'actualReportCount',
+        dataIndex: 'sregistCount',
+        key: 'sregistCount',
         align: 'center'
     },
     {
@@ -151,57 +152,74 @@ const columns = [
     }
 ];
 
-// 模拟数据
-const generateData = () => {
-    const data = [];
-    for (let i = 1; i <= 15; i++) {
-        data.push({
-            id: i,
-            index: i,
-            district: '四川省成都市' + (i % 2 === 0 ? '武侯区' : '锦江区'),
-            farmName: `养殖场 ${i}`,
-            lastReportQuantity: 500 + i * 10,
-            lastReportTime: '2025-03-' + (10 + i % 20),
-            reminderCount: 3 + i % 3,
-            missedReportCount: i % 3,
-            actualReportCount: 3 + i % 4,
-        });
-    }
-    return data;
-};
-
 // 表格数据
-const dataSource = ref(generateData());
+const dataSource = ref([]);
 
 // 分页
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 15
+    total: 0
 });
 
+// 获取上报提醒数据
+const fetchReportReminderData = async () => {
+    loading.value = true;
+    try {
+        const params = {
+            condition: {
+                areacode: searchForm.district,
+                farmName: searchForm.farmName
+            },
+            pageNo: pagination.current,
+            pageSize: pagination.pageSize
+        };
+
+        const res = await getReportReminderStatistics(params);
+
+        if (res) {
+            const records = res.records || [];
+            dataSource.value = records.map((item, index) => ({
+                ...item,
+                id: item.farmId || index, // 使用farmId作为key，如果没有则使用index
+                index: (pagination.current - 1) * pagination.pageSize + index + 1
+            }));
+
+            pagination.total = res.total || 0;
+        }
+    } catch (error) {
+        console.error('获取上报提醒数据失败:', error);
+        message.error('获取上报提醒数据失败');
+    } finally {
+        loading.value = false;
+    }
+};
+
 const handleSearch = () => {
-    console.log('搜索条件:', searchForm);
     pagination.current = 1;
-    // 实际项目中这里应该调用API进行搜索
+    fetchReportReminderData();
 };
 
 const handleReset = () => {
     searchForm.district = '';
     searchForm.farmName = '';
+    pagination.current = 1;
+    fetchReportReminderData();
 };
 
 const viewReminderDetails = (record) => {
-    router.push(`/WARN/detail/${record.id}`);
+    router.push(`/WARN/detail/${record.farmId || record.id}`);
 };
 
 const handleTableChange = (page, pageSize) => {
     pagination.current = page;
     pagination.pageSize = pageSize;
+    fetchReportReminderData();
 };
 
 onMounted(() => {
     fetchAreaTrees();
+    fetchReportReminderData();
 });
 </script>
 

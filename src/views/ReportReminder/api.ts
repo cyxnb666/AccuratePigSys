@@ -7,3 +7,12 @@ export function getAreaTrees() {
         method: 'post'
     });
 }
+
+// 获取上报提醒统计数据
+export function getReportReminderStatistics(params: any) {
+    return axios({
+        url: '/web/warn/selectNormalFarmWarnStaticis',
+        method: 'post',
+        data: params
+    });
+}
