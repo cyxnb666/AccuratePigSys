@@ -118,7 +118,13 @@
                         <div class="media-title">视频</div>
                         <div class="videos-grid">
                             <div v-for="video in record.filePreviewUrls.videos" :key="video.id" class="video-item">
-                                <video controls :src="video.url" class="video-player"></video>
+                                <div class="image-container" @click="viewFile(video.url)">
+                                    <div class="video-placeholder">
+                                        <cloud-download-outlined class="downVideo"
+                                            @click.stop="downloadFile(video.id, video.name)" />
+                                        <video :src="video.url" autoplay controls controlsList="nodownload"></video>
+                                    </div>
+                                </div>
                                 <div class="video-name">{{ video.name }}</div>
                             </div>
                         </div>
@@ -130,15 +136,16 @@
         <div class="dialog-footer">
             <a-button @click="handleCancel">取 消</a-button>
             <a-button v-if="!isViewMode" type="primary" @click="handleConfirm" :loading="submitting">
-            确 定
-        </a-button>
+                确 定
+            </a-button>
         </div>
     </a-modal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onUnmounted, watch } from 'vue';
-import { ExclamationCircleFilled } from '@ant-design/icons-vue';
+import { ExclamationCircleFilled, CloudDownloadOutlined } from '@ant-design/icons-vue';
+import { getFilePreview } from '../api';
 
 const props = defineProps({
     modelValue: {
@@ -217,7 +224,7 @@ const deathTableData = computed(() => {
         };
 
         const key = breed.breedDeadId;
-        
+
         // 确保键已初始化
         if (!(key in reviewerCounts.value)) {
             reviewerCounts.value[key] = breed.auditPersionalCheckCount || 0;
@@ -232,6 +239,7 @@ const deathTableData = computed(() => {
         };
     });
 });
+
 const reviewerCounts = ref({});
 watch(() => props.modelValue, (visible) => {
     if (visible && props.record && props.record.breeds) {
@@ -244,6 +252,34 @@ watch(() => props.modelValue, (visible) => {
     }
 }, { immediate: true });
 
+// 视频播放相关方法
+const viewFile = (url) => {
+    if (url) {
+        window.open(url, '_blank');
+    }
+};
+
+// 下载文件
+const downloadFile = async (id, fileName) => {
+    if (!id) return;
+
+    try {
+        const response = await getFilePreview(id);
+        const blob = new Blob([response.data]);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = url;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('下载文件失败:', error);
+    }
+};
+
 const handleCancel = () => {
     dialogVisible.value = false;
 };
@@ -252,7 +288,7 @@ const handleConfirm = () => {
     // 设置loading状态
     submitting.value = true;
     emit('loading', true);
-    
+
     const reviewData = {
         reviewerCounts: deathTableData.value.map(item => ({
             type: item.type,
@@ -281,6 +317,7 @@ onUnmounted(() => {
         }
     }
 });
+
 defineExpose({
     resetSubmitting: () => {
         submitting.value = false;
@@ -452,12 +489,39 @@ defineExpose({
         width: calc(33.33% - 11px);
         margin-bottom: 12px;
 
-        .video-player {
+        .image-container {
             width: 100%;
             height: 180px;
-            object-fit: contain;
-            background-color: #000;
-            border-radius: 4px;
+            border: 1px solid #e5e5e5;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .video-placeholder {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+
+            .downVideo {
+                height: 20px;
+                position: absolute;
+                right: 5px;
+                top: 5px;
+                color: red;
+                font-size: 20px;
+                z-index: 999;
+            }
+
+            video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
         }
 
         .video-name {

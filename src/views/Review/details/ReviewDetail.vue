@@ -119,12 +119,12 @@
                                                             <div class="count-item">
                                                                 <span class="label">上报数量：</span>
                                                                 <span class="value">{{ currentArea.fattening.reportCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">AI点数：</span>
                                                                 <span class="value">{{ currentArea.fattening.aiCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">审核员点数：</span>
@@ -138,7 +138,7 @@
                                                                 <span class="label">上次上报数量：</span>
                                                                 <span class="value">{{
                                                                     currentArea.fattening.lastReportCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                         </div>
                                                         <div class="detail-button-container">
@@ -193,12 +193,12 @@
                                                             <div class="count-item">
                                                                 <span class="label">上报数量：</span>
                                                                 <span class="value">{{ currentArea.piglets.reportCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">AI点数：</span>
                                                                 <span class="value">{{ currentArea.piglets.aiCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">审核员点数：</span>
@@ -212,7 +212,7 @@
                                                                 <span class="label">上次上报数量：</span>
                                                                 <span class="value">{{
                                                                     currentArea.piglets.lastReportCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                         </div>
                                                         <div class="detail-button-container">
@@ -267,12 +267,12 @@
                                                             <div class="count-item">
                                                                 <span class="label">上报数量：</span>
                                                                 <span class="value">{{ currentArea.sows.reportCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">AI点数：</span>
                                                                 <span class="value">{{ currentArea.sows.aiCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">审核员点数：</span>
@@ -281,12 +281,12 @@
                                                                     :min="0" style="width: 120px" />
                                                                 <span v-else class="value">{{
                                                                     currentArea.sows.reviewerCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">上次上报数量：</span>
                                                                 <span class="value">{{ currentArea.sows.lastReportCount
-                                                                    }}</span>
+                                                                }}</span>
                                                             </div>
                                                         </div>
                                                         <div class="detail-button-container">
