@@ -73,7 +73,7 @@
                             <div class="info-item">
                                 <span class="label">AI点数总数:</span>
                                 <span class="value">{{ basicInfo.aiTotalCount }}</span>
-                                <span v-if="aiPersionDiffRate > 0.2" class="deviation-warning">
+                                <span v-if="aiPersionDiffRate > 20" class="deviation-warning">
                                     (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
                                 </span>
                             </div>
@@ -443,7 +443,7 @@ import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm } from '../api';
+import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm, submitAudit } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -506,7 +506,8 @@ const filePreviewsLoaded = ref(false);
 const reviewData = reactive({
     result: props.isViewMode ? 1 : null,  // 1通过, 0不通过
     comment: '',
-    expectedInventory: 0
+    expectedInventory: 0,
+    registId: ''
 });
 
 // 获取当前区域的围栏数据
@@ -883,15 +884,22 @@ const goBack = () => {
 };
 
 // 提交审核
-const submitReview = () => {
+const submitReview = async () => {
     if (reviewData.result === null) {
         message.error('请选择审核意见');
+        return;
+    }
+
+    // 如果审核不通过，必须填写审核备注
+    if (reviewData.result === 0 && (!reviewData.comment || reviewData.comment.trim() === '')) {
+        message.error('审核不通过时必须填写审核备注');
         return;
     }
 
     // 检查是否所有区域都已填写审核员点数
     let hasEmptyCount = false;
     farmAreas.value.forEach(area => {
+        // 只检查存在的猪类型
         if (
             (hasFenceType('PORKER') && area.fattening.reviewerCount === 0) ||
             (hasFenceType('PIGLET') && area.piglets.reviewerCount === 0) ||
@@ -906,9 +914,51 @@ const submitReview = () => {
         return;
     }
 
-    // 提交审核数据
-    message.success('审核完成');
-    router.push('/AUDITD');
+    try {
+        // 构建审核参数
+        const auditFences = [];
+
+        // 遍历所有养殖区域，收集每个围栏的审核员点数
+        farmAreas.value.forEach(area => {
+            if (area.fences && Array.isArray(area.fences)) {
+                area.fences.forEach(fence => {
+                    let auditPersionalCheckCount = 0;
+
+                    // 根据围栏类型获取对应的审核员点数
+                    if (fence.breedCode === 'PORKER') {
+                        auditPersionalCheckCount = area.fattening.reviewerCount;
+                    } else if (fence.breedCode === 'PIGLET') {
+                        auditPersionalCheckCount = area.piglets.reviewerCount;
+                    } else if (fence.breedCode === 'BROOD_SOW') {
+                        auditPersionalCheckCount = area.sows.reviewerCount;
+                    }
+
+                    auditFences.push({
+                        auditPersionalCheckCount,
+                        fenceRegistId: fence.fenceRegistId
+                    });
+                });
+            }
+        });
+
+        const auditData = {
+            auditFences,
+            auditId: route.params.id.toString(),
+            auditRemark: reviewData.comment,
+            auditStatus: reviewData.result === 1 ? 'AUDITSUCC' : 'AUDITFAIL',
+            leaveCount: reviewData.expectedInventory,
+            registId: reviewData.registId
+        };
+
+        // 调用审核API
+        await submitAudit(auditData);
+
+        message.success('审核完成');
+        router.push('/AUDITD');
+    } catch (error) {
+        console.error('提交审核失败:', error);
+        message.error('提交审核失败，请重试');
+    }
 };
 
 // 加载数据
@@ -931,6 +981,8 @@ const loadData = async () => {
                 basicInfo.reportTime = res.applyTime || '';
                 basicInfo.totalReportCount = res.persionalCheckCount?.toString() || '0';
                 basicInfo.aiTotalCount = res.aiCheckCount?.toString() || '0';
+
+                reviewData.registId = res.registId;
 
                 // 保存偏差率到变量，用于条件显示偏差警告
                 aiPersionDiffRate.value = res.aiPersionDiffRate || 0;

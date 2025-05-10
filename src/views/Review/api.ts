@@ -117,3 +117,14 @@ export function deadConfirm(data: any) {
         data: data
     });
 }
+
+// 提交审核结果
+export function submitAudit(data: any) {
+    return axios({
+        url: '/web/audit/audit',
+        method: 'post',
+        data: {
+            condition: data
+        }
+    });
+}
