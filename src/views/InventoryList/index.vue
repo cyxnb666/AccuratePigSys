@@ -81,7 +81,7 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import { SearchOutlined } from '@ant-design/icons-vue';
-import { getAreaTrees } from './api';
+import { selectUserTree } from './api';
 
 const router = useRouter();
 
@@ -124,7 +124,7 @@ const fetchAreaTrees = async () => {
     loading.value = true;
 
     try {
-        const res = await getAreaTrees();
+        const res = await selectUserTree();
         if (res) {
             districtTreeData.value = transformAreaData(res);
             filteredDistrictTreeData.value = districtTreeData.value;
