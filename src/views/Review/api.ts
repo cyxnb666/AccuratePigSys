@@ -95,3 +95,16 @@ export function getWebDeadRegist(bizId: string) {
         }
     });
 }
+
+// 获取围栏详细数据
+export function getLeaveFence(fenceRegistId: string) {
+    return axios({
+        url: '/web/audit/getLeaveFence',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: fenceRegistId
+            }
+        }
+    });
+}

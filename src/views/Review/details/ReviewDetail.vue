@@ -16,7 +16,7 @@
 
         <!-- 内容区域 -->
         <div class="content-container">
-            <div class="loading-overlay" v-if="loading || (dataLoaded && !filePreviewsLoaded)">
+            <div class="loading-overlay" v-if="loading || currentFenceLoading">
                 <a-spin tip="加载中..." />
             </div>
             <div class="scrollable-content" v-if="dataLoaded && filePreviewsLoaded">
@@ -433,7 +433,7 @@ import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist } from '../api';
+import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -535,39 +535,42 @@ const getTrackingData = (breedCode) => {
     return [];
 };
 
-
+const currentFenceDetail = ref(null);
+const currentFenceLoading = ref(false);
 const fileURLs = reactive({
     videos: {} as Record<string, string>, // fileId -> URL 映射
     sensors: {} as Record<string, string>, // fileId -> URL 映射
 });
 
 const currentVideoURL = computed(() => {
-    const breedCode = getCurrentBreedCode();
-
-    const files = getCurrentFiles(breedCode);
-    const videoFile = files.find(f => f.fileType === 'SENCE_AI');
-
-    if (videoFile) {
-        console.log(`找到视频文件: ${videoFile.fileId}, 类型: ${videoFile.fileType}, 名称: ${videoFile.fileName}`);
-        if (fileURLs.videos[videoFile.fileId]) {
-            console.log(`该视频文件已存在URL: ${fileURLs.videos[videoFile.fileId]}`);
-            return fileURLs.videos[videoFile.fileId];
-        } else {
-            console.log(`该视频文件没有对应的URL`);
-        }
-    } else {
-        console.log(`没有找到类型为 SENCE_AI 的视频文件`);
+    if (!currentFenceDetail.value || !currentFenceDetail.value.files) {
+        return null;
     }
-
-    return null;
+    
+    const videoFile = currentFenceDetail.value.files.find(f => f.fileType === 'SENCE_AI');
+    return videoFile ? videoFile.fileUrl : null;
 });
 
-// 获取当前传感器图URL
 const currentSensorImageURL = computed(() => {
-    const breedCode = getCurrentBreedCode();
-    const files = getCurrentFiles(breedCode);
-    const sensorFile = files.find(f => f.fileType === 'SENSOR');
-    return sensorFile && fileURLs.sensors[sensorFile.fileId] ? fileURLs.sensors[sensorFile.fileId] : null;
+    if (!currentFenceDetail.value || !currentFenceDetail.value.files) {
+        return null;
+    }
+    
+    const sensorFile = currentFenceDetail.value.files.find(f => f.fileType === 'SENSOR');
+    return sensorFile ? sensorFile.fileUrl : null;
+});
+
+// 修改轨迹数据计算属性
+const trackingData = computed(() => {
+    if (!currentFenceDetail.value || !currentFenceDetail.value.gpss) {
+        return [];
+    }
+    
+    return currentFenceDetail.value.gpss.map(gps => ({
+        lng: parseFloat(gps.longitude),
+        lat: parseFloat(gps.latitude),
+        timestamp: `${gps.timestamp}s`
+    }));
 });
 
 // 获取当前选中区域和类型的文件
@@ -590,89 +593,57 @@ const getCurrentBreedCode = () => {
     return breedMap[activeSubTab.value];
 };
 
-// 加载所有文件预览
-const loadFilePreview = async () => {
-    // 重置加载状态
+const loadCurrentFenceDetail = async () => {
+    // 重置状态
     filePreviewsLoaded.value = false;
-
-    // 收集所有文件ID
-    const allFileIds = new Set<string>();
-
-    // 遍历所有区域和围栏，收集文件ID
-    if (farmAreas.value && farmAreas.value.length > 0) {
-        for (const area of farmAreas.value) {
-            if (area.fences && area.fences.length > 0) {
-                for (const fence of area.fences) {
-                    if (fence.files && fence.files.length > 0) {
-                        for (const file of fence.files) {
-                            allFileIds.add(file.fileId);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    console.log(`找到 ${allFileIds.size} 个需要预览的文件`);
-
-    // 对每个文件ID调用API获取预览
-    const filePreviewPromises = Array.from(allFileIds).map(async (fileId) => {
-        try {
-            console.log(`获取文件预览，fileId: ${fileId}`);
-            const response = await getFilePreview(fileId);
-
-            // 查找该文件的类型
-            let fileType = '';
-
-            // 遍历查找文件信息
-            fileLoop: for (const area of farmAreas.value) {
-                if (area.fences) {
-                    for (const fence of area.fences) {
-                        if (fence.files) {
-                            for (const file of fence.files) {
-                                if (file.fileId === fileId) {
-                                    fileType = file.fileType;
-                                    break fileLoop;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 直接使用响应中的Blob，而不是创建新的Blob
-            const url = URL.createObjectURL(response);
-
-            console.log(`创建文件URL成功，fileId: ${fileId}, 类型: ${fileType}`);
-
-            // 存储URL
-            if (fileType === 'SENCE_AI') {
-                fileURLs.videos[fileId] = url;
-            } else if (fileType === 'SENSOR') {
-                fileURLs.sensors[fileId] = url;
-            }
-        } catch (error) {
-            console.error(`获取文件预览失败，fileId: ${fileId}`, error);
-        }
+    currentFenceDetail.value = null;
+    
+    // 清除之前的URL缓存
+    Object.values(fileURLs.videos).forEach(url => {
+        URL.revokeObjectURL(url);
     });
-
-    // 等待所有文件预览请求完成
-    await Promise.all(filePreviewPromises);
-
-    // 标记文件预览加载完成
-    filePreviewsLoaded.value = true;
-    console.log('所有文件预览加载完成');
+    Object.values(fileURLs.sensors).forEach(url => {
+        URL.revokeObjectURL(url);
+    });
+    fileURLs.videos = {};
+    fileURLs.sensors = {};
+    
+    const breedCode = getCurrentBreedCode();
+    const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
+    
+    if (!currentFence || !currentFence.fenceRegistId) {
+        console.log('没有找到当前围栏信息或ID');
+        filePreviewsLoaded.value = true; // 标记加载完成，避免一直显示加载中
+        return;
+    }
+    
+    currentFenceLoading.value = true;
+    
+    try {
+        const response = await getLeaveFence(currentFence.fenceRegistId);
+        
+        if (response) {
+            console.log('获取到围栏详情:', response);
+            currentFenceDetail.value = response;
+            
+            // 如果有文件，加载文件预览
+            if (response.files && response.files.length > 0) {
+                // 为每个文件加载预览
+                await loadFilePreviews(response.files);
+            } else {
+                // 没有文件，直接标记为加载完成
+                filePreviewsLoaded.value = true;
+            }
+        } else {
+            filePreviewsLoaded.value = true;
+        }
+    } catch (error) {
+        console.error('加载围栏详情失败:', error);
+        filePreviewsLoaded.value = true;
+    } finally {
+        currentFenceLoading.value = false;
+    }
 };
-
-const trackingData = computed(() => {
-    const breedMap = {
-        'fattening': 'PORKER',
-        'piglets': 'PIGLET',
-        'sows': 'BROOD_SOW'
-    };
-
-    return getTrackingData(breedMap[activeSubTab.value]);
-});
 
 const hasFenceType = (breedCode) => {
     if (!currentArea.value || !currentArea.value.fences) {
@@ -689,10 +660,13 @@ watch(currentAreaIndex, () => {
     setDefaultActiveSubTab();
 });
 
+watch([currentAreaIndex, activeSubTab], () => {
+    loadCurrentFenceDetail();
+}, { immediate: false });
 // 设置默认选中的子标签
 const setDefaultActiveSubTab = () => {
+    // 原有代码保持不变
     if (currentArea.value && Array.isArray(currentArea.value.fences)) {
-
         if (hasFenceType('PORKER')) {
             activeSubTab.value = 'fattening';
         } else if (hasFenceType('PIGLET')) {
@@ -702,8 +676,10 @@ const setDefaultActiveSubTab = () => {
         } else {
             activeSubTab.value = 'fattening';
         }
-
     }
+    
+    // 添加以下代码
+    loadCurrentFenceDetail();
 };
 
 const outboundColumns = [
@@ -731,17 +707,9 @@ const deathColumns = [
     { title: '操作', key: 'action', align: 'center' }
 ];
 
-const outboundRecords = ref([
-
-]);
-
-const inboundRecords = ref([
-
-]);
-
-const deathRecords = ref([
-
-]);
+const outboundRecords = ref([]);
+const inboundRecords = ref([]);
+const deathRecords = ref([]);
 
 // 计算审核员点数总和
 const calculateTotalReviewerCount = () => {
@@ -983,7 +951,6 @@ const loadData = async () => {
                     }));
                 }
 
-                await loadFilePreview();
                 dataLoaded.value = true;
             }
         } catch (error) {
