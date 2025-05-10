@@ -119,12 +119,12 @@
                                                             <div class="count-item">
                                                                 <span class="label">上报数量：</span>
                                                                 <span class="value">{{ currentArea.fattening.reportCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">AI点数：</span>
                                                                 <span class="value">{{ currentArea.fattening.aiCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">审核员点数：</span>
@@ -138,7 +138,7 @@
                                                                 <span class="label">上次上报数量：</span>
                                                                 <span class="value">{{
                                                                     currentArea.fattening.lastReportCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                         </div>
                                                         <div class="detail-button-container">
@@ -193,12 +193,12 @@
                                                             <div class="count-item">
                                                                 <span class="label">上报数量：</span>
                                                                 <span class="value">{{ currentArea.piglets.reportCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">AI点数：</span>
                                                                 <span class="value">{{ currentArea.piglets.aiCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">审核员点数：</span>
@@ -212,7 +212,7 @@
                                                                 <span class="label">上次上报数量：</span>
                                                                 <span class="value">{{
                                                                     currentArea.piglets.lastReportCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                         </div>
                                                         <div class="detail-button-container">
@@ -267,12 +267,12 @@
                                                             <div class="count-item">
                                                                 <span class="label">上报数量：</span>
                                                                 <span class="value">{{ currentArea.sows.reportCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">AI点数：</span>
                                                                 <span class="value">{{ currentArea.sows.aiCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">审核员点数：</span>
@@ -281,12 +281,12 @@
                                                                     :min="0" style="width: 120px" />
                                                                 <span v-else class="value">{{
                                                                     currentArea.sows.reviewerCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                             <div class="count-item">
                                                                 <span class="label">上次上报数量：</span>
                                                                 <span class="value">{{ currentArea.sows.lastReportCount
-                                                                }}</span>
+                                                                    }}</span>
                                                             </div>
                                                         </div>
                                                         <div class="detail-button-container">
@@ -425,8 +425,8 @@
                 </div>
             </div>
         </div>
-        <death-detail-dialog v-model="deathDetailVisible" :record="currentDeathRecord" :is-view-mode="isViewMode"
-            @confirm="handleDeathDetailConfirm" />
+        <death-detail-dialog ref="deathDetailRef" v-model="deathDetailVisible" :record="currentDeathRecord"
+            :is-view-mode="isViewMode" @confirm="handleDeathDetailConfirm" />
     </div>
 </template>
 
@@ -437,7 +437,7 @@ import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence } from '../api';
+import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -810,8 +810,55 @@ const viewDeathDetail = async (record) => {
     }
 };
 
-const handleDeathDetailConfirm = (reviewData) => {
-    message.success('死亡登记审核已保存');
+const deathDetailRef = ref(null);
+const handleDeathDetailConfirm = async (reviewData) => {
+    try {
+        // 构造请求数据
+        const breeds = currentDeathRecord.value.breeds.map(breed => {
+            // 找到对应的审核数量
+            const reviewItem = reviewData.reviewerCounts.find(item => {
+                const typeMap = {
+                    'PORKER': '育肥猪',
+                    'PIGLET': '仔猪',
+                    'BROOD_SOW': '能繁母猪'
+                };
+                const typeName = typeMap[breed.breedCode] || breed.breedName;
+                return item.type === typeName;
+            });
+
+            return {
+                auditPersionalCheckCount: reviewItem?.count || 0,
+                deadBreedId: breed.breedDeadId
+            };
+        });
+
+        const requestData = {
+            condition: {
+                breeds: breeds,
+                registId: currentDeathRecord.value.registId
+            }
+        };
+
+        // 调用死亡确认API
+        await deadConfirm(requestData);
+
+        // API调用成功，关闭对话框
+        deathDetailVisible.value = false;
+
+        // 显示成功消息
+        message.success('死亡登记审核已保存');
+
+        // 重新加载页面数据
+        await loadData();
+    } catch (error) {
+        console.error('保存死亡登记审核失败:', error);
+        message.error('保存失败，请重试');
+    } finally {
+        // 重置对话框中的loading状态
+        if (deathDetailRef.value) {
+            deathDetailRef.value.resetSubmitting();
+        }
+    }
 };
 
 const goToDetailedComparison = (tabType: string) => {

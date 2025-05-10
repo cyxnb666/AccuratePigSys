@@ -129,15 +129,15 @@
 
         <div class="dialog-footer">
             <a-button @click="handleCancel">取 消</a-button>
-            <a-button v-if="!isViewMode" type="primary" @click="handleConfirm">
-                确 定
-            </a-button>
+            <a-button v-if="!isViewMode" type="primary" @click="handleConfirm" :loading="submitting">
+            确 定
+        </a-button>
         </div>
     </a-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onUnmounted } from 'vue';
+import { ref, reactive, computed, onUnmounted, watch } from 'vue';
 import { ExclamationCircleFilled } from '@ant-design/icons-vue';
 
 const props = defineProps({
@@ -155,7 +155,8 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update:modelValue', 'confirm']);
+const submitting = ref(false);
+const emit = defineEmits(['update:modelValue', 'confirm', 'loading']);
 
 const dialogVisible = computed({
     get: () => props.modelValue,
@@ -205,34 +206,53 @@ const deathColumns = [
     }
 ];
 
-// 处理表格数据 - 只显示API返回的数据中存在的猪类型
 const deathTableData = computed(() => {
     if (!props.record || !props.record.breeds) return [];
 
-    // 从API数据转换为表格数据，只展示存在的猪类型
-    const tableData = props.record.breeds.map(breed => {
+    return props.record.breeds.map(breed => {
         const typeMap = {
             'PORKER': '育肥猪',
             'PIGLET': '仔猪',
             'BROOD_SOW': '能繁母猪'
         };
 
+        const key = breed.breedDeadId;
+        
+        // 确保键已初始化
+        if (!(key in reviewerCounts.value)) {
+            reviewerCounts.value[key] = breed.auditPersionalCheckCount || 0;
+        }
+
         return {
-            key: breed.breedDeadId,
+            key: key,
             type: typeMap[breed.breedCode] || breed.breedName,
             deathCount: breed.registCount || 0,
-            reviewerCount: props.isViewMode ? props.record.auditPersionalCheckCount || 0 : 0
+            get reviewerCount() { return reviewerCounts.value[key]; },
+            set reviewerCount(val) { reviewerCounts.value[key] = val; }
         };
     });
-
-    return tableData;
 });
+const reviewerCounts = ref({});
+watch(() => props.modelValue, (visible) => {
+    if (visible && props.record && props.record.breeds) {
+        // 重置计数器对象，初始化为API返回的每个breed的auditPersionalCheckCount
+        const counts = {};
+        props.record.breeds.forEach(breed => {
+            counts[breed.breedDeadId] = breed.auditPersionalCheckCount || 0;
+        });
+        reviewerCounts.value = counts;
+    }
+}, { immediate: true });
 
 const handleCancel = () => {
     dialogVisible.value = false;
 };
 
 const handleConfirm = () => {
+    // 设置loading状态
+    submitting.value = true;
+    emit('loading', true);
+    
     const reviewData = {
         reviewerCounts: deathTableData.value.map(item => ({
             type: item.type,
@@ -240,8 +260,8 @@ const handleConfirm = () => {
         }))
     };
 
+    // 发送确认事件，但不关闭对话框
     emit('confirm', reviewData);
-    dialogVisible.value = false;
 };
 
 onUnmounted(() => {
@@ -259,6 +279,11 @@ onUnmounted(() => {
                 if (video.url) URL.revokeObjectURL(video.url);
             });
         }
+    }
+});
+defineExpose({
+    resetSubmitting: () => {
+        submitting.value = false;
     }
 });
 </script>

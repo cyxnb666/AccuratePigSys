@@ -108,3 +108,12 @@ export function getLeaveFence(fenceRegistId: string) {
         }
     });
 }
+
+// 死亡登记确认接口
+export function deadConfirm(data: any) {
+    return axios({
+        url: '/web/audit/deadConfirm',
+        method: 'post',
+        data: data
+    });
+}
