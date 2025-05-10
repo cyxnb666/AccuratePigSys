@@ -111,42 +111,43 @@
                                         <div class="loading-overlay" v-if="currentFenceLoading">
                                             <a-spin tip="加载中..." />
                                         </div>
-                                        <div v-if="filePreviewsLoaded">
-                                            <a-tabs v-model:activeKey="activeSubTab">
-                                                <a-tab-pane v-if="hasFenceType('PORKER')" key="fattening" tab="育肥区">
-                                                    <div class="count-row">
-                                                        <div class="count-items-container">
-                                                            <div class="count-item">
-                                                                <span class="label">上报数量：</span>
-                                                                <span class="value">{{ currentArea.fattening.reportCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">AI点数：</span>
-                                                                <span class="value">{{ currentArea.fattening.aiCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">审核员点数：</span>
-                                                                <a-input-number v-if="!isViewMode"
-                                                                    v-model:value="currentArea.fattening.reviewerCount"
-                                                                    :min="0" style="width: 120px" />
-                                                                <span v-else class="value">{{
-                                                                    currentArea.fattening.reviewerCount }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">上次上报数量：</span>
-                                                                <span class="value">{{
-                                                                    currentArea.fattening.lastReportCount
-                                                                }}</span>
-                                                            </div>
+
+                                        <a-tabs v-model:activeKey="activeSubTab">
+                                            <a-tab-pane v-if="hasFenceType('PORKER')" key="fattening" tab="育肥区">
+                                                <div class="count-row">
+                                                    <div class="count-items-container">
+                                                        <div class="count-item">
+                                                            <span class="label">上报数量：</span>
+                                                            <span class="value">{{ currentArea.fattening.reportCount
+                                                            }}</span>
                                                         </div>
-                                                        <div class="detail-button-container">
-                                                            <a-button type="primary" size="small"
-                                                                @click="goToDetailedComparison('fattening')">详细对比</a-button>
+                                                        <div class="count-item">
+                                                            <span class="label">AI点数：</span>
+                                                            <span class="value">{{ currentArea.fattening.aiCount
+                                                            }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">审核员点数：</span>
+                                                            <a-input-number v-if="!isViewMode"
+                                                                v-model:value="currentArea.fattening.reviewerCount"
+                                                                :min="0" style="width: 120px" />
+                                                            <span v-else class="value">{{
+                                                                currentArea.fattening.reviewerCount }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">上次上报数量：</span>
+                                                            <span class="value">{{
+                                                                currentArea.fattening.lastReportCount
+                                                            }}</span>
                                                         </div>
                                                     </div>
+                                                    <div class="detail-button-container">
+                                                        <a-button type="primary" size="small"
+                                                            @click="goToDetailedComparison('fattening')">详细对比</a-button>
+                                                    </div>
+                                                </div>
 
+                                                <div v-if="filePreviewsLoaded">
                                                     <!-- 视频展示区域 -->
                                                     <div class="video-container">
                                                         <div v-if="currentVideoURL" class="video-content">
@@ -185,42 +186,44 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </a-tab-pane>
+                                                </div>
+                                            </a-tab-pane>
 
-                                                <a-tab-pane v-if="hasFenceType('PIGLET')" key="piglets" tab="仔猪区">
-                                                    <div class="count-row">
-                                                        <div class="count-items-container">
-                                                            <div class="count-item">
-                                                                <span class="label">上报数量：</span>
-                                                                <span class="value">{{ currentArea.piglets.reportCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">AI点数：</span>
-                                                                <span class="value">{{ currentArea.piglets.aiCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">审核员点数：</span>
-                                                                <a-input-number v-if="!isViewMode"
-                                                                    v-model:value="currentArea.piglets.reviewerCount"
-                                                                    :min="0" style="width: 120px" />
-                                                                <span v-else class="value">{{
-                                                                    currentArea.piglets.reviewerCount }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">上次上报数量：</span>
-                                                                <span class="value">{{
-                                                                    currentArea.piglets.lastReportCount
-                                                                }}</span>
-                                                            </div>
+                                            <a-tab-pane v-if="hasFenceType('PIGLET')" key="piglets" tab="仔猪区">
+                                                <div class="count-row">
+                                                    <div class="count-items-container">
+                                                        <div class="count-item">
+                                                            <span class="label">上报数量：</span>
+                                                            <span class="value">{{ currentArea.piglets.reportCount
+                                                            }}</span>
                                                         </div>
-                                                        <div class="detail-button-container">
-                                                            <a-button type="primary" size="small"
-                                                                @click="goToDetailedComparison('piglets')">详细对比</a-button>
+                                                        <div class="count-item">
+                                                            <span class="label">AI点数：</span>
+                                                            <span class="value">{{ currentArea.piglets.aiCount
+                                                            }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">审核员点数：</span>
+                                                            <a-input-number v-if="!isViewMode"
+                                                                v-model:value="currentArea.piglets.reviewerCount"
+                                                                :min="0" style="width: 120px" />
+                                                            <span v-else class="value">{{
+                                                                currentArea.piglets.reviewerCount }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">上次上报数量：</span>
+                                                            <span class="value">{{
+                                                                currentArea.piglets.lastReportCount
+                                                            }}</span>
                                                         </div>
                                                     </div>
+                                                    <div class="detail-button-container">
+                                                        <a-button type="primary" size="small"
+                                                            @click="goToDetailedComparison('piglets')">详细对比</a-button>
+                                                    </div>
+                                                </div>
 
+                                                <div v-if="filePreviewsLoaded">
                                                     <!-- 视频展示区域 -->
                                                     <div class="video-container">
                                                         <div v-if="currentVideoURL" class="video-content">
@@ -259,42 +262,44 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </a-tab-pane>
+                                                </div>
+                                            </a-tab-pane>
 
-                                                <a-tab-pane v-if="hasFenceType('BROOD_SOW')" key="sows" tab="母猪区">
-                                                    <div class="count-row">
-                                                        <div class="count-items-container">
-                                                            <div class="count-item">
-                                                                <span class="label">上报数量：</span>
-                                                                <span class="value">{{ currentArea.sows.reportCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">AI点数：</span>
-                                                                <span class="value">{{ currentArea.sows.aiCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">审核员点数：</span>
-                                                                <a-input-number v-if="!isViewMode"
-                                                                    v-model:value="currentArea.sows.reviewerCount"
-                                                                    :min="0" style="width: 120px" />
-                                                                <span v-else class="value">{{
-                                                                    currentArea.sows.reviewerCount
-                                                                }}</span>
-                                                            </div>
-                                                            <div class="count-item">
-                                                                <span class="label">上次上报数量：</span>
-                                                                <span class="value">{{ currentArea.sows.lastReportCount
-                                                                }}</span>
-                                                            </div>
+                                            <a-tab-pane v-if="hasFenceType('BROOD_SOW')" key="sows" tab="母猪区">
+                                                <div class="count-row">
+                                                    <div class="count-items-container">
+                                                        <div class="count-item">
+                                                            <span class="label">上报数量：</span>
+                                                            <span class="value">{{ currentArea.sows.reportCount
+                                                            }}</span>
                                                         </div>
-                                                        <div class="detail-button-container">
-                                                            <a-button type="primary" size="small"
-                                                                @click="goToDetailedComparison('sows')">详细对比</a-button>
+                                                        <div class="count-item">
+                                                            <span class="label">AI点数：</span>
+                                                            <span class="value">{{ currentArea.sows.aiCount
+                                                            }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">审核员点数：</span>
+                                                            <a-input-number v-if="!isViewMode"
+                                                                v-model:value="currentArea.sows.reviewerCount" :min="0"
+                                                                style="width: 120px" />
+                                                            <span v-else class="value">{{
+                                                                currentArea.sows.reviewerCount
+                                                            }}</span>
+                                                        </div>
+                                                        <div class="count-item">
+                                                            <span class="label">上次上报数量：</span>
+                                                            <span class="value">{{ currentArea.sows.lastReportCount
+                                                            }}</span>
                                                         </div>
                                                     </div>
+                                                    <div class="detail-button-container">
+                                                        <a-button type="primary" size="small"
+                                                            @click="goToDetailedComparison('sows')">详细对比</a-button>
+                                                    </div>
+                                                </div>
 
+                                                <div v-if="filePreviewsLoaded">
                                                     <!-- 视频展示区域 -->
                                                     <div class="video-container">
                                                         <div v-if="currentVideoURL" class="video-content">
@@ -333,9 +338,10 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </a-tab-pane>
-                                            </a-tabs>
-                                        </div>
+                                                </div>
+                                            </a-tab-pane>
+                                        </a-tabs>
+
                                     </div>
                                 </div>
                             </div>

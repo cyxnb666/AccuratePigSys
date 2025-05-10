@@ -264,8 +264,7 @@ const downloadFile = async (id, fileName) => {
     if (!id) return;
 
     try {
-        const response = await getFilePreview(id);
-        const blob = new Blob([response.data]);
+        const blob = await getFilePreview(id); // 直接接收返回的Blob
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.style.display = 'none';
