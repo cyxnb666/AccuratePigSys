@@ -11,19 +11,19 @@
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">行政区划:</span>
-                            <span class="value">{{ basicInfo.district }}</span>
+                            <span class="value">{{ record.areaName }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">养殖场名称:</span>
-                            <span class="value">{{ basicInfo.farmName }}</span>
+                            <span class="value">{{ record.farmName }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">养殖场地址:</span>
-                            <span class="value">{{ basicInfo.address }}</span>
+                            <span class="value">{{ record.farmAddress }}</span>
                         </div>
                     </a-col>
                 </a-row>
@@ -32,19 +32,19 @@
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">上报用户:</span>
-                            <span class="value">{{ basicInfo.reportUser }}</span>
+                            <span class="value">{{ record.registUserName }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">上报时间:</span>
-                            <span class="value">{{ basicInfo.reportTime }}</span>
+                            <span class="value">{{ record.registTime }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">养殖员（主要联系人）:</span>
-                            <span class="value">{{ basicInfo.breeder }}</span>
+                            <span class="value">{{ record.primaryLinkerName }} {{ record.primaryLinkerMobile }}</span>
                         </div>
                     </a-col>
                 </a-row>
@@ -59,20 +59,20 @@
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">死亡时间:</span>
-                            <span class="value">{{ deathInfo.deathTime }}</span>
+                            <span class="value">{{ record.startDate }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">上报总数:</span>
-                            <span class="value">{{ deathInfo.totalReportCount }}</span>
+                            <span class="value">{{ record.registCount }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">AI点数总数:</span>
-                            <span class="value">{{ deathInfo.aiTotalCount }}</span>
-                            <a-popover title="预警提示">
+                            <span class="value">{{ record.aiCheckCount }}</span>
+                            <a-popover v-if="showAiWarning" title="预警提示">
                                 <template #content>
                                     上报点数与AI点数差异已超过预警阈值20%，请仔细审核
                                 </template>
@@ -82,7 +82,7 @@
                     </a-col>
                 </a-row>
 
-                <a-table :columns="deathColumns" :data-source="deathData" :pagination="false" bordered size="small"
+                <a-table :columns="deathColumns" :data-source="deathTableData" :pagination="false" bordered size="small"
                     class="death-table">
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'reviewerCount'">
@@ -94,21 +94,34 @@
                 </a-table>
             </div>
 
-            <div class="info-section">
+            <div class="info-section" v-if="hasMediaFiles">
                 <div class="section-header">
                     <div class="title">照片/视频</div>
                 </div>
 
-                <div class="media-grid">
-                    <div v-for="i in 2" :key="`image-${i}`" class="media-item image-placeholder">
-                        <img src="" alt="" />
+                <div class="media-content">
+                    <!-- 图片预览部分 -->
+                    <div v-if="record.filePreviewUrls?.images?.length > 0" class="images-section">
+                        <div class="media-title">照片</div>
+                        <a-image-preview-group>
+                            <div class="images-grid">
+                                <div v-for="img in record.filePreviewUrls.images" :key="img.id" class="image-item">
+                                    <a-image :src="img.url" :alt="img.name" />
+                                    <div class="image-name">{{ img.name }}</div>
+                                </div>
+                            </div>
+                        </a-image-preview-group>
                     </div>
 
-                    <div class="media-item video-placeholder">
-                        <video controls>
-                            <source src="" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
+                    <!-- 视频预览部分 -->
+                    <div v-if="record.filePreviewUrls?.videos?.length > 0" class="videos-section">
+                        <div class="media-title">视频</div>
+                        <div class="videos-grid">
+                            <div v-for="video in record.filePreviewUrls.videos" :key="video.id" class="video-item">
+                                <video controls :src="video.url" class="video-player"></video>
+                                <div class="video-name">{{ video.name }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -124,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onUnmounted } from 'vue';
 import { ExclamationCircleFilled } from '@ant-design/icons-vue';
 
 const props = defineProps({
@@ -149,21 +162,28 @@ const dialogVisible = computed({
     set: (value) => emit('update:modelValue', value)
 });
 
-const basicInfo = reactive({
-    district: '四川省成都市',
-    farmName: 'XXXXXX养殖场',
-    address: '四川省成都市XXXXXXXXX',
-    reportUser: '张三',
-    reportTime: '2025-03-31',
-    breeder: '张三 15561280883'
+// 计算是否显示媒体文件部分
+const hasMediaFiles = computed(() => {
+    return (
+        props.record?.filePreviewUrls?.images?.length > 0 ||
+        props.record?.filePreviewUrls?.videos?.length > 0
+    );
 });
 
-const deathInfo = reactive({
-    deathTime: '2025-03-31',
-    totalReportCount: '6',
-    aiTotalCount: '1'
+// 计算是否显示AI点数预警
+const showAiWarning = computed(() => {
+    if (!props.record.registCount || !props.record.aiCheckCount) return false;
+
+    const reportCount = Number(props.record.registCount) || 0;
+    const aiCount = Number(props.record.aiCheckCount) || 0;
+
+    if (reportCount === 0 || aiCount === 0) return false;
+
+    const diffRate = Math.abs(reportCount - aiCount) / reportCount;
+    return diffRate > 0.2; // 超过20%显示预警
 });
 
+// 死亡表格列定义
 const deathColumns = [
     {
         title: '种类',
@@ -185,26 +205,28 @@ const deathColumns = [
     }
 ];
 
-const deathData = ref([
-    {
-        key: '1',
-        type: '育肥猪',
-        deathCount: 2,
-        reviewerCount: props.isViewMode ? 2 : 0
-    },
-    {
-        key: '2',
-        type: '仔猪',
-        deathCount: 4,
-        reviewerCount: props.isViewMode ? 4 : 0
-    },
-    {
-        key: '3',
-        type: '能繁母猪',
-        deathCount: 0,
-        reviewerCount: props.isViewMode ? 0 : 0
-    }
-]);
+// 处理表格数据 - 只显示API返回的数据中存在的猪类型
+const deathTableData = computed(() => {
+    if (!props.record || !props.record.breeds) return [];
+
+    // 从API数据转换为表格数据，只展示存在的猪类型
+    const tableData = props.record.breeds.map(breed => {
+        const typeMap = {
+            'PORKER': '育肥猪',
+            'PIGLET': '仔猪',
+            'BROOD_SOW': '能繁母猪'
+        };
+
+        return {
+            key: breed.breedDeadId,
+            type: typeMap[breed.breedCode] || breed.breedName,
+            deathCount: breed.registCount || 0,
+            reviewerCount: props.isViewMode ? props.record.auditPersionalCheckCount || 0 : 0
+        };
+    });
+
+    return tableData;
+});
 
 const handleCancel = () => {
     dialogVisible.value = false;
@@ -212,7 +234,7 @@ const handleCancel = () => {
 
 const handleConfirm = () => {
     const reviewData = {
-        reviewerCounts: deathData.value.map(item => ({
+        reviewerCounts: deathTableData.value.map(item => ({
             type: item.type,
             count: item.reviewerCount
         }))
@@ -221,6 +243,24 @@ const handleConfirm = () => {
     emit('confirm', reviewData);
     dialogVisible.value = false;
 };
+
+onUnmounted(() => {
+    if (props.record?.filePreviewUrls) {
+        // 释放图片URLs
+        if (props.record.filePreviewUrls.images) {
+            props.record.filePreviewUrls.images.forEach(img => {
+                if (img.url) URL.revokeObjectURL(img.url);
+            });
+        }
+
+        // 释放视频URLs
+        if (props.record.filePreviewUrls.videos) {
+            props.record.filePreviewUrls.videos.forEach(video => {
+                if (video.url) URL.revokeObjectURL(video.url);
+            });
+        }
+    }
+});
 </script>
 
 <style lang="scss" scoped>
@@ -251,10 +291,12 @@ const handleConfirm = () => {
     }
 
     .info-section {
-        margin-bottom: 24px;
+        padding: 20px;
+        margin-bottom: 0;
+        border-bottom: 1px solid #f0f0f0;
 
         &:last-child {
-            margin-bottom: 0;
+            border-bottom: none;
         }
     }
 
@@ -310,12 +352,6 @@ const handleConfirm = () => {
             margin-left: 8px;
             cursor: pointer;
         }
-
-        .warning-message {
-            color: #ff4d4f;
-            margin-left: 8px;
-            font-size: 12px;
-        }
     }
 
     .death-table {
@@ -327,39 +363,86 @@ const handleConfirm = () => {
         }
     }
 
-    .media-grid {
+    .media-content {
+        margin-top: 16px;
+    }
+
+    .media-title {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 12px;
+        color: #333;
+    }
+
+    .images-section,
+    .videos-section {
+        margin-bottom: 24px;
+    }
+
+    .images-grid {
         display: flex;
         flex-wrap: wrap;
         gap: 16px;
     }
 
-    .media-item {
+    .image-item {
         width: calc(20% - 13px);
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        overflow: hidden;
+        margin-bottom: 12px;
 
-        &.image-placeholder {
+        :deep(.ant-image) {
+            width: 100%;
             height: 120px;
-            background-color: #f5f5f5;
             display: flex;
             align-items: center;
             justify-content: center;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            overflow: hidden;
 
             img {
                 max-width: 100%;
                 max-height: 100%;
+                object-fit: contain;
             }
         }
 
-        &.video-placeholder {
-            background-color: #000;
+        .image-name {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
 
-            video {
-                width: 100%;
-                height: 120px;
-                display: block;
-            }
+    .videos-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .video-item {
+        width: calc(33.33% - 11px);
+        margin-bottom: 12px;
+
+        .video-player {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            background-color: #000;
+            border-radius: 4px;
+        }
+
+        .video-name {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     }
 

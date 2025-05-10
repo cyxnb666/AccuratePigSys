@@ -433,7 +433,7 @@ import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../plotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters } from '../api';
+import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -756,9 +756,58 @@ const calculateTotalReviewerCount = () => {
     return total;
 };
 
-const viewDeathDetail = (record) => {
-    currentDeathRecord.value = record;
-    deathDetailVisible.value = true;
+const viewDeathDetail = async (record) => {
+    try {
+        loading.value = true;
+        const detailRes = await getWebDeadRegist(record.bizId);
+
+        // 获取文件预览
+        if (detailRes.files && detailRes.files.length > 0) {
+            // 初始化文件预览URLs
+            detailRes.filePreviewUrls = {
+                images: [],
+                videos: []
+            };
+
+            // 为每个文件获取预览URL
+            const filePreviewPromises = detailRes.files.map(async (file) => {
+                try {
+                    const fileResponse = await getFilePreview(file.fileId);
+                    const url = URL.createObjectURL(fileResponse);
+
+                    // 根据文件后缀区分图片和视频
+                    const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
+
+                    if (isVideo) {
+                        detailRes.filePreviewUrls.videos.push({
+                            id: file.fileId,
+                            name: file.fileName,
+                            url: url
+                        });
+                    } else {
+                        detailRes.filePreviewUrls.images.push({
+                            id: file.fileId,
+                            name: file.fileName,
+                            url: url
+                        });
+                    }
+                } catch (error) {
+                    console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
+                }
+            });
+
+            // 等待所有文件预览加载完成
+            await Promise.all(filePreviewPromises);
+        }
+
+        currentDeathRecord.value = detailRes;
+        deathDetailVisible.value = true;
+    } catch (error) {
+        console.error('获取死亡登记详情失败:', error);
+        message.error('获取死亡登记详情失败');
+    } finally {
+        loading.value = false;
+    }
 };
 
 const handleDeathDetailConfirm = (reviewData) => {
@@ -912,20 +961,26 @@ const loadData = async () => {
 
                 // 处理死亡记录数据
                 if (deathsRes) {
-                    console.log('获取到死亡记录数据:', deathsRes);
-                    // 待确定数据格式后处理
+                    deathRecords.value = deathsRes.map(item => ({
+                        ...item,
+                        key: item.bizId
+                    }));
                 }
 
                 // 处理补栏记录数据
                 if (restocksRes) {
-                    console.log('获取到补栏记录数据:', restocksRes);
-                    // 待确定数据格式后处理
+                    inboundRecords.value = restocksRes.map(item => ({
+                        ...item,
+                        key: item.bizId
+                    }));
                 }
 
                 // 处理出栏记录数据
                 if (slaughtersRes) {
-                    console.log('获取到出栏记录数据:', slaughtersRes);
-                    // 待确定数据格式后处理
+                    outboundRecords.value = slaughtersRes.map(item => ({
+                        ...item,
+                        key: item.bizId
+                    }));
                 }
 
                 await loadFilePreview();

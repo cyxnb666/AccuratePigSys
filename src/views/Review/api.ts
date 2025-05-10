@@ -82,3 +82,16 @@ export function queryRangeRegistSlaughters(auditId: string) {
         }
     });
 }
+
+// 获取死亡登记详情
+export function getWebDeadRegist(bizId: string) {
+    return axios({
+        url: '/web/audit/getWebDeadRegist',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: bizId
+            }
+        }
+    });
+}
