@@ -16,3 +16,18 @@ export function getReportReminderStatistics(params: any) {
         data: params
     });
 }
+
+// 获取提醒记录详情
+export function getNormalWarns(farmId: string, pageNo: number = 1, pageSize: number = 10) {
+    return axios({
+        url: '/web/warn/pageQueryNormalWarns',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmId
+            },
+            pageNo,
+            pageSize
+        }
+    });
+}

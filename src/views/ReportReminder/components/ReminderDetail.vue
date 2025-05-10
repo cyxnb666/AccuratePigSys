@@ -9,7 +9,7 @@
                             <left-outlined /> 返回
                         </a>
                     </a-breadcrumb-item>
-                    <a-breadcrumb-item>提醒记录详情</a-breadcrumb-item>
+                    <a-breadcrumb-item>{{ farmName }}提醒记录详情</a-breadcrumb-item>
                 </a-breadcrumb>
             </div>
         </div>
@@ -17,43 +17,55 @@
         <!-- 数据表格 -->
         <div class="content-container">
             <div class="data-table">
-                <a-table :columns="columns" :data-source="dataSource" :pagination="pagination" bordered row-key="id"
-                    :scroll="{ y: tableHeight }" @change="handleTableChange">
+                <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
+                    row-key="id" :scroll="{ y: tableHeight }">
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'rule'">
-                            <!-- 规则显示，支持多行 -->
-                            <div v-for="(rule, index) in record.rules" :key="index" class="rule-item">
-                                {{ rule }}
+                            <div class="rule-item">
+                                {{ record.rule }}
                             </div>
                         </template>
                         <template v-if="column.key === 'reportStatus'">
-                            <a-tag :color="record.reportStatus === '已上报' ? 'success' : 'warning'">
-                                {{ record.reportStatus }}
+                            <a-tag :color="getStatusColor(record.registStatus)">
+                                {{ getStatusText(record.registStatus) }}
                             </a-tag>
                         </template>
                         <template v-if="column.key === 'relatedTask'">
-                            <a-button type="link" @click="viewTask(record)" v-if="record.relatedTask">
-                                {{ record.relatedTask }}
+                            <a-button type="link" @click="viewTask(record)" v-if="record.auditId">
+                                {{ record.auditId }}
                             </a-button>
                             <span v-else>-</span>
                         </template>
                     </template>
                 </a-table>
+
+                <!-- 分页 -->
+                <div class="pagination">
+                    <a-pagination :current="pagination.current" :pageSize="pagination.pageSize"
+                        :total="pagination.total" @change="handlePaginationChange" show-size-changer
+                        :show-total="(total) => `共 ${total} 条记录`" />
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { LeftOutlined } from '@ant-design/icons-vue';
+import { getNormalWarns } from '../api';
 
 const router = useRouter();
 const route = useRoute();
+const isLoading = ref(false);
 
-// 表格高度
-const tableHeight = ref('calc(80vh - 140px)');
+const tableHeight = ref('calc(80vh - 150px)');
+const loading = ref(false);
+const dataSource = ref([]);
+
+const farmId = computed(() => route.query.farmId as string);
+const farmName = computed(() => route.query.farmName as string || '未知养殖场');
 
 // 表格列配置
 const columns = [
@@ -66,8 +78,8 @@ const columns = [
     },
     {
         title: '提醒时间',
-        dataIndex: 'reminderTime',
-        key: 'reminderTime',
+        dataIndex: 'warnTime',
+        key: 'warnTime',
         align: 'center',
         width: 160
     },
@@ -94,70 +106,117 @@ const columns = [
     }
 ];
 
-// 模拟数据
-const generateData = () => {
-    const data = [];
-    const rules = [
-        ['存栏变化数累计达到数量（出栏/补栏/死亡）：10'],
-        ['存栏变化数累计达到比例（出栏/补栏/死亡）：10%'],
-        ['上次存栏上报至今累计达到天数：20'],
-        ['重复不通过重新上报']
-    ];
-
-    for (let i = 1; i <= 50; i++) {
-        const reportStatus = i % 3 === 0 ? '已上报' : i % 3 === 1 ? '待上报' : '逾期未上报';
-        const isReviewCompleted = reportStatus === '已上报'; // 已上报的任务都已审核完成
-
-        data.push({
-            id: i,
-            index: i,
-            reminderTime: `2025-03-${i < 10 ? '0' + i : i}`,
-            rules: [rules[i % 4][0]],
-            reportStatus: reportStatus,
-            relatedTask: i % 2 === 0 ? `TASK-${2025000 + i}` : null,
-            relatedTaskId: i % 2 === 0 ? i : null, // 用于跳转的ID
-            isReviewCompleted: isReviewCompleted // 用于控制查看模式还是审核模式
-        });
-    }
-    return data;
-};
-
-// 表格数据
-const dataSource = ref(generateData());
-
 // 分页配置
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 50,
-    showSizeChanger: true,
-    showTotal: (total) => `共 ${total} 条`
+    total: 0
 });
+
+// 获取状态文本
+const getStatusText = (status) => {
+    switch (status) {
+        case 'S': return '已上报';
+        case 'O': return '逾期未上报';
+        case 'N': return '待上报';
+        default: return '未知状态';
+    }
+};
+
+// 根据状态获取颜色
+const getStatusColor = (status) => {
+    switch (status) {
+        case 'S': return 'success';
+        case 'O': return 'error';
+        case 'N': return 'warning';
+        default: return 'default';
+    }
+};
+
+// 获取提醒记录详情数据
+const fetchWarnDetails = async () => {
+    if (!farmId.value) {
+        console.error('未提供养殖场ID');
+        return;
+    }
+
+    loading.value = true;
+    try {
+        const res = await getNormalWarns(farmId.value, pagination.current, pagination.pageSize);
+
+        if (res && res.records) {
+            dataSource.value = res.records.map((item, index) => ({
+                ...item,
+                id: item.warnId,
+                index: (pagination.current - 1) * pagination.pageSize + index + 1,
+                rule: item.ruleContent
+            }));
+
+            pagination.total = res.total || 0;
+        } else {
+            dataSource.value = [];
+            pagination.total = 0;
+        }
+    } catch (error) {
+        console.error('获取提醒记录详情失败:', error);
+        dataSource.value = [];
+    } finally {
+        loading.value = false;
+    }
+};
 
 // 返回上一页
 const goBack = () => {
     router.go(-1);
 };
 
-// 查看关联任务 - 根据审核状态决定跳转模式
+// 查看关联任务
 const viewTask = (record) => {
-    if (record.relatedTaskId) {
-        // 如果任务已审核完成(已上报)，则以查看模式打开；否则以审核模式打开
-        const viewMode = record.isReviewCompleted;
+    if (record.auditId) {
+        // 根据审核状态决定是否以只读模式打开
+        // 只有在待审核状态(AUDITING)时才可编辑，其他状态只能查看
+        const isViewMode = record.auditStatus !== 'AUDITING';
 
         router.push({
-            path: `/AUDITD/detail/${record.relatedTaskId}`,
-            query: { viewMode: viewMode.toString() }
+            path: `/AUDITD/detail/${record.auditId}`,
+            query: { viewMode: isViewMode.toString() }
         });
     }
 };
 
-// 表格分页变化
-const handleTableChange = (pag) => {
-    pagination.current = pag.current;
-    pagination.pageSize = pag.pageSize;
-    // 实际项目中这里应该调用API重新加载数据
+const handlePaginationChange = (page, pageSize) => {
+    // 如果正在加载，忽略此次调用
+    if (isLoading.value) return;
+
+    // 设置锁以防止重复请求
+    isLoading.value = true;
+
+    pagination.current = page;
+    pagination.pageSize = pageSize;
+
+    // 请求完成后在 finally 中解锁
+    fetchWarnDetails().finally(() => {
+        isLoading.value = false;
+    });
 };
+
+// 页码变化处理
+const handlePageChange = (page, pageSize) => {
+    pagination.current = page;
+    fetchWarnDetails();
+};
+
+// 每页记录数变化处理
+const handleSizeChange = (current, size) => {
+    pagination.pageSize = size;
+    pagination.current = 1; // 切换每页条数时重置为第一页
+    fetchWarnDetails();
+};
+
+// 初始化加载数据
+onMounted(() => {
+    fetchWarnDetails();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -204,6 +263,11 @@ const handleTableChange = (pag) => {
                 overflow-y: auto;
             }
         }
+
+        .pagination {
+            margin-top: 16px;
+            text-align: right;
+        }
     }
 
     .rule-item {
@@ -215,7 +279,6 @@ const handleTableChange = (pag) => {
     }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
     .ant-table-thead>tr>th {
         background-color: #F3F5F9;

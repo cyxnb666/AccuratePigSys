@@ -181,7 +181,7 @@ const fetchReportReminderData = async () => {
             const records = res.records || [];
             dataSource.value = records.map((item, index) => ({
                 ...item,
-                id: item.farmId || index, // 使用farmId作为key，如果没有则使用index
+                id: item.farmId,
                 index: (pagination.current - 1) * pagination.pageSize + index + 1
             }));
 
@@ -208,7 +208,13 @@ const handleReset = () => {
 };
 
 const viewReminderDetails = (record) => {
-    router.push(`/WARN/detail/${record.farmId || record.id}`);
+    router.push({
+        path: `/WARN/detail/${record.id}`,
+        query: {
+            farmId: record.farmId,
+            farmName: record.farmName
+        }
+    });
 };
 
 const handleTableChange = (page, pageSize) => {
@@ -246,7 +252,6 @@ onMounted(() => {
         flex-direction: column;
         flex: 1;
 
-        /* 确保表格能够撑满容器 */
         :deep(.ant-table-wrapper) {
             flex: 1;
 
@@ -268,7 +273,6 @@ onMounted(() => {
     }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
     .ant-table-thead>tr>th {
         background-color: #F3F5F9;
