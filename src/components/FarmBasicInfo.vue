@@ -10,7 +10,8 @@
             <div class="info-row">
                 <div class="info-item">
                     <span class="label">行政区划:</span>
-                    <span class="value">{{ farmInfo.district }}</span>
+                    <span class="value">{{ farmInfo.provinceName }} {{ farmInfo.cityName }} {{ farmInfo.townName }} {{
+                        farmInfo.districtName }}</span>
                 </div>
             </div>
             <div class="info-row">
@@ -22,13 +23,13 @@
             <div class="info-row">
                 <div class="info-item">
                     <span class="label">养殖场地址:</span>
-                    <span class="value">{{ farmInfo.address }}</span>
+                    <span class="value">{{ farmInfo.farmAddress }}</span>
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-item">
-                    <span class="label">养殖场主要联系人:</span>
-                    <span class="value">{{ farmInfo.contactPerson }} {{ farmInfo.contactPhone }}</span>
+                    <span class="label">养殖场备注:</span>
+                    <span class="value">{{ farmInfo.remark }}</span>
                 </div>
             </div>
         </div>
@@ -42,11 +43,13 @@ defineProps({
         type: Object,
         required: true,
         default: () => ({
-            district: '',
+            provinceName: '',
+            cityName: '',
+            townName: '',
+            districtName: '',
             farmName: '',
-            address: '',
-            contactPerson: '',
-            contactPhone: ''
+            farmAddress: '',
+            remark: ''
         })
     },
     showDetailButton: {

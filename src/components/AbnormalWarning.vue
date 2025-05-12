@@ -28,10 +28,10 @@ defineProps({
 defineEmits(['view-more']);
 
 const warningColumns = [
-    { title: '任务号', dataIndex: 'taskId', key: 'taskId', align: 'center' },
-    { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
-    { title: '上报总数', dataIndex: 'totalReported', key: 'totalReported', align: 'center' },
-    { title: '人工审核数量', dataIndex: 'manualReviewCount', key: 'manualReviewCount', align: 'center' },
+    { title: '任务号', dataIndex: 'auditId', key: 'auditId', align: 'center' },
+    { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
+    { title: '上报总数', dataIndex: 'persionalCheckCount', key: 'persionalCheckCount', align: 'center' },
+    { title: '人工审核数量', dataIndex: 'auditPersionalCheckCount', key: 'auditPersionalCheckCount', align: 'center' },
     { title: '偏差率', dataIndex: 'deviationRate', key: 'deviationRate', align: 'center' },
 ];
 </script>

@@ -14,27 +14,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
 
 const props = defineProps({
-    reportData: {
-        type: Array,
+    farmWarnData: {
+        type: Object,
         required: true,
-        default: () => [
-            { name: '提醒上报', value: 20, color: '#40A9FF' },
-            { name: '延期未上报', value: 15, color: '#73D13D' },
-            { name: '实际上报', value: 25, color: '#36CFC9' }
-        ]
+        default: () => ({
+            nregistCount: 0,
+            oregistCount: 0,
+            sregistCount: 0
+        })
     },
     dateRange: {
         type: Array,
         default: () => []
+    },
+    farmId: {
+        type: String,
+        required: true
     }
 });
 
-const emit = defineEmits(['update:dateRange']);
+const emit = defineEmits(['update:dateRange', 'reload-report-data']);
 
 const localDateRange = ref(props.dateRange);
 
@@ -44,7 +48,31 @@ watch(() => props.dateRange, (newVal) => {
 
 const handleDateChange = (dates) => {
     emit('update:dateRange', dates);
+
+    // Format dates for API call
+    let startDate = '';
+    let endDate = '';
+
+    if (dates && dates.length === 2) {
+        startDate = dates[0] ? dayjs(dates[0]).format('YYYY-MM-DD') : '';
+        endDate = dates[1] ? dayjs(dates[1]).format('YYYY-MM-DD') : '';
+    }
+
+    // Emit event to reload data with new date range
+    emit('reload-report-data', {
+        startDate,
+        endDate
+    });
 };
+
+// Transform API data to chart format
+const chartData = computed(() => {
+    return [
+        { name: '提醒未上报', value: props.farmWarnData.nregistCount || 0, color: '#40A9FF' },
+        { name: '延期未上报', value: props.farmWarnData.oregistCount || 0, color: '#73D13D' },
+        { name: '实际上报', value: props.farmWarnData.sregistCount || 0, color: '#36CFC9' }
+    ];
+});
 
 const chartRef = ref<HTMLElement | null>(null);
 let chart: echarts.ECharts | null = null;
@@ -76,7 +104,7 @@ const initChart = () => {
         },
         xAxis: {
             type: 'category',
-            data: props.reportData.map(item => item.name)
+            data: chartData.value.map(item => item.name)
         },
         yAxis: {
             type: 'value'
@@ -86,7 +114,7 @@ const initChart = () => {
                 name: '次数',
                 type: 'bar',
                 barWidth: '60%',
-                data: props.reportData.map(item => ({
+                data: chartData.value.map(item => ({
                     value: item.value,
                     itemStyle: { color: item.color }
                 })),
@@ -105,7 +133,7 @@ const handleResize = () => {
     chart?.resize();
 };
 
-watch(() => props.reportData, () => {
+watch(() => props.farmWarnData, () => {
     initChart();
 }, { deep: true });
 
@@ -152,7 +180,7 @@ onUnmounted(() => {
     .chart-container {
         width: 100%;
         height: 300px;
-        
+
 
         .chart {
             width: 100%;

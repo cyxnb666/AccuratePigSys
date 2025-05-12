@@ -31,12 +31,13 @@
 
                     <!-- 右侧：养殖场存栏情况 -->
                     <a-col :span="7">
-                        <farm-inventory-pie :inventory-data="inventoryData" />
+                        <farm-inventory-pie :leave-data="leaveData" />
                     </a-col>
 
                     <!-- 最右侧：上报情况 -->
                     <a-col :span="7" style="padding-left: 24px;">
-                        <report-status-bar :report-data="reportData" v-model:date-range="dateRange" />
+                        <report-status-bar :farm-warn-data="farmWarnData" :farm-id="farmId"
+                            v-model:date-range="dateRange" @reload-report-data="handleReportDataReload" />
                     </a-col>
                 </a-row>
             </div>
@@ -57,10 +58,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
+import { getLivestockFarm, queryErrorFarmWarns, getLeave, getFarmWarnStaticis } from '../api';
 
 // 引入抽取的组件
 import FarmBasicInfo from '@/components/FarmBasicInfo.vue';
@@ -89,69 +91,109 @@ const mixedChartDateRange = ref<any>([]);
 
 // 分页配置
 const pagination = reactive({
-  stock: { current: 1, pageSize: 10 },
-  outbound: { current: 1, pageSize: 10 },
-  inbound: { current: 1, pageSize: 10 },
-  death: { current: 1, pageSize: 10 },
-  total: 50,
-  showTotal: (total) => `共 ${total} 条`
+    stock: { current: 1, pageSize: 10 },
+    outbound: { current: 1, pageSize: 10 },
+    inbound: { current: 1, pageSize: 10 },
+    death: { current: 1, pageSize: 10 },
+    total: 50,
+    showTotal: (total) => `共 ${total} 条`
 });
 
 // 异常预警表格数据
-const warningData = ref([
-    {
-        key: '1',
-        taskId: 'vvvvvvvvv',
-        reportTime: '2025-03-31 23:23:22',
-        totalReported: 11,
-        manualReviewCount: 15,
-        deviationRate: '',
-    },
-    {
-        key: '2',
-        taskId: 'bbbbbbbbbb',
-        reportTime: '2025-03-31 13:23:11',
-        totalReported: 20,
-        manualReviewCount: 28,
-        deviationRate: '',
-    },
-    {
-        key: '3',
-        taskId: 'xxxxxxxxxxxx',
-        reportTime: '',
-        totalReported: '',
-        manualReviewCount: '',
-        deviationRate: '',
+const warningData = ref([]);
+const fetchWarningData = async () => {
+    try {
+        const params = {
+            "condition": {
+                "areacode": "",
+                "farmName": "",
+                "startDate": "",
+                "endDate": ""
+            },
+            "pageNo": 1,
+            "pageSize": 3
+        };
+
+        const res = await queryErrorFarmWarns(params);
+        if (res && res.records) {
+            warningData.value = res.records;
+        } else {
+            warningData.value = [];
+        }
+    } catch (error) {
+        console.error('获取异常预警数据失败:', error);
+        warningData.value = [];
     }
-]);
+};
 
 // 查看更多异常预警
 const viewMoreWarnings = () => {
     message.info('查看更多异常预警功能待实现');
 };
 
-// 模拟养殖场基础信息
-const farmInfo = reactive({
-    district: '四川省成都市武侯区',
-    farmName: 'XXXXX养殖场',
-    address: 'XXXXXXXXXXXXXXXXXXXXXXX',
-    contactPerson: '张三',
-    contactPhone: '15508280883'
-});
+// 养殖场基础信息
+const farmInfo = ref({});
+const fetchFarmData = async () => {
+    try {
+        const params = {
+            condition: {
+                primaryKey: farmId
+            }
+        };
+        const res = await getLivestockFarm(params);
+        if (res) {
+            farmInfo.value = res;
+        }
+    } catch (error) {
+        console.error('获取养殖场数据失败:', error);
+    }
+};
 
 // 存栏饼图数据
-const inventoryData = ref([
-    { value: 20, name: '仔猪' },
-    { value: 40, name: '育肥猪' },
-    { value: 100, name: '能繁母猪' }
-]);
+const leaveData = ref({
+    pigletCount: 0,
+    porkerCount: 0,
+    sowCount: 0,
+    totalCount: 0
+});
+const fetchInventoryData = async () => {
+    try {
+        const res = await getLeave(farmId);
+        if (res) {
+            leaveData.value = res;
+        }
+    } catch (error) {
+        console.error('获取存栏情况数据失败:', error);
+    }
+};
 
 // 上报情况柱状图数据
-const reportData = ref([
-    { name: '提醒上报', value: 20, color: '#40A9FF' },
-    { name: '延期未上报', value: 15, color: '#73D13D' },
-    { name: '实际上报', value: 25, color: '#36CFC9' }
-]);
+const farmWarnData = ref({
+    nregistCount: 0,
+    oregistCount: 0,
+    sregistCount: 0
+});
+const fetchReportStatusData = async (startDate = "", endDate = "") => {
+    try {
+        const params = {
+            condition: {
+                endDate: endDate,
+                farmId: farmId,
+                startDate: startDate
+            }
+        };
+
+        const res = await getFarmWarnStaticis(params);
+        if (res) {
+            farmWarnData.value = res;
+        }
+    } catch (error) {
+        console.error('获取存栏上报情况数据失败:', error);
+    }
+};
+const handleReportDataReload = (dateInfo) => {
+    fetchReportStatusData(dateInfo.startDate, dateInfo.endDate);
+};
 
 // 趋势折线图数据
 const trendData = reactive({
@@ -234,12 +276,17 @@ const handleViewDetail = (record) => {
 
 // 模拟API加载数据
 const loadData = async () => {
-    // 实际项目中，这里会调用API获取数据
+    await fetchFarmData();
+    await fetchWarningData();
+    await fetchInventoryData();
+    await fetchReportStatusData();
+    // 实际项目中，这里会调用其他API获取数据
     // 目前使用模拟数据，未来可以替换为实际API调用
 };
 
-// 组件挂载时加载数据
-loadData();
+onMounted(() => {
+    loadData();
+});
 </script>
 
 <style lang="scss" scoped>

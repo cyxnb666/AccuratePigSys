@@ -2,7 +2,7 @@
     <div class="info-section">
         <div class="section-header">
             <div class="title">养殖场存栏情况</div>
-            <div class="sub-title">存栏总数：{{ totalInventory }}</div>
+            <div class="sub-title">存栏总数：{{ leaveData.totalCount || 0 }}</div>
         </div>
         <div class="chart-container">
             <div ref="chartRef" class="chart"></div>
@@ -15,19 +15,41 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 
 const props = defineProps({
-    inventoryData: {
-        type: Array,
+    leaveData: {
+        type: Object,
         required: true,
-        default: () => [
-            { value: 20, name: '仔猪' },
-            { value: 40, name: '育肥猪' },
-            { value: 100, name: '能繁母猪' }
-        ]
+        default: () => ({
+            pigletCount: 0,
+            porkerCount: 0,
+            sowCount: 0,
+            totalCount: 0
+        })
     }
 });
 
-const totalInventory = computed(() => {
-    return props.inventoryData.reduce((sum, item) => sum + item.value, 0);
+// Calculate chart data from leaveData
+const chartData = computed(() => {
+    const total = props.leaveData.totalCount ||
+        (props.leaveData.pigletCount + props.leaveData.porkerCount + props.leaveData.sowCount);
+
+    // Create data array for the chart
+    return [
+        {
+            name: '仔猪',
+            value: props.leaveData.pigletCount || 0,
+            percentage: total > 0 ? ((props.leaveData.pigletCount || 0) / total * 100).toFixed(2) : 0
+        },
+        {
+            name: '育肥猪',
+            value: props.leaveData.porkerCount || 0,
+            percentage: total > 0 ? ((props.leaveData.porkerCount || 0) / total * 100).toFixed(2) : 0
+        },
+        {
+            name: '能繁母猪',
+            value: props.leaveData.sowCount || 0,
+            percentage: total > 0 ? ((props.leaveData.sowCount || 0) / total * 100).toFixed(2) : 0
+        }
+    ];
 });
 
 const chartRef = ref<HTMLElement | null>(null);
@@ -41,7 +63,7 @@ const initChart = () => {
     }
 
     const colors = ['#36CFC9', '#73D13D', '#40A9FF'];
-    const chartData = props.inventoryData.map((item, index) => ({
+    const data = chartData.value.map((item, index) => ({
         ...item,
         itemStyle: { color: colors[index % colors.length] }
     }));
@@ -54,7 +76,7 @@ const initChart = () => {
         legend: {
             orient: 'horizontal',
             bottom: 0,
-            data: chartData.map(item => item.name)
+            data: data.map(item => item.name)
         },
         series: [
             {
@@ -86,7 +108,7 @@ const initChart = () => {
                         fontWeight: 'bold'
                     }
                 },
-                data: chartData
+                data: data
             }
         ]
     };
@@ -98,7 +120,7 @@ const handleResize = () => {
     chart?.resize();
 };
 
-watch(() => props.inventoryData, () => {
+watch(() => props.leaveData, () => {
     initChart();
 }, { deep: true });
 

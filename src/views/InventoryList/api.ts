@@ -28,3 +28,43 @@ export function exportLeaves(params) {
         name: '存栏清单.xlsx'
     });
 }
+
+// 获取养殖场基础信息
+export function getLivestockFarm(params) {
+    return axios({
+        url: '/web/livestock/getLivestockFarm',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取异常预警数据
+export function queryErrorFarmWarns(params) {
+    return axios({
+        url: '/web/warn/queryErrorFarmWarns',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取养殖场存栏情况
+export function getLeave(farmId) {
+    return axios({
+        url: '/web/leave/getLeave',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmId
+            }
+        }
+    });
+}
+
+// 获取存栏上报情况
+export function getFarmWarnStaticis(params) {
+    return axios({
+        url: '/web/leave/getFarmWarnStaticis',
+        method: 'post',
+        data: params
+    });
+}
