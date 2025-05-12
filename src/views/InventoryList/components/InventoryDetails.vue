@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
@@ -83,7 +83,7 @@ import {
     queryFarmDeadRegistDeads
 } from '../api';
 import DeathDetailDialog from '@/views/Review/details/DeathDetailDialog.vue';
-import { getWebDeadRegist, getFilePreview } from '@/views/Review/api';
+import { getWebDeadRegist } from '@/views/Review/api';
 import FarmBasicInfo from '@/components/FarmBasicInfo.vue';
 import AbnormalWarning from '@/components/AbnormalWarning.vue';
 import FarmInventoryPie from '@/components/FarmInventoryPie.vue';
@@ -432,41 +432,31 @@ const handleViewDetail = async (record) => {
         try {
             const detailRes = await getWebDeadRegist(record.bizId);
 
-            // 获取文件预览
+            // 准备文件预览URLs
             if (detailRes.files && detailRes.files.length > 0) {
                 detailRes.filePreviewUrls = {
                     images: [],
                     videos: []
                 };
 
-                const filePreviewPromises = detailRes.files.map(async (file) => {
-                    try {
-                        const fileResponse = await getFilePreview(file.fileId);
-                        const url = URL.createObjectURL(fileResponse);
+                detailRes.files.forEach(file => {
+                    // 根据文件后缀判断是视频还是图片
+                    const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
 
-                        // 根据文件后缀判断是视频还是图片
-                        const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
-
-                        if (isVideo) {
-                            detailRes.filePreviewUrls.videos.push({
-                                id: file.fileId,
-                                name: file.fileName,
-                                url: url
-                            });
-                        } else {
-                            detailRes.filePreviewUrls.images.push({
-                                id: file.fileId,
-                                name: file.fileName,
-                                url: url
-                            });
-                        }
-                    } catch (error) {
-                        console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
+                    if (isVideo) {
+                        detailRes.filePreviewUrls.videos.push({
+                            id: file.fileId,
+                            name: file.fileName,
+                            url: file.fileUrl 
+                        });
+                    } else {
+                        detailRes.filePreviewUrls.images.push({
+                            id: file.fileId,
+                            name: file.fileName,
+                            url: file.fileUrl
+                        });
                     }
                 });
-
-                // 等待所有文件预览加载完成
-                await Promise.all(filePreviewPromises);
             }
 
             currentDeathRecord.value = detailRes;
@@ -509,22 +499,6 @@ const loadData = async () => {
 
 onMounted(() => {
     loadData();
-});
-
-onUnmounted(() => {
-    if (currentDeathRecord.value?.filePreviewUrls) {
-        if (currentDeathRecord.value.filePreviewUrls.images) {
-            currentDeathRecord.value.filePreviewUrls.images.forEach(img => {
-                if (img.url) URL.revokeObjectURL(img.url);
-            });
-        }
-
-        if (currentDeathRecord.value.filePreviewUrls.videos) {
-            currentDeathRecord.value.filePreviewUrls.videos.forEach(video => {
-                if (video.url) URL.revokeObjectURL(video.url);
-            });
-        }
-    }
 });
 </script>
 

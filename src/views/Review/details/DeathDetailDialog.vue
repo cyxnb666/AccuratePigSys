@@ -121,7 +121,7 @@
                                 <div class="image-container" @click="viewFile(video.url)">
                                     <div class="video-placeholder">
                                         <cloud-download-outlined class="downVideo"
-                                            @click.stop="downloadFile(video.id, video.name)" />
+                                            @click.stop="downloadFile(video.url, video.name)" />
                                         <video :src="video.url" autoplay controls controlsList="nodownload"></video>
                                     </div>
                                 </div>
@@ -143,9 +143,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onUnmounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { ExclamationCircleFilled, CloudDownloadOutlined } from '@ant-design/icons-vue';
-import { getFilePreview } from '../api';
 
 const props = defineProps({
     modelValue: {
@@ -260,12 +259,10 @@ const viewFile = (url) => {
 };
 
 // 下载文件
-const downloadFile = async (id, fileName) => {
-    if (!id) return;
+const downloadFile = (url, fileName) => {
+    if (!url) return;
 
     try {
-        const blob = await getFilePreview(id); // 直接接收返回的Blob
-        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.style.display = 'none';
         link.href = url;
@@ -273,7 +270,6 @@ const downloadFile = async (id, fileName) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
     } catch (error) {
         console.error('下载文件失败:', error);
     }
@@ -298,24 +294,6 @@ const handleConfirm = () => {
     // 发送确认事件，但不关闭对话框
     emit('confirm', reviewData);
 };
-
-onUnmounted(() => {
-    if (props.record?.filePreviewUrls) {
-        // 释放图片URLs
-        if (props.record.filePreviewUrls.images) {
-            props.record.filePreviewUrls.images.forEach(img => {
-                if (img.url) URL.revokeObjectURL(img.url);
-            });
-        }
-
-        // 释放视频URLs
-        if (props.record.filePreviewUrls.videos) {
-            props.record.filePreviewUrls.videos.forEach(video => {
-                if (video.url) URL.revokeObjectURL(video.url);
-            });
-        }
-    }
-});
 
 defineExpose({
     resetSubmitting: () => {
@@ -354,6 +332,7 @@ defineExpose({
     .info-section {
         margin-bottom: 0;
         padding-bottom: 12px;
+
         &:last-child {
             border-bottom: none;
         }

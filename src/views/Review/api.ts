@@ -30,20 +30,6 @@ export function getAuditDetail(auditId: string) {
     });
 }
 
-// 获取文件预览
-export function getFilePreview(fileId: string) {
-    return axios({
-        url: '/web/file/preview',
-        method: 'post',
-        responseType: 'blob',
-        data: {
-            condition: {
-                primaryKey: fileId
-            }
-        }
-    });
-}
-
 // 获取死亡登记记录
 export function queryRangeRegistDeads(auditId: string) {
     return axios({

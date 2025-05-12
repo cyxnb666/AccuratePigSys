@@ -119,12 +119,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.fattening.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.fattening.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -138,7 +138,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.fattening.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -195,12 +195,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.piglets.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.piglets.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -214,7 +214,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.piglets.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -271,12 +271,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.sows.reportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.sows.aiCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -285,12 +285,12 @@
                                                                 style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.sows.reviewerCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{ currentArea.sows.lastReportCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -371,7 +371,8 @@
                                     bordered size="small">
                                     <template #bodyCell="{ column, record }">
                                         <template v-if="column.key === 'action'">
-                                            <a-button type="link" @click="viewDeathDetail(record)">详情</a-button>
+                                            <a-button type="link" @click="viewDeathDetail(record)"
+                                                :loading="record.loading">详情</a-button>
                                         </template>
                                     </template>
                                 </a-table>
@@ -437,13 +438,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../PlotGPS/PlotGPS.vue';
-import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm, submitAudit } from '../api';
+import { getAuditDetail, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm, submitAudit } from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
@@ -527,10 +528,6 @@ const fenceData = computed(() => {
 
 const currentFenceDetail = ref(null);
 const currentFenceLoading = ref(false);
-const fileURLs = reactive({
-    videos: {} as Record<string, string>, // fileId -> URL 映射
-    sensors: {} as Record<string, string>, // fileId -> URL 映射
-});
 
 const currentVideoURL = computed(() => {
     if (!currentFenceDetail.value || !currentFenceDetail.value.files) {
@@ -573,35 +570,6 @@ const getCurrentBreedCode = () => {
     return breedMap[activeSubTab.value];
 };
 
-// 加载文件预览
-const loadFilePreviews = async (files) => {
-    try {
-        const filePreviewPromises = files.map(async (file) => {
-            try {
-                const fileResponse = await getFilePreview(file.fileId);
-                const url = URL.createObjectURL(fileResponse);
-
-                // 根据文件类型存储URL
-                if (file.fileType === 'SENCE_AI') {
-                    fileURLs.videos[file.fileId] = url;
-                    file.fileUrl = url;
-                } else if (file.fileType === 'SENSOR') {
-                    fileURLs.sensors[file.fileId] = url;
-                    file.fileUrl = url;
-                }
-            } catch (error) {
-                console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
-            }
-        });
-
-        await Promise.all(filePreviewPromises);
-        filePreviewsLoaded.value = true;
-    } catch (error) {
-        console.error('加载文件预览失败:', error);
-        filePreviewsLoaded.value = true;
-    }
-};
-
 const fenceDetailsCache = reactive({});
 const loadCurrentFenceDetail = async () => {
     // 重置状态
@@ -637,14 +605,8 @@ const loadCurrentFenceDetail = async () => {
             fenceDetailsCache[fenceRegistId] = response;
             currentFenceDetail.value = response;
 
-            // 如果有文件，加载文件预览
-            if (response.files && response.files.length > 0) {
-                // 为每个文件加载预览
-                await loadFilePreviews(response.files);
-            } else {
-                // 没有文件，直接标记为加载完成
-                filePreviewsLoaded.value = true;
-            }
+            // 直接设置为已加载
+            filePreviewsLoaded.value = true;
         } else {
             filePreviewsLoaded.value = true;
         }
@@ -734,46 +696,40 @@ const calculateTotalReviewerCount = () => {
 
 const viewDeathDetail = async (record) => {
     try {
-        loading.value = true;
+        // 设置当前记录的loading状态为true
+        const index = deathRecords.value.findIndex(item => item.bizId === record.bizId);
+        if (index !== -1) {
+            deathRecords.value[index].loading = true;
+        }
+
         const detailRes = await getWebDeadRegist(record.bizId);
 
         // 获取文件预览
         if (detailRes.files && detailRes.files.length > 0) {
-            // 初始化文件预览URLs
             detailRes.filePreviewUrls = {
                 images: [],
                 videos: []
             };
 
-            // 为每个文件获取预览URL
-            const filePreviewPromises = detailRes.files.map(async (file) => {
-                try {
-                    const fileResponse = await getFilePreview(file.fileId);
-                    const url = URL.createObjectURL(fileResponse);
+            // 直接使用fileUrl，不再调用getFilePreview
+            detailRes.files.forEach(file => {
+                // 根据文件后缀区分图片和视频
+                const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
 
-                    // 根据文件后缀区分图片和视频
-                    const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
-
-                    if (isVideo) {
-                        detailRes.filePreviewUrls.videos.push({
-                            id: file.fileId,
-                            name: file.fileName,
-                            url: url
-                        });
-                    } else {
-                        detailRes.filePreviewUrls.images.push({
-                            id: file.fileId,
-                            name: file.fileName,
-                            url: url
-                        });
-                    }
-                } catch (error) {
-                    console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
+                if (isVideo) {
+                    detailRes.filePreviewUrls.videos.push({
+                        id: file.fileId,
+                        name: file.fileName,
+                        url: file.fileUrl
+                    });
+                } else {
+                    detailRes.filePreviewUrls.images.push({
+                        id: file.fileId,
+                        name: file.fileName,
+                        url: file.fileUrl
+                    });
                 }
             });
-
-            // 等待所有文件预览加载完成
-            await Promise.all(filePreviewPromises);
         }
 
         currentDeathRecord.value = detailRes;
@@ -781,7 +737,11 @@ const viewDeathDetail = async (record) => {
     } catch (error) {
         console.error('获取死亡登记详情失败:', error);
     } finally {
-        loading.value = false;
+        // 结束当前记录的loading状态
+        const index = deathRecords.value.findIndex(item => item.bizId === record.bizId);
+        if (index !== -1) {
+            deathRecords.value[index].loading = false;
+        }
     }
 };
 
@@ -839,7 +799,7 @@ const goToDetailedComparison = (tabType: string) => {
     // 获取当前选中的围栏信息
     const breedCode = getCurrentBreedCode();
     const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
-    
+
     if (currentFence && currentFence.fenceRegistId && fenceDetailsCache[currentFence.fenceRegistId]) {
         // 如果有缓存数据，将其存入sessionStorage以便SuperDetail组件使用
         sessionStorage.setItem(
@@ -847,7 +807,7 @@ const goToDetailedComparison = (tabType: string) => {
             JSON.stringify(fenceDetailsCache[currentFence.fenceRegistId])
         );
     }
-    
+
     router.push({
         path: `/AUDITD/super-detail/${route.params.id}`,
         query: {
@@ -1040,7 +1000,8 @@ const loadData = async () => {
                 if (deathsRes) {
                     deathRecords.value = deathsRes.map(item => ({
                         ...item,
-                        key: item.bizId
+                        key: item.bizId,
+                        loading: false
                     }));
                 }
 
@@ -1074,23 +1035,6 @@ const loadData = async () => {
 
 onMounted(() => {
     loadData();
-});
-
-onUnmounted(() => {
-    // 释放所有创建的 Blob URL
-    Object.values(fileURLs.videos).forEach(url => {
-        URL.revokeObjectURL(url);
-    });
-    Object.values(fileURLs.sensors).forEach(url => {
-        URL.revokeObjectURL(url);
-    });
-    fileURLs.videos = {};
-    fileURLs.sensors = {};
-
-    // 清空缓存对象
-    Object.keys(fenceDetailsCache).forEach(key => {
-        delete fenceDetailsCache[key];
-    });
 });
 </script>
 

@@ -61,7 +61,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { LeftOutlined } from '@ant-design/icons-vue';
-import { getFilePreview, getLeaveFence } from '../api';
+import { getLeaveFence } from '../api';
 import PlotGPS from '../PlotGPS/PlotGPS.vue';
 
 const props = defineProps({
@@ -87,17 +87,6 @@ const trackingData = ref([]);
 
 const goBack = () => {
     router.go(-1);
-};
-
-// 加载文件预览的辅助函数
-const loadFilePreview = async (fileId) => {
-    try {
-        const fileResponse = await getFilePreview(fileId);
-        return URL.createObjectURL(fileResponse);
-    } catch (error) {
-        console.error(`获取文件预览失败，fileId: ${fileId}`, error);
-        return null;
-    }
 };
 
 onMounted(async () => {
@@ -153,19 +142,16 @@ onMounted(async () => {
                                 }));
                             }
                             
-                            // 对于文件，我们不使用缓存的URL，而是重新从API获取
                             if (fenceDetail.files && fenceDetail.files.length > 0) {
-                                // 找到相关文件
                                 const videoFile = fenceDetail.files.find(f => f.fileType === 'SENCE_AI');
                                 const sensorFile = fenceDetail.files.find(f => f.fileType === 'SENSOR');
                                 
-                                // 重新获取文件预览
-                                if (videoFile && videoFile.fileId) {
-                                    videoUrl.value = await loadFilePreview(videoFile.fileId);
+                                if (videoFile && videoFile.fileUrl) {
+                                    videoUrl.value = videoFile.fileUrl;
                                 }
                                 
-                                if (sensorFile && sensorFile.fileId) {
-                                    sensorImageUrl.value = await loadFilePreview(sensorFile.fileId);
+                                if (sensorFile && sensorFile.fileUrl) {
+                                    sensorImageUrl.value = sensorFile.fileUrl;
                                 }
                             }
                         }
@@ -190,18 +176,18 @@ onMounted(async () => {
             const fenceDetail = await getLeaveFence(fenceRegistId);
             
             if (fenceDetail) {
-                // 处理文件
+                // 处理文件 - 直接使用API返回的fileUrl
                 if (fenceDetail.files && fenceDetail.files.length > 0) {
                     // 处理视频
                     const videoFile = fenceDetail.files.find(f => f.fileType === 'SENCE_AI');
-                    if (videoFile && videoFile.fileId) {
-                        videoUrl.value = await loadFilePreview(videoFile.fileId);
+                    if (videoFile && videoFile.fileUrl) {
+                        videoUrl.value = videoFile.fileUrl;
                     }
                     
                     // 处理传感器图片
                     const sensorFile = fenceDetail.files.find(f => f.fileType === 'SENSOR');
-                    if (sensorFile && sensorFile.fileId) {
-                        sensorImageUrl.value = await loadFilePreview(sensorFile.fileId);
+                    if (sensorFile && sensorFile.fileUrl) {
+                        sensorImageUrl.value = sensorFile.fileUrl;
                     }
                 }
                 
