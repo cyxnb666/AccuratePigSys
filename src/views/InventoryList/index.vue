@@ -8,7 +8,7 @@
 
                         <div class="tree-search">
                             <a-input v-model:value="districtSearchText" placeholder="搜索行政区划" allowClear
-                                @change="handleDistrictSearch" :disabled="loading">
+                                @input="handleDistrictSearchInput" :disabled="treeLoading">
                                 <template #prefix>
                                     <search-outlined />
                                 </template>
@@ -17,17 +17,18 @@
                     </div>
 
                     <div class="tree-content">
-                        <a-spin :spinning="loading" tip="加载中..." class="centered-spin">
+                        <a-spin :spinning="treeLoading" tip="加载中..." class="centered-spin">
                             <div v-if="filteredDistrictTreeData.length > 0" class="tree-wrapper">
                                 <a-tree :tree-data="filteredDistrictTreeData" @select="handleDistrictSelect"
                                     :selectedKeys="selectedDistrict" :expandedKeys="expandedKeys" @expand="onExpand"
                                     :autoExpandParent="autoExpandParent">
-                                    <template #title="{ title, searchValue }">
-                                        <span v-if="searchValue && title.includes(searchValue)">
-                                            <template v-for="(fragment, i) in getHighlightFragments(title, searchValue)"
+                                    <template #title="{ title }">
+                                        <span v-if="districtSearchText && districtSearchText.trim()">
+                                            <template
+                                                v-for="(fragment, i) in getHighlightFragments(title, districtSearchText)"
                                                 :key="i">
                                                 <span v-if="fragment.highlight" class="highlight-text">{{ fragment.text
-                                                }}</span>
+                                                    }}</span>
                                                 <span v-else>{{ fragment.text }}</span>
                                             </template>
                                         </span>
@@ -35,7 +36,7 @@
                                     </template>
                                 </a-tree>
                             </div>
-                            <div v-else-if="!loading" class="empty-data">
+                            <div v-else-if="!treeLoading" class="empty-data">
                                 <a-empty description="暂无行政区划数据" />
                             </div>
                         </a-spin>
@@ -54,7 +55,7 @@
                     </div>
 
                     <div class="data-table">
-                        <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false"
+                        <a-table :columns="columns" :data-source="tableData" :loading="tableLoading" :pagination="false"
                             bordered row-key="id" :scroll="{ y: tableHeight }">
                             <template #bodyCell="{ column, record }">
                                 <template v-if="column.key === 'action'">
@@ -84,7 +85,9 @@ import { SearchOutlined } from '@ant-design/icons-vue';
 import { selectUserTree, pageQueryLeaves, exportLeaves } from './api';
 
 const router = useRouter();
-const loading = ref(true);
+// 分离加载状态
+const treeLoading = ref(true);
+const tableLoading = ref(true);
 
 // 区域树数据
 const districtTreeData = ref<any[]>([]);
@@ -119,7 +122,8 @@ const transformAreaData = (areaList: any[]): any[] => {
 
 // 获取行政区划数据
 const fetchAreaTrees = async () => {
-    loading.value = true;
+    treeLoading.value = true;
+    tableLoading.value = true; // 初始同时加载表格和树
 
     try {
         const res = await selectUserTree();
@@ -133,45 +137,111 @@ const fetchAreaTrees = async () => {
                 selectedDistrict.value = [firstNode.key];
                 expandedKeys.value = [firstNode.key];
                 searchForm.district = firstNode.title;
-
-                // 加载表格数据
-                loadData(firstNode.title);
             }
         }
     } catch (error) {
         console.error('获取行政区划数据失败:', error);
     } finally {
-        loading.value = false;
+        treeLoading.value = false;
+        // 树加载完成后加载表格数据
+        if (selectedDistrict.value.length > 0) {
+            loadData(searchForm.district);
+        } else {
+            tableLoading.value = false;
+        }
     }
 };
 
-const getHighlightFragments = (title: string, searchValue: string) => {
-    if (!searchValue || !title.includes(searchValue)) {
-        return [{ text: title, highlight: false }];
+const handleDistrictSearch = () => {
+    const searchText = districtSearchText.value.trim();
+
+    if (!searchText) {
+        // 没有搜索文本时，恢复原始树数据
+        filteredDistrictTreeData.value = JSON.parse(JSON.stringify(districtTreeData.value));
+        return;
     }
+
+    // 深度优先搜索，返回匹配的节点
+    const filterTree = (tree) => {
+        if (!tree || tree.length === 0) return [];
+
+        const result = [];
+
+        for (const node of tree) {
+            // 克隆节点
+            const clonedNode = { ...node };
+
+            // 处理子节点
+            if (node.children && node.children.length > 0) {
+                clonedNode.children = filterTree(node.children);
+            }
+
+            // 如果标题包含搜索文本或有匹配的子节点，则保留该节点
+            if ((clonedNode.title && clonedNode.title.toLowerCase().includes(searchText.toLowerCase())) ||
+                (clonedNode.children && clonedNode.children.length > 0)) {
+                result.push(clonedNode);
+            }
+        }
+
+        return result;
+    };
+
+    // 应用过滤
+    filteredDistrictTreeData.value = filterTree(JSON.parse(JSON.stringify(districtTreeData.value)));
+
+    // 如果有搜索结果，展开所有节点以显示匹配项
+    if (filteredDistrictTreeData.value.length > 0) {
+        // 递归收集所有节点的key
+        const getAllKeys = (nodes) => {
+            if (!nodes) return [];
+            let keys = [];
+            for (const node of nodes) {
+                keys.push(node.key);
+                if (node.children) {
+                    keys = keys.concat(getAllKeys(node.children));
+                }
+            }
+            return keys;
+        };
+
+        expandedKeys.value = getAllKeys(filteredDistrictTreeData.value);
+        autoExpandParent.value = true;
+    }
+};
+
+// 高亮显示函数
+const getHighlightFragments = (title, searchValue) => {
+    if (!searchValue || !title) return [{ text: title, highlight: false }];
+
+    const searchLower = searchValue.toLowerCase();
+    const titleLower = title.toLowerCase();
+
+    if (!titleLower.includes(searchLower)) return [{ text: title, highlight: false }];
 
     const fragments = [];
     let lastIndex = 0;
-    let index = title.indexOf(searchValue);
+    let startIndex = titleLower.indexOf(searchLower);
 
-    while (index !== -1) {
-        // 添加匹配前的普通文本
-        if (index > lastIndex) {
+    while (startIndex !== -1) {
+        // 匹配前的文本
+        if (startIndex > lastIndex) {
             fragments.push({
-                text: title.substring(lastIndex, index),
+                text: title.substring(lastIndex, startIndex),
                 highlight: false
             });
         }
 
+        // 匹配的文本 - 使用原始大小写
         fragments.push({
-            text: title.substring(index, index + searchValue.length),
+            text: title.substring(startIndex, startIndex + searchValue.length),
             highlight: true
         });
 
-        lastIndex = index + searchValue.length;
-        index = title.indexOf(searchValue, lastIndex);
+        lastIndex = startIndex + searchValue.length;
+        startIndex = titleLower.indexOf(searchLower, lastIndex);
     }
 
+    // 添加剩余文本
     if (lastIndex < title.length) {
         fragments.push({
             text: title.substring(lastIndex),
@@ -182,18 +252,24 @@ const getHighlightFragments = (title: string, searchValue: string) => {
     return fragments;
 };
 
+// 在input变化时调用搜索函数
+const handleDistrictSearchInput = (e) => {
+    districtSearchText.value = e.target.value;
+    handleDistrictSearch();
+};
+
 const handleDistrictSelect = (selectedKeys, info) => {
     if (selectedKeys.length > 0) {
         selectedDistrict.value = selectedKeys;
         const districtName = info.node.title;
         searchForm.district = districtName;
-        pagination.current = 1; // 重置到第一页
+        pagination.current = 1;
         loadData(districtName);
     }
 };
 
 const handleSearch = () => {
-    pagination.current = 1; // 重置到第一页
+    pagination.current = 1;
     loadData(searchForm.district);
 };
 
@@ -204,6 +280,7 @@ const handleTableChange = (page, pageSize) => {
     }
     loadData(searchForm.district);
 };
+
 const onExpand = (keys) => {
     expandedKeys.value = keys;
     autoExpandParent.value = false;
@@ -271,7 +348,7 @@ const pagination = reactive({
 const tableData = ref([]);
 
 const loadData = async (district) => {
-    loading.value = true;
+    tableLoading.value = true;
     try {
         const params = {
             condition: {
@@ -286,7 +363,7 @@ const loadData = async (district) => {
         if (res && res.records) {
             tableData.value = res.records.map((item, index) => ({
                 ...item,
-                index: (pagination.current) * pagination.pageSize + index + 1
+                index: (pagination.current - 1) * pagination.pageSize + index + 1
             }));
             pagination.total = res.total || 0;
         } else {
@@ -298,7 +375,7 @@ const loadData = async (district) => {
         tableData.value = [];
         pagination.total = 0;
     } finally {
-        loading.value = false;
+        tableLoading.value = false;
     }
 };
 
@@ -323,7 +400,7 @@ const handleDownload = async () => {
 };
 
 const viewDetails = (record) => {
-    router.push(`/KEEP/details/${record.id}`);
+    router.push(`/KEEP/details/${record.farmId}`);
 };
 
 onMounted(() => {
