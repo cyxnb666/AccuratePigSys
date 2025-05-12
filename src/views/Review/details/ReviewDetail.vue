@@ -119,12 +119,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.fattening.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.fattening.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -138,7 +138,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.fattening.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -195,12 +195,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.piglets.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.piglets.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -214,7 +214,7 @@
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 currentArea.piglets.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -271,12 +271,12 @@
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{ currentArea.sows.reportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
                                                             <span class="value">{{ currentArea.sows.aiCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
@@ -285,12 +285,12 @@
                                                                 style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 currentArea.sows.reviewerCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{ currentArea.sows.lastReportCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -442,7 +442,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
-import PlotGPS from '../plotGPS/PlotGPS.vue';
+import PlotGPS from '../PlotGPS/PlotGPS.vue';
 import { getAuditDetail, getFilePreview, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm, submitAudit } from '../api';
 
 const deathDetailVisible = ref(false);
@@ -602,20 +602,10 @@ const loadFilePreviews = async (files) => {
     }
 };
 
+const fenceDetailsCache = reactive({});
 const loadCurrentFenceDetail = async () => {
     // 重置状态
     filePreviewsLoaded.value = false;
-    currentFenceDetail.value = null;
-
-    // 清除之前的URL缓存
-    Object.values(fileURLs.videos).forEach(url => {
-        URL.revokeObjectURL(url);
-    });
-    Object.values(fileURLs.sensors).forEach(url => {
-        URL.revokeObjectURL(url);
-    });
-    fileURLs.videos = {};
-    fileURLs.sensors = {};
 
     const breedCode = getCurrentBreedCode();
     const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
@@ -623,15 +613,28 @@ const loadCurrentFenceDetail = async () => {
     if (!currentFence || !currentFence.fenceRegistId) {
         console.log('没有找到当前围栏信息或ID');
         filePreviewsLoaded.value = true; // 标记加载完成，避免一直显示加载中
+        currentFenceDetail.value = null;
+        return;
+    }
+
+    const fenceRegistId = currentFence.fenceRegistId;
+
+    // 检查缓存中是否已有该围栏数据
+    if (fenceDetailsCache[fenceRegistId]) {
+        console.log('使用缓存的围栏数据:', fenceRegistId);
+        currentFenceDetail.value = fenceDetailsCache[fenceRegistId];
+        filePreviewsLoaded.value = true;
         return;
     }
 
     currentFenceLoading.value = true;
 
     try {
-        const response = await getLeaveFence(currentFence.fenceRegistId);
+        const response = await getLeaveFence(fenceRegistId);
 
         if (response) {
+            // 将数据存入缓存
+            fenceDetailsCache[fenceRegistId] = response;
             currentFenceDetail.value = response;
 
             // 如果有文件，加载文件预览
@@ -833,6 +836,18 @@ const handleDeathDetailConfirm = async (reviewData) => {
 };
 
 const goToDetailedComparison = (tabType: string) => {
+    // 获取当前选中的围栏信息
+    const breedCode = getCurrentBreedCode();
+    const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
+    
+    if (currentFence && currentFence.fenceRegistId && fenceDetailsCache[currentFence.fenceRegistId]) {
+        // 如果有缓存数据，将其存入sessionStorage以便SuperDetail组件使用
+        sessionStorage.setItem(
+            `fence_detail_${currentFence.fenceRegistId}`,
+            JSON.stringify(fenceDetailsCache[currentFence.fenceRegistId])
+        );
+    }
+    
     router.push({
         path: `/AUDITD/super-detail/${route.params.id}`,
         query: {
@@ -937,6 +952,7 @@ const loadData = async () => {
             const res = await getAuditDetail(auditId.toString());
 
             if (res) {
+                sessionStorage.setItem(`audit_data_${auditId}`, JSON.stringify(res));
                 // 填充基础信息
                 basicInfo.district = res.farmAddress || '';
                 basicInfo.farmName = res.farmName || '';
@@ -1067,6 +1083,13 @@ onUnmounted(() => {
     });
     Object.values(fileURLs.sensors).forEach(url => {
         URL.revokeObjectURL(url);
+    });
+    fileURLs.videos = {};
+    fileURLs.sensors = {};
+
+    // 清空缓存对象
+    Object.keys(fenceDetailsCache).forEach(key => {
+        delete fenceDetailsCache[key];
     });
 });
 </script>

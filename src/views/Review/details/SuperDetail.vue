@@ -18,10 +18,13 @@
             <a-row :gutter="16" class="full-height-row">
                 <a-col :span="14" class="full-height-col">
                     <div class="video-wrapper">
-                        <video controls width="100%" class="main-video">
-                            <source src="" type="video/mp4">
+                        <video v-if="videoUrl" controls width="100%" class="main-video">
+                            <source :src="videoUrl" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
+                        <div v-else class="video-placeholder">
+                            <div class="placeholder-text">暂无视频数据</div>
+                        </div>
                     </div>
                 </a-col>
 
@@ -31,7 +34,12 @@
                         <div class="track-container">
                             <div class="track-header">传感器轨迹</div>
                             <div class="track-content sensor-track">
-                                <!-- This would be implemented with a chart library in production -->
+                                <img v-if="sensorImageUrl" :src="sensorImageUrl" alt="传感器轨迹" 
+                                     style="width: 100%; height: 100%; object-fit: contain;" />
+                                <div v-else class="placeholder-text"
+                                     style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                                    暂无传感器轨迹数据
+                                </div>
                             </div>
                         </div>
 
@@ -39,7 +47,7 @@
                         <div class="track-container">
                             <div class="track-header">GPS轨迹</div>
                             <div class="track-content gps-track">
-                                <!-- This would be implemented with a map library in production -->
+                                <plot-g-p-s :fence-data="fenceData" :tracking-data="trackingData" :area-type="tabKey" />
                             </div>
                         </div>
                     </div>
@@ -53,6 +61,8 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { LeftOutlined } from '@ant-design/icons-vue';
+import { getFilePreview, getLeaveFence } from '../api';
+import PlotGPS from '../PlotGPS/PlotGPS.vue';
 
 const props = defineProps({
     recordId: {
@@ -70,17 +80,147 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const videoUrl = ref('');
+const sensorImageUrl = ref('');
+const fenceData = ref({ path: [] });
+const trackingData = ref([]);
 
 const goBack = () => {
     router.go(-1);
 };
 
-onMounted(() => {
-    console.log(`Loading detailed comparison for record ${props.recordId}, area ${props.areaIndex}, tab ${props.tabKey}`);
-    // In a real implementation, you would fetch the video and track data from your API
+// 加载文件预览的辅助函数
+const loadFilePreview = async (fileId) => {
+    try {
+        const fileResponse = await getFilePreview(fileId);
+        return URL.createObjectURL(fileResponse);
+    } catch (error) {
+        console.error(`获取文件预览失败，fileId: ${fileId}`, error);
+        return null;
+    }
+};
 
-    // Note: The following would be implemented with actual chart libraries 
-    // like ECharts for the sensor track and a map library for the GPS track
+onMounted(async () => {
+    console.log(`Loading detailed comparison for record ${props.recordId}, area ${props.areaIndex}, tab ${props.tabKey}`);
+    
+    // 获取当前标签页对应的围栏类型
+    const breedCodeMap = {
+        'fattening': 'PORKER',
+        'piglets': 'PIGLET',
+        'sows': 'BROOD_SOW'
+    };
+    const breedCode = breedCodeMap[props.tabKey];
+    
+    let fenceRegistId = null;
+    
+    // 尝试从sessionStorage中获取缓存数据
+    try {
+        // 获取审核数据
+        const auditDataStr = sessionStorage.getItem(`audit_data_${props.recordId}`);
+        if (auditDataStr) {
+            const auditData = JSON.parse(auditDataStr);
+            if (auditData && auditData.auditFences && auditData.auditFences[props.areaIndex]) {
+                const fenceArea = auditData.auditFences[props.areaIndex];
+                
+                // 处理围栏坐标数据
+                if (fenceArea.coordinate) {
+                    try {
+                        const coordinateData = JSON.parse(fenceArea.coordinate);
+                        fenceData.value = { path: coordinateData };
+                    } catch (e) {
+                        console.error('解析围栏坐标失败:', e);
+                    }
+                }
+                
+                // 查找当前类型的围栏
+                if (fenceArea.fences) {
+                    const fence = fenceArea.fences.find(f => f.breedCode === breedCode);
+                    if (fence && fence.fenceRegistId) {
+                        fenceRegistId = fence.fenceRegistId;
+                        
+                        // 获取围栏详情缓存
+                        const fenceDetailStr = sessionStorage.getItem(`fence_detail_${fence.fenceRegistId}`);
+                        if (fenceDetailStr) {
+                            console.log('Using cached fence detail data from sessionStorage');
+                            const fenceDetail = JSON.parse(fenceDetailStr);
+                            
+                            // 处理GPS轨迹数据
+                            if (fenceDetail.gpss && fenceDetail.gpss.length > 0) {
+                                trackingData.value = fenceDetail.gpss.map(gps => ({
+                                    lng: parseFloat(gps.longitude),
+                                    lat: parseFloat(gps.latitude),
+                                    timestamp: `${gps.timestamp}s`
+                                }));
+                            }
+                            
+                            // 对于文件，我们不使用缓存的URL，而是重新从API获取
+                            if (fenceDetail.files && fenceDetail.files.length > 0) {
+                                // 找到相关文件
+                                const videoFile = fenceDetail.files.find(f => f.fileType === 'SENCE_AI');
+                                const sensorFile = fenceDetail.files.find(f => f.fileType === 'SENSOR');
+                                
+                                // 重新获取文件预览
+                                if (videoFile && videoFile.fileId) {
+                                    videoUrl.value = await loadFilePreview(videoFile.fileId);
+                                }
+                                
+                                if (sensorFile && sensorFile.fileId) {
+                                    sensorImageUrl.value = await loadFilePreview(sensorFile.fileId);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error retrieving cached data:', error);
+    }
+    
+    // 如果没有从缓存中获取到围栏ID，则无法继续
+    if (!fenceRegistId) {
+        console.error('No fence registration ID found, cannot load detailed data');
+        return;
+    }
+    
+    // 如果没有加载完整的数据，直接从API加载
+    if (!videoUrl.value || !sensorImageUrl.value || trackingData.value.length === 0) {
+        try {
+            console.log('Loading data from API for fence:', fenceRegistId);
+            const fenceDetail = await getLeaveFence(fenceRegistId);
+            
+            if (fenceDetail) {
+                // 处理文件
+                if (fenceDetail.files && fenceDetail.files.length > 0) {
+                    // 处理视频
+                    const videoFile = fenceDetail.files.find(f => f.fileType === 'SENCE_AI');
+                    if (videoFile && videoFile.fileId) {
+                        videoUrl.value = await loadFilePreview(videoFile.fileId);
+                    }
+                    
+                    // 处理传感器图片
+                    const sensorFile = fenceDetail.files.find(f => f.fileType === 'SENSOR');
+                    if (sensorFile && sensorFile.fileId) {
+                        sensorImageUrl.value = await loadFilePreview(sensorFile.fileId);
+                    }
+                }
+                
+                // 处理GPS轨迹
+                if (fenceDetail.gpss && fenceDetail.gpss.length > 0 && trackingData.value.length === 0) {
+                    trackingData.value = fenceDetail.gpss.map(gps => ({
+                        lng: parseFloat(gps.longitude),
+                        lat: parseFloat(gps.latitude),
+                        timestamp: `${gps.timestamp}s`
+                    }));
+                }
+                
+                // 更新缓存
+                sessionStorage.setItem(`fence_detail_${fenceRegistId}`, JSON.stringify(fenceDetail));
+            }
+        } catch (error) {
+            console.error('Failed to load fence detail from API:', error);
+        }
+    }
 });
 </script>
 
