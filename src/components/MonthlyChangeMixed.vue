@@ -13,22 +13,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 
 const props = defineProps({
     mixedData: {
-        type: Object,
+        type: Array,
         required: true,
-        default: () => ({
-            xAxis: ['上报起始月', '二月', '三月', '四月', '五月', '至今月/止期月'],
-            series: [
-                { name: '育肥猪', type: 'bar', data: [10, 20, 30, 40, 50, 60] },
-                { name: '仔猪', type: 'bar', data: [20, 25, 30, 45, 30, 100] },
-                { name: '母猪', type: 'bar', data: [25, 30, 61, 63, 63, 115] },
-                { name: '存栏总量', type: 'line', yAxisIndex: 1, data: [500, 200, 260, 330, 650, 333] }
-            ]
-        })
+        default: () => []
     },
     dateRange: {
         type: Array,
@@ -51,12 +43,126 @@ const handleDateChange = (dates) => {
 const chartRef = ref<HTMLElement | null>(null);
 let chart: echarts.ECharts | null = null;
 
+// 转换数据格式用于图表展示
+const processedData = computed(() => {
+    if (!props.mixedData || !Array.isArray(props.mixedData)) {
+        return {
+            xAxis: [],
+            series: []
+        };
+    }
+
+    // 收集所有唯一的月份
+    const allMonths = new Set();
+    props.mixedData.forEach(breed => {
+        if (breed.staticiss && Array.isArray(breed.staticiss)) {
+            breed.staticiss.forEach(item => {
+                if (item.reportMonth) {
+                    allMonths.add(item.reportMonth);
+                }
+            });
+        }
+    });
+
+    // 将月份数组排序
+    const months = Array.from(allMonths).sort();
+
+    // 处理各个品种的数据
+    const breedSeries = [];
+    let totalData = Array(months.length).fill(0); // 存储每个月的总数
+
+    props.mixedData.forEach(breed => {
+        if (!breed.breedName) return;
+
+        // 准备该品种的数据数组，对应每个月
+        const breedData = Array(months.length).fill(0);
+
+        // 填充实际数据
+        if (breed.staticiss && Array.isArray(breed.staticiss)) {
+            breed.staticiss.forEach(item => {
+                if (item.reportMonth) {
+                    const monthIndex = months.indexOf(item.reportMonth);
+                    if (monthIndex !== -1) {
+                        const count = item.persionalCheckCount || 0;
+                        breedData[monthIndex] = count;
+                        totalData[monthIndex] += count; // 累加到总数
+                    }
+                }
+            });
+        }
+
+        // 添加到系列中
+        breedSeries.push({
+            name: breed.breedName,
+            type: 'bar',
+            data: breedData
+        });
+    });
+
+    // 添加总量折线图
+    breedSeries.push({
+        name: '存栏总量',
+        type: 'line',
+        yAxisIndex: 1,
+        data: totalData
+    });
+
+    // 格式化X轴显示，如果只有一个月份，则添加一个前后月份
+    let xAxis = [...months];
+    if (xAxis.length === 1) {
+        const month = xAxis[0];
+        const [year, monthNum] = month.split('-').map(part => parseInt(part));
+
+        // 添加前一个月
+        const prevMonth = monthNum === 1
+            ? `${year - 1}-12`
+            : `${year}-${(monthNum - 1).toString().padStart(2, '0')}`;
+
+        // 添加后一个月
+        const nextMonth = monthNum === 12
+            ? `${year + 1}-01`
+            : `${year}-${(monthNum + 1).toString().padStart(2, '0')}`;
+
+        xAxis = [prevMonth, month, nextMonth];
+
+        // 调整数据数组，在前后添加0
+        breedSeries.forEach(series => {
+            series.data = [0, ...series.data, 0];
+        });
+    }
+
+    return {
+        xAxis,
+        series: breedSeries
+    };
+});
+
 const initChart = () => {
     if (!chartRef.value) return;
 
     if (!chart) {
         chart = echarts.init(chartRef.value);
     }
+
+    const data = processedData.value;
+
+    // 找出最大值用于设置Y轴范围
+    let barMax = 0;
+    let lineMax = 0;
+
+    data.series.forEach(series => {
+        if (series.type === 'bar') {
+            const max = Math.max(...series.data.filter(v => typeof v === 'number'));
+            barMax = Math.max(barMax, max);
+        } else if (series.type === 'line') {
+            const max = Math.max(...series.data.filter(v => typeof v === 'number'));
+            lineMax = Math.max(lineMax, max);
+        }
+    });
+
+    // 适当放大范围，确保有足够的显示空间
+    barMax = Math.ceil(barMax * 1.2) || 100;
+    lineMax = Math.ceil(lineMax * 1.2) || 200;
 
     const option = {
         tooltip: {
@@ -69,7 +175,7 @@ const initChart = () => {
             }
         },
         legend: {
-            data: props.mixedData.series.map(item => item.name),
+            data: data.series.map(item => item.name),
             top: 'bottom',
         },
         grid: {
@@ -82,7 +188,7 @@ const initChart = () => {
         xAxis: [
             {
                 type: 'category',
-                data: props.mixedData.xAxis,
+                data: data.xAxis,
                 axisPointer: {
                     type: 'shadow'
                 }
@@ -93,18 +199,18 @@ const initChart = () => {
                 type: 'value',
                 name: '数量',
                 min: 0,
-                max: 120,
-                interval: 20
+                max: barMax,
+                interval: Math.ceil(barMax / 6)
             },
             {
                 type: 'value',
                 name: '总量',
                 min: 0,
-                max: 700,
-                interval: 100
+                max: lineMax,
+                interval: Math.ceil(lineMax / 7)
             }
         ],
-        series: props.mixedData.series.map(item => {
+        series: data.series.map(item => {
             const baseConfig = {
                 name: item.name,
                 type: item.type,

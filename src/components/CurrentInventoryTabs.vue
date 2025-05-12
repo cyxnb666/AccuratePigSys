@@ -2,7 +2,7 @@
     <div class="detail-card">
         <div class="card-header">
             <div class="title">当前存栏信息</div>
-            <!-- 添加可选的查看更多按钮 -->
+            <!-- 保留查看更多按钮功能 -->
             <div v-if="showViewMore" class="view-more-link">
                 <a @click="$emit('view-more')">查看更多 <right-outlined /></a>
             </div>
@@ -10,35 +10,51 @@
         <a-tabs v-model:activeKey="activeKey" @change="handleTabChange">
             <a-tab-pane key="1" tab="存栏记录">
                 <a-table :columns="stockColumns" :data-source="stockData"
-                    :pagination="showPagination ? pagination : false" bordered>
+                    :pagination="showPagination ? stockPagination : false" bordered>
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'action'">
                             <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
                         </template>
-                        <template v-if="column.key === 'reviewResult'">
-                            <a-tag :color="record.reviewResult === '审核通过' ? 'success' : 'error'">
-                                {{ record.reviewResult }}
+                        <template v-if="column.key === 'registStatus'">
+                            <a-tag :color="record.registStatus === 'AUDITSUCC' ? 'success' : 'error'">
+                                {{ record.registStatus === 'AUDITSUCC' ? '审核通过' : '审核不通过' }}
                             </a-tag>
+                        </template>
+                        <template v-if="column.key === 'index'">
+                            {{ record._index }}
                         </template>
                     </template>
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="2" tab="出栏记录">
                 <a-table :columns="outboundColumns" :data-source="outboundData"
-                    :pagination="showPagination ? pagination : false" bordered>
+                    :pagination="showPagination ? outboundPagination : false" bordered>
+                    <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'index'">
+                            {{ record._index }}
+                        </template>
+                    </template>
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="3" tab="入栏记录">
                 <a-table :columns="inboundColumns" :data-source="inboundData"
-                    :pagination="showPagination ? pagination : false" bordered>
+                    :pagination="showPagination ? inboundPagination : false" bordered>
+                    <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'index'">
+                            {{ record._index }}
+                        </template>
+                    </template>
                 </a-table>
             </a-tab-pane>
             <a-tab-pane key="4" tab="死亡记录">
                 <a-table :columns="deathColumns" :data-source="deathData"
-                    :pagination="showPagination ? pagination : false" bordered>
+                    :pagination="showPagination ? deathPagination : false" bordered>
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'action'">
                             <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
+                        </template>
+                        <template v-if="column.key === 'index'">
+                            {{ record._index }}
                         </template>
                     </template>
                 </a-table>
@@ -48,10 +64,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { RightOutlined } from '@ant-design/icons-vue';
 
-defineProps({
+const props = defineProps({
     stockData: {
         type: Array,
         required: true,
@@ -72,16 +88,26 @@ defineProps({
         required: true,
         default: () => []
     },
-    pagination: {
+    // 修改为四个独立的分页
+    stockPagination: {
         type: Object,
         required: true,
-        default: () => ({
-            current: 1,
-            pageSize: 10,
-            total: 50,
-            showTotal: (total) => `共 ${total} 条`,
-            onChange: () => { }
-        })
+        default: () => ({})
+    },
+    outboundPagination: {
+        type: Object,
+        required: true,
+        default: () => ({})
+    },
+    inboundPagination: {
+        type: Object,
+        required: true,
+        default: () => ({})
+    },
+    deathPagination: {
+        type: Object,
+        required: true,
+        default: () => ({})
     },
     showViewMore: {
         type: Boolean,
@@ -92,52 +118,96 @@ defineProps({
         default: true
     }
 });
-defineEmits(['view-detail', 'view-more']);
+const emit = defineEmits(['view-detail', 'view-more', 'tab-change']);
 
-const handleTabChange = (newActiveKey) => {
-    if (pagination && pagination.onChange && showPagination) {
-        pagination.current = 1;
-    }
-};
 const activeKey = ref('1');
 
-// 表格列定义
+// 处理标签页切换
+const handleTabChange = (newActiveKey) => {
+    activeKey.value = newActiveKey;
+    // 通知父组件标签已切换
+    emit('tab-change', newActiveKey);
+};
+
+// 为数据添加索引
+watch(() => props.stockData, (newData) => {
+    if (Array.isArray(newData)) {
+        newData.forEach((item, index) => {
+            item._index = index + 1 + (props.stockPagination.current - 1) * props.stockPagination.pageSize;
+        });
+    }
+}, { deep: true });
+
+watch(() => props.outboundData, (newData) => {
+    if (Array.isArray(newData)) {
+        newData.forEach((item, index) => {
+            item._index = index + 1 + (props.outboundPagination.current - 1) * props.outboundPagination.pageSize;
+        });
+    }
+}, { deep: true });
+
+watch(() => props.inboundData, (newData) => {
+    if (Array.isArray(newData)) {
+        newData.forEach((item, index) => {
+            item._index = index + 1 + (props.inboundPagination.current - 1) * props.inboundPagination.pageSize;
+        });
+    }
+}, { deep: true });
+
+watch(() => props.deathData, (newData) => {
+    if (Array.isArray(newData)) {
+        newData.forEach((item, index) => {
+            item._index = index + 1 + (props.deathPagination.current - 1) * props.deathPagination.pageSize;
+        });
+    }
+}, { deep: true });
+
+// 表格列定义 - 根据真实API数据调整
 const stockColumns = [
     { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' },
-    { title: '时间', dataIndex: 'time', key: 'time', align: 'center' },
-    { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', align: 'center' },
-    { title: '育肥猪数量', dataIndex: 'fatteningPigs', key: 'fatteningPigs', align: 'center' },
-    { title: '仔猪数量', dataIndex: 'piglets', key: 'piglets', align: 'center' },
-    { title: '母猪数量', dataIndex: 'sows', key: 'sows', align: 'center' },
-    { title: '审核结果', dataIndex: 'reviewResult', key: 'reviewResult', align: 'center' },
+    { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sowCount', key: 'sowCount', align: 'center' },
+    { title: '人工审核数量', dataIndex: 'persionalCheckCount', key: 'persionalCheckCount', align: 'center' },
+    { title: '审核结果', dataIndex: 'registStatus', key: 'registStatus', align: 'center' },
     { title: '操作', key: 'action', align: 'center' },
 ];
 
 // 出栏记录表格列
 const outboundColumns = [
     { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' },
-    { title: '出栏日期', dataIndex: 'date', key: 'date', align: 'center' },
-    { title: '出栏类型', dataIndex: 'type', key: 'type', align: 'center' },
-    { title: '出栏数量', dataIndex: 'quantity', key: 'quantity', align: 'center' },
-    { title: '出栏原因', dataIndex: 'reason', key: 'reason', align: 'center' },
+    { title: '业务ID', dataIndex: 'bizId', key: 'bizId', align: 'center' },
+    { title: '开始日期', dataIndex: 'startDate', key: 'startDate', align: 'center' },
+    { title: '结束日期', dataIndex: 'endDate', key: 'endDate', align: 'center' },
+    { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sowCount', key: 'sowCount', align: 'center' },
 ];
 
 // 入栏记录表格列
 const inboundColumns = [
     { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' },
-    { title: '入栏日期', dataIndex: 'date', key: 'date', align: 'center' },
-    { title: '入栏类型', dataIndex: 'type', key: 'type', align: 'center' },
-    { title: '入栏数量', dataIndex: 'quantity', key: 'quantity', align: 'center' },
-    { title: '入栏来源', dataIndex: 'source', key: 'source', align: 'center' },
+    { title: '业务ID', dataIndex: 'bizId', key: 'bizId', align: 'center' },
+    { title: '开始日期', dataIndex: 'startDate', key: 'startDate', align: 'center' },
+    { title: '结束日期', dataIndex: 'endDate', key: 'endDate', align: 'center' },
+    { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sowCount', key: 'sowCount', align: 'center' },
 ];
 
 // 死亡记录表格列
 const deathColumns = [
     { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' },
-    { title: '死亡日期', dataIndex: 'date', key: 'date', align: 'center' },
-    { title: '死亡类型', dataIndex: 'type', key: 'type', align: 'center' },
-    { title: '死亡数量', dataIndex: 'quantity', key: 'quantity', align: 'center' },
-    { title: '死亡原因', dataIndex: 'reason', key: 'reason', align: 'center' },
+    { title: '业务ID', dataIndex: 'bizId', key: 'bizId', align: 'center' },
+    { title: '开始日期', dataIndex: 'startDate', key: 'startDate', align: 'center' },
+    { title: '结束日期', dataIndex: 'endDate', key: 'endDate', align: 'center' },
+    { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
+    { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
+    { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
+    { title: '母猪数量', dataIndex: 'sowCount', key: 'sowCount', align: 'center' },
     { title: '操作', key: 'action', align: 'center' },
 ];
 </script>

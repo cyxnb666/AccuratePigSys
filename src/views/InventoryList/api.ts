@@ -68,3 +68,57 @@ export function getFarmWarnStaticis(params) {
         data: params
     });
 }
+
+// 获取养殖区存栏量变化趋势
+export function selectLeaveFenceStaticis(params) {
+    return axios({
+        url: '/web/leave/selectLeaveFenceStaticis',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取养殖场存栏量月度变化趋势
+export function selectLeaveMonthStaticis(params) {
+    return axios({
+        url: '/web/leave/selectLeaveMonthStaticis',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取存栏记录
+export function selectLeaveRegists(params) {
+    return axios({
+        url: '/web/leave/selectLeaveRegists',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取出栏记录
+export function queryFarmRegistSlaughters(params) {
+    return axios({
+        url: '/web/leave/queryFarmRegistSlaughters',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取入栏记录
+export function queryFarmRegistRestocks(params) {
+    return axios({
+        url: '/web/leave/queryFarmRegistRestocks',
+        method: 'post',
+        data: params
+    });
+}
+
+// 获取死亡记录
+export function queryFarmDeadRegistDeads(params) {
+    return axios({
+        url: '/web/leave/queryFarmDeadRegistDeads',
+        method: 'post',
+        data: params
+    });
+}

@@ -8,10 +8,7 @@
         <template v-else>
             <div class="info-warning-card">
                 <!-- 养殖场基础信息 -->
-                <farm-basic-info 
-        :farm-info="farmInfo" 
-        :show-detail-button="true" 
-        @view-detail="viewFarmDetail" />
+                <farm-basic-info :farm-info="farmInfo" :show-detail-button="true" @view-detail="viewFarmDetail" />
 
                 <!-- 异常预警 -->
                 <div style="margin-top: 20px;">

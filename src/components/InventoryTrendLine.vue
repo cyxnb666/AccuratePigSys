@@ -20,16 +20,9 @@ import dayjs from 'dayjs';
 
 const props = defineProps({
     trendData: {
-        type: Object,
+        type: Array,
         required: true,
-        default: () => ({
-            xAxis: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
-            series: [
-                { name: '养殖场1', data: [10, 20, 30, 40, 50, 60, 55, 50, 40, 42, 45, 40] },
-                { name: '养殖场2', data: [15, 25, 35, 45, 35, 90, 100, 105, 100, 105, 100, 95] },
-                { name: '养殖场3', data: [5, 15, 25, 35, 30, 80, 70, 75, 75, 70, 60, 70] }
-            ]
-        })
+        default: () => []
     },
     dateRange: {
         type: Array,
@@ -63,12 +56,67 @@ const initChart = () => {
         chart = echarts.init(chartRef.value);
     }
 
+    // 处理数据
+    const seriesData = [];
+    const xAxisData = [];
+    
+    // 如果存在数据则处理
+    if (props.trendData && props.trendData.length > 0) {
+        // 收集所有唯一的日期
+        const allDates = new Set();
+        props.trendData.forEach(fence => {
+            if (fence.staticiss && fence.staticiss.length) {
+                fence.staticiss.forEach(item => {
+                    if (item.registDate) {
+                        allDates.add(item.registDate);
+                    }
+                });
+            }
+        });
+        
+        // 按日期排序
+        xAxisData.push(...Array.from(allDates).sort());
+        
+        // 处理每个围栏的数据
+        props.trendData.forEach(fence => {
+            if (!fence.fenceName) return;
+            
+            // 创建一个包含所有日期的映射，初始值为0
+            const dataMap = {};
+            xAxisData.forEach(date => {
+                dataMap[date] = 0;
+            });
+            
+            // 填充实际数据
+            if (fence.staticiss && fence.staticiss.length) {
+                fence.staticiss.forEach(item => {
+                    if (item.registDate && dataMap.hasOwnProperty(item.registDate)) {
+                        dataMap[item.registDate] = item.persionalCheckCount || 0;
+                    }
+                });
+            }
+            
+            // 收集围栏的数据
+            const seriesItem = {
+                name: fence.fenceName,
+                type: 'line',
+                data: xAxisData.map(date => dataMap[date]),
+                smooth: true,
+                lineStyle: {
+                    width: 2
+                }
+            };
+            
+            seriesData.push(seriesItem);
+        });
+    }
+
     const option = {
         tooltip: {
             trigger: 'axis'
         },
         legend: {
-            data: props.trendData.series.map(item => item.name),
+            data: seriesData.map(item => item.name),
             top: 'bottom',
         },
         grid: {
@@ -81,20 +129,12 @@ const initChart = () => {
         xAxis: {
             type: 'category',
             boundaryGap: false,
-            data: props.trendData.xAxis
+            data: xAxisData
         },
         yAxis: {
             type: 'value'
         },
-        series: props.trendData.series.map(item => ({
-            name: item.name,
-            type: 'line',
-            data: item.data,
-            smooth: true,
-            lineStyle: {
-                width: 2
-            }
-        }))
+        series: seriesData
     };
 
     chart.setOption(option);
@@ -118,6 +158,40 @@ onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
 });
 </script>
+
+<style lang="scss" scoped>
+.detail-card {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 16px;
+
+        .title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+    }
+
+    .chart-container {
+        width: 100%;
+        height: 300px;
+
+        .chart {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+</style>
 
 <style lang="scss" scoped>
 .detail-card {
