@@ -785,7 +785,6 @@ const viewDeathDetail = async (record) => {
 const deathDetailRef = ref(null);
 const handleDeathDetailConfirm = async (reviewData) => {
     try {
-        // 构造请求数据
         const breeds = currentDeathRecord.value.breeds.map(breed => {
             // 找到对应的审核数量
             const reviewItem = reviewData.reviewerCounts.find(item => {

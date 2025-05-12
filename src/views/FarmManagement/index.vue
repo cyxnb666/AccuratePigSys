@@ -63,7 +63,6 @@ import { ref, reactive, onMounted } from 'vue';
 import ReportTaskDialog from './components/ReportTaskDialog.vue';
 import { message, Modal } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
-import dayjs from 'dayjs';
 import { getAreaTrees, getFarmList, deleteFarm, getEffectiveTaskConfig } from './api';
 
 const router = useRouter();
@@ -323,7 +322,6 @@ onMounted(() => {
   }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
   .ant-table-thead>tr>th {
     background-color: #F3F5F9;

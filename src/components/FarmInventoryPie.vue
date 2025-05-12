@@ -27,12 +27,10 @@ const props = defineProps({
     }
 });
 
-// Calculate chart data from leaveData
 const chartData = computed(() => {
     const total = props.leaveData.totalCount ||
         (props.leaveData.pigletCount + props.leaveData.porkerCount + props.leaveData.sowCount);
 
-    // Create data array for the chart
     return [
         {
             name: '仔猪',

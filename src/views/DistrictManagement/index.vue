@@ -26,21 +26,15 @@
 
         <!-- 数据表格 -->
         <div class="data-table">
-            <a-table :columns="columns" 
-                     :data-source="dataSource" 
-                     :loading="loading"
-                     :pagination="false" 
-                     bordered 
-                     row-key="areacode"
-                     :scroll="{ y: tableHeight }" 
-                     :indentSize="20"
-                     @expand="handleExpand">
+            <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="false" bordered
+                row-key="areacode" :scroll="{ y: tableHeight }" :indentSize="20" @expand="handleExpand">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'status'">
                         <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
                     </template>
                     <template v-if="column.key === 'action'">
-                        <a-button type="link" @click="handleEdit(record)" :loading="editingId === record.areacode && editLoading">编辑</a-button>
+                        <a-button type="link" @click="handleEdit(record)"
+                            :loading="editingId === record.areacode && editLoading">编辑</a-button>
                     </template>
                 </template>
             </a-table>
@@ -130,10 +124,10 @@ const fetchAreaTrees = async () => {
         if (res) {
             // 添加"中国"作为顶级节点
             const transformedData = transformAreaData(res);
-            
+
             // 检查是否已存在value为"0"的节点
             const hasRootNode = transformedData.some(node => node.value === "0");
-            
+
             if (!hasRootNode) {
                 // 如果不存在，添加"中国"作为顶级节点
                 transformedData.unshift({
@@ -148,7 +142,7 @@ const fetchAreaTrees = async () => {
                     rootNode.title = "中国";
                 }
             }
-            
+
             areaTreeData.value = transformedData;
         }
     } catch (error) {
@@ -175,7 +169,7 @@ const fetchDistrictList = async (params) => {
 onMounted(() => {
     // 获取行政区划树形数据
     fetchAreaTrees();
-    
+
     // 加载表格数据
     const params = {
         condition: {
@@ -201,7 +195,7 @@ const handleSearch = () => {
 const handleReset = () => {
     searchForm.areaname = '';
     searchForm.areacode = '';
-    
+
     // 重置后重新加载顶级区划
     const params = {
         condition: {
@@ -217,9 +211,9 @@ const handleReset = () => {
 const handleStatusChange = async (record) => {
     try {
         await enableDistrict(record.areacode);
-        
+
         message.success(`${record.enabled === '1' ? '禁用' : '启用'}行政区划成功`);
-        
+
         // 更新本地数据状态
         const updateState = (data) => {
             for (let i = 0; i < data.length; i++) {
@@ -235,18 +229,18 @@ const handleStatusChange = async (record) => {
             }
             return false;
         };
-        
+
         const newDataSource = [...dataSource.value];
         updateState(newDataSource);
         dataSource.value = newDataSource;
-        
+
     } catch (error) {
         console.error('更新状态失败:', error);
     }
 };
 
 // 展开事件处理
-const handleExpand = async (expanded, record) => {    
+const handleExpand = async (expanded, record) => {
     if (expanded) {
         // 如果是展开操作，加载子节点数据
         await loadChildrenData(record);
@@ -259,7 +253,7 @@ const loadChildrenData = async (record) => {
     if (record.children && record.children.length > 0) {
         return;
     }
-    
+
     try {
         loading.value = true;
         const params = {
@@ -267,9 +261,9 @@ const loadChildrenData = async (record) => {
                 parentAreacode: record.areacode
             }
         };
-        
+
         const res = await getDistrictList(params);
-        
+
         // 查找当前记录在dataSource中的位置，并更新其children
         const updateChildrenData = (data) => {
             for (let i = 0; i < data.length; i++) {
@@ -286,12 +280,12 @@ const loadChildrenData = async (record) => {
             }
             return false;
         };
-        
+
         // 创建新的数组引用以触发Vue的响应式更新
         const newDataSource = [...dataSource.value];
         updateChildrenData(newDataSource);
         dataSource.value = newDataSource;
-        
+
     } catch (error) {
         console.error('加载子区域数据失败:', error);
     } finally {
@@ -305,10 +299,10 @@ const handleEdit = async (record) => {
         // 设置当前正在编辑的记录ID和loading状态
         editingId.value = record.areacode;
         editLoading.value = true;
-        
+
         // 获取行政区划详情
         const res = await getDistrictDetail(record.areacode);
-        
+
         if (res) {
             isEdit.value = true;
             currentRecord.value = {
@@ -375,7 +369,6 @@ const handleDialogSuccess = (data) => {
     }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
     .ant-table-thead>tr>th {
         background-color: #F3F5F9;

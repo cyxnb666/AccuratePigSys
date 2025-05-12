@@ -34,8 +34,8 @@
 
         <!-- 数据表格 -->
         <div class="data-table">
-            <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered row-key="id"
-                :scroll="{ y: tableHeight }">
+            <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
+                row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'deviationRate'">
                         <span :style="{ color: getDeviationColor(record.deviationRate) }">
@@ -61,11 +61,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { getAreaTrees, getWarningList } from './api';
 import dayjs from 'dayjs';
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 
 // 搜索表单
@@ -161,9 +162,9 @@ const columns = [
 // 获取偏差率颜色
 const getDeviationColor = (rate) => {
     const numRate = parseFloat(rate);
-    if (numRate > 15) return '#FF4D4F'; // 红色 - 高偏差
-    if (numRate > 8) return '#FAAD14';  // 黄色 - 中偏差
-    return '#52C41A';                   // 绿色 - 低偏差
+    if (numRate > 15) return '#FF4D4F';
+    if (numRate > 8) return '#FAAD14';
+    return '#52C41A';
 };
 
 // 表格数据
@@ -247,7 +248,14 @@ const handleTableChange = (page, pageSize) => {
 
 onMounted(() => {
     fetchAreaTrees();
-    fetchWarningData();
+
+    const { farmName } = route.query;
+    if (farmName) {
+        searchForm.farmName = farmName as string;
+        handleSearch();
+    } else {
+        fetchWarningData();
+    }
 });
 </script>
 
@@ -296,7 +304,6 @@ onMounted(() => {
     }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
     .ant-table-thead>tr>th {
         background-color: #F3F5F9;

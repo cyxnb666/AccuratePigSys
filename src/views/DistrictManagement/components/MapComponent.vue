@@ -1,6 +1,6 @@
 <template>
     <div style="width: 100%">
-        <!-- 地图容器 --> 
+        <!-- 地图容器 -->
         <div ref="mapContainer" class="map-container"></div>
     </div>
 </template>
@@ -105,7 +105,7 @@ const setMarker = (lnglat: any) => {
             position: lnglat,
             map: map
         });
-        
+
         console.log('标记点已设置');
     } catch (error) {
         console.error('设置标记点失败:', error);

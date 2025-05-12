@@ -59,7 +59,7 @@ const initChart = () => {
     // 处理数据
     const seriesData = [];
     const xAxisData = [];
-    
+
     // 如果存在数据则处理
     if (props.trendData && props.trendData.length > 0) {
         // 收集所有唯一的日期
@@ -73,20 +73,20 @@ const initChart = () => {
                 });
             }
         });
-        
+
         // 按日期排序
         xAxisData.push(...Array.from(allDates).sort());
-        
+
         // 处理每个围栏的数据
         props.trendData.forEach(fence => {
             if (!fence.fenceName) return;
-            
+
             // 创建一个包含所有日期的映射，初始值为0
             const dataMap = {};
             xAxisData.forEach(date => {
                 dataMap[date] = 0;
             });
-            
+
             // 填充实际数据
             if (fence.staticiss && fence.staticiss.length) {
                 fence.staticiss.forEach(item => {
@@ -95,7 +95,7 @@ const initChart = () => {
                     }
                 });
             }
-            
+
             // 收集围栏的数据
             const seriesItem = {
                 name: fence.fenceName,
@@ -106,7 +106,7 @@ const initChart = () => {
                     width: 2
                 }
             };
-            
+
             seriesData.push(seriesItem);
         });
     }

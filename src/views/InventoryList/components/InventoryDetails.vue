@@ -1,64 +1,67 @@
 <template>
     <div class="inventory-details">
-        <!-- 面包屑导航 -->
-        <div class="bread-detail-card">
-            <div class="breadcrumb">
-                <a-breadcrumb>
-                    <a-breadcrumb-item>
-                        <a @click="goBack">
-                            <left-outlined /> 返回
-                        </a>
-                    </a-breadcrumb-item>
-                    <a-breadcrumb-item>存栏详情</a-breadcrumb-item>
-                </a-breadcrumb>
+        <a-spin :spinning="pageLoading" tip="正在加载数据..." class="global-loading">
+            <!-- 面包屑导航 -->
+            <div class="bread-detail-card">
+                <div class="breadcrumb">
+                    <a-breadcrumb>
+                        <a-breadcrumb-item>
+                            <a @click="goBack">
+                                <left-outlined /> 返回
+                            </a>
+                        </a-breadcrumb-item>
+                        <a-breadcrumb-item>存栏详情</a-breadcrumb-item>
+                    </a-breadcrumb>
+                </div>
             </div>
-        </div>
 
-        <div class="content-section">
-            <div class="detail-card">
-                <a-row :gutter="24">
-                    <a-col :span="10">
-                        <!-- 养殖场基础信息 -->
-                        <div class="info-card">
-                            <farm-basic-info :farm-info="farmInfo" />
+            <div class="content-section">
+                <div class="detail-card">
+                    <a-row :gutter="24">
+                        <a-col :span="10">
+                            <!-- 养殖场基础信息 -->
+                            <div class="info-card">
+                                <farm-basic-info :farm-info="farmInfo" />
 
-                            <!-- 异常预警 -->
-                            <div style="margin-top: 20px;">
-                                <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+                                <!-- 异常预警 -->
+                                <div style="margin-top: 20px;">
+                                    <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
+                                </div>
                             </div>
-                        </div>
-                    </a-col>
+                        </a-col>
 
-                    <!-- 右侧：养殖场存栏情况 -->
-                    <a-col :span="7">
-                        <farm-inventory-pie :leave-data="leaveData" />
-                    </a-col>
+                        <!-- 右侧：养殖场存栏情况 -->
+                        <a-col :span="7">
+                            <farm-inventory-pie :leave-data="leaveData" />
+                        </a-col>
 
-                    <!-- 最右侧：上报情况 -->
-                    <a-col :span="7" style="padding-left: 24px;">
-                        <report-status-bar :farm-warn-data="farmWarnData" :farm-id="farmId"
-                            v-model:date-range="dateRange" @reload-report-data="handleReportDataReload" />
-                    </a-col>
-                </a-row>
+                        <!-- 最右侧：上报情况 -->
+                        <a-col :span="7" style="padding-left: 24px;">
+                            <report-status-bar :farm-warn-data="farmWarnData" :farm-id="farmId"
+                                v-model:date-range="dateRange" @reload-report-data="handleReportDataReload" />
+                        </a-col>
+                    </a-row>
+                </div>
+
+                <!-- 养殖区存栏量变化趋势图 -->
+                <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" />
+
+                <!-- 养殖场存栏量月度变化趋势(柱状图+折线图混合) -->
+                <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange" />
             </div>
 
-            <!-- 养殖区存栏量变化趋势图 -->
-            <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" />
+            <!-- 当前存栏信息 -->
+            <div class="current-inventory-section">
+                <current-inventory-tabs :stock-data="stockData" :outbound-data="outboundData"
+                    :inbound-data="inboundData" :death-data="deathData" :stock-pagination="stockPagination"
+                    :outbound-pagination="outboundPagination" :inbound-pagination="inboundPagination"
+                    :death-pagination="deathPagination" @view-detail="handleViewDetail" @tab-change="handleTabChange" />
+            </div>
 
-            <!-- 养殖场存栏量月度变化趋势(柱状图+折线图混合) -->
-            <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange" />
-        </div>
+            <death-detail-dialog ref="deathDetailRef" v-model="deathDetailVisible" :record="currentDeathRecord"
+                :is-view-mode="true" />
 
-        <!-- 当前存栏信息 -->
-        <div class="current-inventory-section">
-            <current-inventory-tabs :stock-data="stockData" :outbound-data="outboundData" :inbound-data="inboundData"
-                :death-data="deathData" :stock-pagination="stockPagination" :outbound-pagination="outboundPagination"
-                :inbound-pagination="inboundPagination" :death-pagination="deathPagination"
-                @view-detail="handleViewDetail" @tab-change="handleTabChange" />
-        </div>
-
-        <death-detail-dialog ref="deathDetailRef" v-model="deathDetailVisible" :record="currentDeathRecord"
-            :is-view-mode="true" />
+        </a-spin>
     </div>
 </template>
 
@@ -81,8 +84,6 @@ import {
 } from '../api';
 import DeathDetailDialog from '@/views/Review/details/DeathDetailDialog.vue';
 import { getWebDeadRegist, getFilePreview } from '@/views/Review/api';
-
-// 引入抽取的组件
 import FarmBasicInfo from '@/components/FarmBasicInfo.vue';
 import AbnormalWarning from '@/components/AbnormalWarning.vue';
 import FarmInventoryPie from '@/components/FarmInventoryPie.vue';
@@ -94,11 +95,8 @@ import dayjs from "dayjs";
 
 const router = useRouter();
 const route = useRoute();
-
-// 获取路由参数
+const pageLoading = ref(true);
 const farmId = route.params.id;
-
-// 返回上一页
 const goBack = () => {
     router.go(-1);
 };
@@ -186,7 +184,10 @@ const fetchWarningData = async () => {
 
 // 查看更多异常预警
 const viewMoreWarnings = () => {
-    message.info('查看更多异常预警功能待实现');
+    router.push({
+        path: '/E-WARN',
+        query: { farmName: farmInfo.value.farmName }
+    });
 };
 
 // 养殖场基础信息
@@ -267,7 +268,7 @@ const fetchTrendData = async (startDate = "", endDate = "") => {
 
         const res = await selectLeaveFenceStaticis(params);
         if (res) {
-            trendData.value = res; // 直接使用后端返回的数据
+            trendData.value = res;
         }
     } catch (error) {
         console.error('获取养殖区存栏量变化趋势数据失败:', error);
@@ -287,7 +288,7 @@ watch(trendDateRange, (newValue) => {
 }, { deep: true });
 
 // 月度变化混合图表数据
-const mixedData = ref(null);
+const mixedData = ref([]);
 const fetchMixedData = async (startMonth = "", endMonth = "") => {
     try {
         const params = {
@@ -300,7 +301,7 @@ const fetchMixedData = async (startMonth = "", endMonth = "") => {
 
         const res = await selectLeaveMonthStaticis(params);
         if (res) {
-            mixedData.value = res; // 直接使用后端返回的数据
+            mixedData.value = res;
         }
     } catch (error) {
         console.error('获取养殖场存栏量月度变化趋势数据失败:', error);
@@ -422,80 +423,88 @@ const handleTabChange = (key) => {
 // 查看详情
 const handleViewDetail = async (record) => {
     if (activeTabKey.value === '4') { // 死亡记录
-    // 设置当前记录的loading状态为true
-    const index = deathData.value.findIndex(item => item.bizId === record.bizId);
-    if (index !== -1) {
-      deathData.value[index].loading = true;
-    }
-    
-    try {
-      const detailRes = await getWebDeadRegist(record.bizId);
+        // 设置当前记录的loading状态为true
+        const index = deathData.value.findIndex(item => item.bizId === record.bizId);
+        if (index !== -1) {
+            deathData.value[index].loading = true;
+        }
 
-      // 获取文件预览
-      if (detailRes.files && detailRes.files.length > 0) {
-        detailRes.filePreviewUrls = {
-          images: [],
-          videos: []
-        };
+        try {
+            const detailRes = await getWebDeadRegist(record.bizId);
 
-        const filePreviewPromises = detailRes.files.map(async (file) => {
-          try {
-            const fileResponse = await getFilePreview(file.fileId);
-            const url = URL.createObjectURL(fileResponse);
+            // 获取文件预览
+            if (detailRes.files && detailRes.files.length > 0) {
+                detailRes.filePreviewUrls = {
+                    images: [],
+                    videos: []
+                };
 
-            // 根据文件后缀判断是视频还是图片
-            const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
+                const filePreviewPromises = detailRes.files.map(async (file) => {
+                    try {
+                        const fileResponse = await getFilePreview(file.fileId);
+                        const url = URL.createObjectURL(fileResponse);
 
-            if (isVideo) {
-              detailRes.filePreviewUrls.videos.push({
-                id: file.fileId,
-                name: file.fileName,
-                url: url
-              });
-            } else {
-              detailRes.filePreviewUrls.images.push({
-                id: file.fileId,
-                name: file.fileName,
-                url: url
-              });
+                        // 根据文件后缀判断是视频还是图片
+                        const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
+
+                        if (isVideo) {
+                            detailRes.filePreviewUrls.videos.push({
+                                id: file.fileId,
+                                name: file.fileName,
+                                url: url
+                            });
+                        } else {
+                            detailRes.filePreviewUrls.images.push({
+                                id: file.fileId,
+                                name: file.fileName,
+                                url: url
+                            });
+                        }
+                    } catch (error) {
+                        console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
+                    }
+                });
+
+                // 等待所有文件预览加载完成
+                await Promise.all(filePreviewPromises);
             }
-          } catch (error) {
-            console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
-          }
+
+            currentDeathRecord.value = detailRes;
+            deathDetailVisible.value = true;
+        } catch (error) {
+            console.error('获取死亡登记详情失败:', error);
+            message.error('获取详情失败');
+        } finally {
+            if (index !== -1) {
+                deathData.value[index].loading = false;
+            }
+        }
+    } else {
+        router.push({
+            path: `/AUDITD/detail/${record.auditId}`,
+            query: { viewMode: 'true' }
         });
-
-        // 等待所有文件预览加载完成
-        await Promise.all(filePreviewPromises);
-      }
-
-      currentDeathRecord.value = detailRes;
-      deathDetailVisible.value = true;
-    } catch (error) {
-      console.error('获取死亡登记详情失败:', error);
-      message.error('获取详情失败');
-    } finally {
-      // 无论成功还是失败，都重置loading状态
-      if (index !== -1) {
-        deathData.value[index].loading = false;
-      }
     }
-  } else {
-    // 对于存栏记录，继续使用原来的导航逻辑
-    router.push({
-      path: `/AUDITD/detail/${record.auditId}`,
-      query: { viewMode: 'true' }
-    });
-  }
 };
 
 const loadData = async () => {
-    await fetchFarmData();
-    await fetchWarningData();
-    await fetchInventoryData();
-    await fetchReportStatusData();
-    await fetchTrendData();
-    await fetchMixedData();
-    await fetchTableData();
+    pageLoading.value = true;
+    try {
+        await Promise.all([
+            fetchFarmData(),
+            fetchWarningData(),
+            fetchInventoryData(),
+            fetchReportStatusData(),
+            fetchTrendData(),
+            fetchMixedData(),
+            fetchTableData()
+        ]);
+    } catch (error) {
+        console.error('Error loading page data:', error);
+        message.error('加载数据失败，请刷新页面重试');
+    } finally {
+        pageLoading.value = false;
+    }
 };
 
 onMounted(() => {
@@ -503,20 +512,19 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // 清理创建的Blob URL，防止内存泄漏
-  if (currentDeathRecord.value?.filePreviewUrls) {
-    if (currentDeathRecord.value.filePreviewUrls.images) {
-      currentDeathRecord.value.filePreviewUrls.images.forEach(img => {
-        if (img.url) URL.revokeObjectURL(img.url);
-      });
+    if (currentDeathRecord.value?.filePreviewUrls) {
+        if (currentDeathRecord.value.filePreviewUrls.images) {
+            currentDeathRecord.value.filePreviewUrls.images.forEach(img => {
+                if (img.url) URL.revokeObjectURL(img.url);
+            });
+        }
+
+        if (currentDeathRecord.value.filePreviewUrls.videos) {
+            currentDeathRecord.value.filePreviewUrls.videos.forEach(video => {
+                if (video.url) URL.revokeObjectURL(video.url);
+            });
+        }
     }
-    
-    if (currentDeathRecord.value.filePreviewUrls.videos) {
-      currentDeathRecord.value.filePreviewUrls.videos.forEach(video => {
-        if (video.url) URL.revokeObjectURL(video.url);
-      });
-    }
-  }
 });
 </script>
 
@@ -528,15 +536,36 @@ onUnmounted(() => {
     background-color: #f0f2f5;
     height: 100%;
 
+    .global-loading {
+        height: 100%;
+
+        :deep(.ant-spin-container) {
+            height: 100%;
+        }
+
+        :deep(.ant-spin) {
+            max-height: none;
+        }
+
+        :deep(.ant-spin-spinning) {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+    }
+
     .info-card {
         background-color: white;
         border-radius: 4px;
         box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
         padding: 16px;
-    }
-
-    .breadcrumb {
-        // padding: 8px 0;
     }
 
     .content-section,

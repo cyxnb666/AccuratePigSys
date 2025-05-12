@@ -92,7 +92,7 @@ const props = defineProps({
         required: true,
         default: () => []
     },
-    // 修改为四个独立的分页
+    // 四个独立的分页
     stockPagination: {
         type: Object,
         required: true,
@@ -166,7 +166,7 @@ watch(() => props.deathData, (newData) => {
     }
 }, { deep: true });
 
-// 表格列定义 - 根据真实API数据调整
+// 表格列定义
 const stockColumns = [
     { title: '序号', dataIndex: 'index', key: 'index', width: 80, align: 'center' },
     { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },

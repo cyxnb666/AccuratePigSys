@@ -10,7 +10,7 @@
                     :show-search="true" :disabled="isEdit" />
             </a-form-item>
 
-            <!-- 行政区划名称和代码 (Side by side) -->
+            <!-- 行政区划名称和代码 -->
             <a-row :gutter="16">
                 <a-col :span="12">
                     <a-form-item label="行政区划名称" name="districtName">
@@ -24,7 +24,7 @@
                 </a-col>
             </a-row>
 
-            <!-- 状态 (Full width) -->
+            <!-- 状态 -->
             <a-form-item label="状态" name="status">
                 <a-select v-model:value="formData.status" placeholder="请选择状态">
                     <a-select-option value="启用">启用</a-select-option>
@@ -211,7 +211,6 @@ const handleSubmit = () => {
             submitting.value = true;
             
             try {
-                // 构造提交数据
                 const submitData = {
                     areacode: formData.districtCode,
                     areaname: formData.districtName,

@@ -49,7 +49,6 @@ watch(() => props.dateRange, (newVal) => {
 const handleDateChange = (dates) => {
     emit('update:dateRange', dates);
 
-    // Format dates for API call
     let startDate = '';
     let endDate = '';
 
@@ -58,14 +57,12 @@ const handleDateChange = (dates) => {
         endDate = dates[1] ? dayjs(dates[1]).format('YYYY-MM-DD') : '';
     }
 
-    // Emit event to reload data with new date range
     emit('reload-report-data', {
         startDate,
         endDate
     });
 };
 
-// Transform API data to chart format
 const chartData = computed(() => {
     return [
         { name: '提醒未上报', value: props.farmWarnData.nregistCount || 0, color: '#40A9FF' },

@@ -430,7 +430,6 @@ onMounted(() => {
   }
 }
 
-// 表格样式优化
 :deep(.ant-table-wrapper) {
   .ant-table-thead>tr>th {
     background-color: #F3F5F9;
