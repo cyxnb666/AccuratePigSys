@@ -27,7 +27,7 @@
                                             <template v-for="(fragment, i) in getHighlightFragments(title, searchValue)"
                                                 :key="i">
                                                 <span v-if="fragment.highlight" class="highlight-text">{{ fragment.text
-                                                }}</span>
+                                                    }}</span>
                                                 <span v-else>{{ fragment.text }}</span>
                                             </template>
                                         </span>
@@ -81,11 +81,9 @@ import { ref, reactive, onMounted, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
 import { SearchOutlined } from '@ant-design/icons-vue';
-import { selectUserTree } from './api';
+import { selectUserTree, pageQueryLeaves, exportLeaves } from './api';
 
 const router = useRouter();
-
-// 加载状态
 const loading = ref(true);
 
 // 区域树数据
@@ -142,7 +140,6 @@ const fetchAreaTrees = async () => {
         }
     } catch (error) {
         console.error('获取行政区划数据失败:', error);
-        message.error('获取行政区划数据失败');
     } finally {
         loading.value = false;
     }
@@ -166,7 +163,6 @@ const getHighlightFragments = (title: string, searchValue: string) => {
             });
         }
 
-        // 添加匹配的文本部分
         fragments.push({
             text: title.substring(index, index + searchValue.length),
             highlight: true
@@ -176,7 +172,6 @@ const getHighlightFragments = (title: string, searchValue: string) => {
         index = title.indexOf(searchValue, lastIndex);
     }
 
-    // 添加最后一部分普通文本
     if (lastIndex < title.length) {
         fragments.push({
             text: title.substring(lastIndex),
@@ -187,57 +182,27 @@ const getHighlightFragments = (title: string, searchValue: string) => {
     return fragments;
 };
 
-// 搜索
-const handleDistrictSearch = () => {
-    if (!districtSearchText.value) {
-        filteredDistrictTreeData.value = districtTreeData.value;
-        return;
+const handleDistrictSelect = (selectedKeys, info) => {
+    if (selectedKeys.length > 0) {
+        selectedDistrict.value = selectedKeys;
+        const districtName = info.node.title;
+        searchForm.district = districtName;
+        pagination.current = 1; // 重置到第一页
+        loadData(districtName);
     }
+};
 
-    // 查找匹配的节点
-    const searchValue = districtSearchText.value.toLowerCase();
+const handleSearch = () => {
+    pagination.current = 1; // 重置到第一页
+    loadData(searchForm.district);
+};
 
-    // 递归搜索函数
-    const searchTree = (nodes: any[]) => {
-        const result: any[] = [];
-
-        nodes.forEach(node => {
-            // 深拷贝节点
-            const newNode = { ...node };
-
-            // 如果当前节点匹配，添加searchValue属性
-            if (node.title.toLowerCase().includes(searchValue)) {
-                newNode.searchValue = searchValue;
-                if (node.children) {
-                    newNode.children = [...node.children];
-                }
-                result.push(newNode);
-
-                // 添加到展开的键中
-                if (!expandedKeys.value.includes(node.key)) {
-                    expandedKeys.value.push(node.key);
-                }
-            }
-            // 如果有子节点，递归搜索
-            else if (node.children) {
-                const filteredChildren = searchTree(node.children);
-                if (filteredChildren.length > 0) {
-                    newNode.children = filteredChildren;
-                    result.push(newNode);
-
-                    // 添加到展开的键中
-                    if (!expandedKeys.value.includes(node.key)) {
-                        expandedKeys.value.push(node.key);
-                    }
-                }
-            }
-        });
-
-        return result;
-    };
-
-    filteredDistrictTreeData.value = searchTree(districtTreeData.value);
-    autoExpandParent.value = true;
+const handleTableChange = (page, pageSize) => {
+    pagination.current = page;
+    if (pageSize) {
+        pagination.pageSize = pageSize;
+    }
+    loadData(searchForm.district);
 };
 const onExpand = (keys) => {
     expandedKeys.value = keys;
@@ -254,8 +219,8 @@ const columns = [
     },
     {
         title: '行政区划',
-        dataIndex: 'district',
-        key: 'district',
+        dataIndex: 'areaname',
+        key: 'areaname',
         align: 'center'
     },
     {
@@ -266,26 +231,26 @@ const columns = [
     },
     {
         title: '育肥猪',
-        dataIndex: 'fatteningPigs',
-        key: 'fatteningPigs',
+        dataIndex: 'porkerCount',
+        key: 'porkerCount',
         align: 'center'
     },
     {
         title: '仔猪',
-        dataIndex: 'piglets',
-        key: 'piglets',
+        dataIndex: 'pigletCount',
+        key: 'pigletCount',
         align: 'center'
     },
     {
         title: '母猪',
-        dataIndex: 'sows',
-        key: 'sows',
+        dataIndex: 'sowCount',
+        key: 'sowCount',
         align: 'center'
     },
     {
         title: '最近上报日期',
-        dataIndex: 'reportDate',
-        key: 'reportDate',
+        dataIndex: 'registTime',
+        key: 'registTime',
         align: 'center'
     },
     {
@@ -299,61 +264,62 @@ const columns = [
 const pagination = reactive({
     current: 1,
     pageSize: 10,
-    total: 50,
+    total: 0,
     showSizeChanger: true,
 });
 
-const handleTableChange = (page) => {
-    pagination.current = page;
-    loadData(searchForm.district);
-};
-
 const tableData = ref([]);
 
-// 处理区域选择
-const handleDistrictSelect = (selectedKeys, info) => {
-    if (selectedKeys.length > 0) {
-        selectedDistrict.value = selectedKeys;
-        const districtName = info.node.title;
-        searchForm.district = districtName;
-        loadData(districtName);
+const loadData = async (district) => {
+    loading.value = true;
+    try {
+        const params = {
+            condition: {
+                areacode: selectedDistrict.value[0] || '',
+                farmName: searchForm.farmName || ''
+            },
+            pageNo: pagination.current,
+            pageSize: pagination.pageSize
+        };
+
+        const res = await pageQueryLeaves(params);
+        if (res && res.records) {
+            tableData.value = res.records.map((item, index) => ({
+                ...item,
+                index: (pagination.current) * pagination.pageSize + index + 1
+            }));
+            pagination.total = res.total || 0;
+        } else {
+            tableData.value = [];
+            pagination.total = 0;
+        }
+    } catch (error) {
+        console.error('获取存栏清单数据失败:', error);
+        tableData.value = [];
+        pagination.total = 0;
+    } finally {
+        loading.value = false;
     }
 };
 
-// 根据区域加载数据
-const loadData = (district) => {
-    // 模拟数据加载，实际项目中这里应该调用API
-    const data = [];
-    for (let i = 1; i <= 50; i++) {
-        data.push({
-            id: i,
-            index: (pagination.current - 1) * pagination.pageSize + i,
-            district: district,
-            farmName: `${district}养殖场${i}`,
-            fatteningPigs: Math.floor(Math.random() * 100),
-            piglets: Math.floor(Math.random() * 50),
-            sows: Math.floor(Math.random() * 30),
-            reportDate: '2025-04-30'
-        });
+const handleDownload = async () => {
+    try {
+        message.loading({ content: '清单下载中...', key: 'download', duration: 0 });
+
+        const params = {
+            condition: {
+                areacode: selectedDistrict.value[0] || '',
+                farmName: searchForm.farmName || ''
+            }
+        };
+
+        await exportLeaves(params);
+
+        message.success({ content: '下载成功', key: 'download', duration: 2 });
+    } catch (error) {
+        console.error('下载清单失败:', error);
+        message.error({ content: '下载清单失败', key: 'download', duration: 2 });
     }
-    tableData.value = data;
-    pagination.total = 50;
-};
-
-const handleSearch = () => {
-    pagination.current = 1;
-    loadData(searchForm.district);
-
-    if (searchForm.farmName) {
-        tableData.value = tableData.value.filter(item =>
-            item.farmName.includes(searchForm.farmName)
-        );
-        pagination.total = tableData.value.length;
-    }
-};
-
-const handleDownload = () => {
-    message.success('清单下载中...');
 };
 
 const viewDetails = (record) => {
