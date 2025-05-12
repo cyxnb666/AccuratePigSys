@@ -352,10 +352,8 @@ defineExpose({
     }
 
     .info-section {
-        padding: 20px;
         margin-bottom: 0;
-        border-bottom: 1px solid #f0f0f0;
-
+        padding-bottom: 12px;
         &:last-child {
             border-bottom: none;
         }
