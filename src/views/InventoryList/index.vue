@@ -27,7 +27,7 @@
                                             <template v-for="(fragment, i) in getHighlightFragments(title, searchValue)"
                                                 :key="i">
                                                 <span v-if="fragment.highlight" class="highlight-text">{{ fragment.text
-                                                    }}</span>
+                                                }}</span>
                                                 <span v-else>{{ fragment.text }}</span>
                                             </template>
                                         </span>
@@ -54,8 +54,8 @@
                     </div>
 
                     <div class="data-table">
-                        <a-table :columns="columns" :data-source="tableData" :pagination="false" bordered row-key="id"
-                            :scroll="{ y: tableHeight }">
+                        <a-table :columns="columns" :data-source="tableData" :loading="loading" :pagination="false"
+                            bordered row-key="id" :scroll="{ y: tableHeight }">
                             <template #bodyCell="{ column, record }">
                                 <template v-if="column.key === 'action'">
                                     <a-button type="link" @click="viewDetails(record)">详情</a-button>
