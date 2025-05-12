@@ -13,7 +13,9 @@
                     :pagination="showPagination ? stockPagination : false" bordered>
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'action'">
-                            <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
+                            <a-button type="link" @click="$emit('view-detail', record)">
+                                详情
+                            </a-button>
                         </template>
                         <template v-if="column.key === 'registStatus'">
                             <a-tag :color="record.registStatus === 'AUDITSUCC' ? 'success' : 'error'">
@@ -51,7 +53,9 @@
                     :pagination="showPagination ? deathPagination : false" bordered>
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'action'">
-                            <a href="javascript:;" @click="$emit('view-detail', record)">详情</a>
+                            <a-button type="link" @click="$emit('view-detail', record)" :loading="record.loading">
+                                详情
+                            </a-button>
                         </template>
                         <template v-if="column.key === 'index'">
                             {{ record._index }}

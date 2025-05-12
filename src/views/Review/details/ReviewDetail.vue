@@ -469,11 +469,6 @@ const route = useRoute();
 const activeMainTab = ref('inventory');
 const activeSubTab = ref('fattening');
 const currentAreaIndex = ref(0);
-const tabConfig = [
-    { key: 'fattening', title: '育肥区', breedCode: 'PORKER' },
-    { key: 'piglets', title: '仔猪区', breedCode: 'PIGLET' },
-    { key: 'sows', title: '母猪区', breedCode: 'BROOD_SOW' }
-];
 // 基础信息
 const basicInfo = reactive({
     district: '',
@@ -530,26 +525,6 @@ const fenceData = computed(() => {
     }
 });
 
-// 获取当前区域的GPS轨迹数据
-const getTrackingData = (breedCode) => {
-    if (!currentArea.value || !currentArea.value.fences) {
-        return [];
-    }
-
-    // 在当前区域的fences中找到对应类型的栏舍数据
-    const fence = currentArea.value.fences.find(f => f.breedCode === breedCode);
-
-    if (fence && fence.gpss && fence.gpss.length > 0) {
-        return fence.gpss.map(gps => ({
-            lng: parseFloat(gps.longitude),
-            lat: parseFloat(gps.latitude),
-            timestamp: `${gps.timestamp}s`
-        }));
-    }
-
-    return [];
-};
-
 const currentFenceDetail = ref(null);
 const currentFenceLoading = ref(false);
 const fileURLs = reactive({
@@ -587,16 +562,6 @@ const trackingData = computed(() => {
         timestamp: `${gps.timestamp}s`
     }));
 });
-
-// 获取当前选中区域和类型的文件
-const getCurrentFiles = (breedCode: string) => {
-    if (!currentArea.value || !currentArea.value.fences) {
-        return [];
-    }
-    const fence = currentArea.value.fences.find(f => f.breedCode === breedCode);
-    const files = fence?.files || [];
-    return files;
-};
 
 // 根据活动标签获取当前breed code
 const getCurrentBreedCode = () => {

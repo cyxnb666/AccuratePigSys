@@ -56,11 +56,14 @@
                 :inbound-pagination="inboundPagination" :death-pagination="deathPagination"
                 @view-detail="handleViewDetail" @tab-change="handleTabChange" />
         </div>
+
+        <death-detail-dialog ref="deathDetailRef" v-model="deathDetailVisible" :record="currentDeathRecord"
+            :is-view-mode="true" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue';
+import { ref, reactive, onMounted, watch, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
@@ -76,6 +79,8 @@ import {
     queryFarmRegistRestocks,
     queryFarmDeadRegistDeads
 } from '../api';
+import DeathDetailDialog from '@/views/Review/details/DeathDetailDialog.vue';
+import { getWebDeadRegist, getFilePreview } from '@/views/Review/api';
 
 // 引入抽取的组件
 import FarmBasicInfo from '@/components/FarmBasicInfo.vue';
@@ -389,8 +394,16 @@ const fetchTableData = async (type = 'all') => {
         console.error('获取存栏信息数据失败:', error);
     }
 };
-const handleTabChange = (activeKey) => {
-    switch (activeKey) {
+
+const deathDetailVisible = ref(false);
+const currentDeathRecord = ref(null);
+const deathDetailRef = ref(null);
+const activeTabKey = ref('1');
+
+const handleTabChange = (key) => {
+    activeTabKey.value = key;
+
+    switch (key) {
         case '1': // 存栏记录
             fetchTableData('stock');
             break;
@@ -407,11 +420,72 @@ const handleTabChange = (activeKey) => {
 };
 
 // 查看详情
-const handleViewDetail = (record) => {
+const handleViewDetail = async (record) => {
+    if (activeTabKey.value === '4') { // 死亡记录
+    // 设置当前记录的loading状态为true
+    const index = deathData.value.findIndex(item => item.bizId === record.bizId);
+    if (index !== -1) {
+      deathData.value[index].loading = true;
+    }
+    
+    try {
+      const detailRes = await getWebDeadRegist(record.bizId);
+
+      // 获取文件预览
+      if (detailRes.files && detailRes.files.length > 0) {
+        detailRes.filePreviewUrls = {
+          images: [],
+          videos: []
+        };
+
+        const filePreviewPromises = detailRes.files.map(async (file) => {
+          try {
+            const fileResponse = await getFilePreview(file.fileId);
+            const url = URL.createObjectURL(fileResponse);
+
+            // 根据文件后缀判断是视频还是图片
+            const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
+
+            if (isVideo) {
+              detailRes.filePreviewUrls.videos.push({
+                id: file.fileId,
+                name: file.fileName,
+                url: url
+              });
+            } else {
+              detailRes.filePreviewUrls.images.push({
+                id: file.fileId,
+                name: file.fileName,
+                url: url
+              });
+            }
+          } catch (error) {
+            console.error(`获取文件预览失败，fileId: ${file.fileId}`, error);
+          }
+        });
+
+        // 等待所有文件预览加载完成
+        await Promise.all(filePreviewPromises);
+      }
+
+      currentDeathRecord.value = detailRes;
+      deathDetailVisible.value = true;
+    } catch (error) {
+      console.error('获取死亡登记详情失败:', error);
+      message.error('获取详情失败');
+    } finally {
+      // 无论成功还是失败，都重置loading状态
+      if (index !== -1) {
+        deathData.value[index].loading = false;
+      }
+    }
+  } else {
+    // 对于存栏记录，继续使用原来的导航逻辑
     router.push({
-        path: `/AUDITD/detail/${record.auditId}`,
-        query: { viewMode: 'true' }
+      path: `/AUDITD/detail/${record.auditId}`,
+      query: { viewMode: 'true' }
     });
+  }
 };
 
 const loadData = async () => {
@@ -426,6 +500,23 @@ const loadData = async () => {
 
 onMounted(() => {
     loadData();
+});
+
+onUnmounted(() => {
+  // 清理创建的Blob URL，防止内存泄漏
+  if (currentDeathRecord.value?.filePreviewUrls) {
+    if (currentDeathRecord.value.filePreviewUrls.images) {
+      currentDeathRecord.value.filePreviewUrls.images.forEach(img => {
+        if (img.url) URL.revokeObjectURL(img.url);
+      });
+    }
+    
+    if (currentDeathRecord.value.filePreviewUrls.videos) {
+      currentDeathRecord.value.filePreviewUrls.videos.forEach(video => {
+        if (video.url) URL.revokeObjectURL(video.url);
+      });
+    }
+  }
 });
 </script>
 
