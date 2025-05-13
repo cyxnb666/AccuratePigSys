@@ -30,19 +30,19 @@
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">行政区划:</span>
-                                <span class="value">{{ basicInfo.district }}</span>
+                                <span class="value">{{ auditData.farmAddress }}</span>
                             </div>
                         </a-col>
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">养殖场名称:</span>
-                                <span class="value">{{ basicInfo.farmName }}</span>
+                                <span class="value">{{ auditData.farmName }}</span>
                             </div>
                         </a-col>
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">养殖场地址:</span>
-                                <span class="value">{{ basicInfo.address }}</span>
+                                <span class="value">{{ auditData.farmAddress }}</span>
                             </div>
                         </a-col>
                     </a-row>
@@ -51,19 +51,19 @@
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">上报用户:</span>
-                                <span class="value">{{ basicInfo.reportUser }}</span>
+                                <span class="value">{{ auditData.applyUserName }}</span>
                             </div>
                         </a-col>
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">上报时间:</span>
-                                <span class="value">{{ basicInfo.reportTime }}</span>
+                                <span class="value">{{ auditData.applyTime }}</span>
                             </div>
                         </a-col>
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">上报点数总数:</span>
-                                <span class="value">{{ basicInfo.totalReportCount }}</span>
+                                <span class="value">{{ auditData.persionalCheckCount }}</span>
                             </div>
                         </a-col>
                     </a-row>
@@ -72,8 +72,8 @@
                         <a-col :span="8">
                             <div class="info-item">
                                 <span class="label">AI点数总数:</span>
-                                <span class="value">{{ basicInfo.aiTotalCount }}</span>
-                                <span v-if="aiPersionDiffRate > 20" class="deviation-warning">
+                                <span class="value">{{ auditData.aiCheckCount }}</span>
+                                <span v-if="auditData.aiPersionDiffRate > 20" class="deviation-warning">
                                     (预警提示: 上报点数与AI点数差异已超过预警阈值20%, 请仔细审核)
                                 </span>
                             </div>
@@ -95,17 +95,17 @@
                                 <div class="sidebar-navigation">
                                     <div class="navigation-header">养殖区域列表</div>
                                     <div class="navigation-list">
-                                        <div v-for="(area, index) in farmAreas" :key="index"
+                                        <div v-for="(area, index) in auditData.auditFences" :key="index"
                                             :class="['navigation-item', currentAreaIndex === index ? 'active' : '']"
                                             @click="currentAreaIndex = index">
-                                            {{ area.name }}
+                                            {{ area.fenceName }}
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- 右侧内容区域 -->
                                 <div class="point-content">
-                                    <div class="price-point-header">{{ currentArea.name }}</div>
+                                    <div class="price-point-header">{{ getCurrentArea().fenceName }}</div>
 
                                     <div class="price-point-details">
                                         <div class="loading-overlay" v-if="currentFenceLoading">
@@ -118,26 +118,27 @@
                                                     <div class="count-items-container">
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
-                                                            <span class="value">{{ currentArea.fattening.reportCount
-                                                            }}</span>
+                                                            <span class="value">{{
+                                                                getCurrentFence('PORKER')?.persionalCheckCount }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
-                                                            <span class="value">{{ currentArea.fattening.aiCount
-                                                            }}</span>
+                                                            <span class="value">{{
+                                                                getCurrentFence('PORKER')?.aiCheckCount }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
                                                             <a-input-number v-if="!isViewMode"
-                                                                v-model:value="currentArea.fattening.reviewerCount"
+                                                                v-model:value="getCurrentFence('PORKER').auditPersionalCheckCount"
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
-                                                                currentArea.fattening.reviewerCount }}</span>
+                                                                getCurrentFence('PORKER')?.auditPersionalCheckCount
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
-                                                                currentArea.fattening.lastReportCount
+                                                                getCurrentFence('PORKER')?.lastPersionalCheckCount
                                                             }}</span>
                                                         </div>
                                                     </div>
@@ -194,26 +195,27 @@
                                                     <div class="count-items-container">
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
-                                                            <span class="value">{{ currentArea.piglets.reportCount
-                                                            }}</span>
+                                                            <span class="value">{{
+                                                                getCurrentFence('PIGLET')?.persionalCheckCount }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
-                                                            <span class="value">{{ currentArea.piglets.aiCount
-                                                            }}</span>
+                                                            <span class="value">{{
+                                                                getCurrentFence('PIGLET')?.aiCheckCount }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
                                                             <a-input-number v-if="!isViewMode"
-                                                                v-model:value="currentArea.piglets.reviewerCount"
+                                                                v-model:value="getCurrentFence('PIGLET').auditPersionalCheckCount"
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
-                                                                currentArea.piglets.reviewerCount }}</span>
+                                                                getCurrentFence('PIGLET')?.auditPersionalCheckCount
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
-                                                                currentArea.piglets.lastReportCount
+                                                                getCurrentFence('PIGLET')?.lastPersionalCheckCount
                                                             }}</span>
                                                         </div>
                                                     </div>
@@ -270,26 +272,28 @@
                                                     <div class="count-items-container">
                                                         <div class="count-item">
                                                             <span class="label">上报数量：</span>
-                                                            <span class="value">{{ currentArea.sows.reportCount
+                                                            <span class="value">{{
+                                                                getCurrentFence('BROOD_SOW')?.persionalCheckCount
                                                             }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
-                                                            <span class="value">{{ currentArea.sows.aiCount
-                                                            }}</span>
+                                                            <span class="value">{{
+                                                                getCurrentFence('BROOD_SOW')?.aiCheckCount }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">审核员点数：</span>
                                                             <a-input-number v-if="!isViewMode"
-                                                                v-model:value="currentArea.sows.reviewerCount" :min="0"
-                                                                style="width: 120px" />
+                                                                v-model:value="getCurrentFence('BROOD_SOW').auditPersionalCheckCount"
+                                                                :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
-                                                                currentArea.sows.reviewerCount
+                                                                getCurrentFence('BROOD_SOW')?.auditPersionalCheckCount
                                                             }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
-                                                            <span class="value">{{ currentArea.sows.lastReportCount
+                                                            <span class="value">{{
+                                                                getCurrentFence('BROOD_SOW')?.lastPersionalCheckCount
                                                             }}</span>
                                                         </div>
                                                     </div>
@@ -409,11 +413,11 @@
                         </div>
                         <div class="review-option-item">
                             <span class="review-label">应计存栏数:</span>
-                            <span class="review-value">{{ reviewData.expectedInventory }}</span>
+                            <span class="review-value">{{ auditData.leaveCount }}</span>
                         </div>
                         <div class="review-option-item">
                             <span class="review-label">上报点数总数:</span>
-                            <span class="review-value">{{ basicInfo.totalReportCount }}</span>
+                            <span class="review-value">{{ auditData.persionalCheckCount }}</span>
                         </div>
                     </div>
                 </div>
@@ -444,13 +448,22 @@ import { message } from 'ant-design-vue';
 import { LeftOutlined } from '@ant-design/icons-vue';
 import DeathDetailDialog from './DeathDetailDialog.vue';
 import PlotGPS from '../PlotGPS/PlotGPS.vue';
-import { getAuditDetail, queryRangeRegistDeads, queryRangeRegistRestocks, queryRangeRegistSlaughters, getWebDeadRegist, getLeaveFence, deadConfirm, submitAudit } from '../api';
+import {
+    getAuditDetail,
+    queryRangeRegistDeads,
+    queryRangeRegistRestocks,
+    queryRangeRegistSlaughters,
+    getWebDeadRegist,
+    getLeaveFence,
+    deadConfirm,
+    submitAudit,
+    calculateLeaveCount
+} from '../api';
 
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
 const loading = ref(false);
 const dataLoaded = ref(false);
-const aiPersionDiffRate = ref(0);
 
 const props = defineProps({
     isViewMode: {
@@ -470,55 +483,55 @@ const route = useRoute();
 const activeMainTab = ref('inventory');
 const activeSubTab = ref('fattening');
 const currentAreaIndex = ref(0);
-// 基础信息
-const basicInfo = reactive({
-    district: '',
-    farmName: '',
-    address: '',
-    reportUser: '',
-    reportTime: '',
-    totalReportCount: '',
-    aiTotalCount: ''
-});
 
-// 养殖区域数据
-const farmAreas = ref([]);
-
-// 当前选中的养殖区域
-const currentArea = computed(() => {
-    return farmAreas.value[currentAreaIndex.value] || {
-        name: '',
-        coordinate: [],
-        fences: [],
-        fattening: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-        piglets: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-        sows: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
-    };
-});
-
-const filePreviewsLoaded = ref(false);
+const auditData = ref(null);
 
 // 审核数据
 const reviewData = reactive({
     result: props.isViewMode ? 1 : null,  // 1通过, 0不通过
     comment: '',
-    expectedInventory: 0,
-    registId: ''
 });
+
+// 获取当前区域
+const getCurrentArea = () => {
+    if (!auditData.value || !auditData.value.auditFences || auditData.value.auditFences.length === 0) {
+        return {};
+    }
+    return auditData.value.auditFences[currentAreaIndex.value] || {};
+};
+
+// 获取当前围栏
+const getCurrentFence = (breedCode) => {
+    const area = getCurrentArea();
+    if (!area || !area.fences) {
+        return {};
+    }
+    return area.fences.find(f => f.breedCode === breedCode) || {};
+};
+
+// 检查当前区域是否有特定类型的围栏
+const hasFenceType = (breedCode) => {
+    const area = getCurrentArea();
+    if (!area || !area.fences) {
+        return false;
+    }
+    return area.fences.some(f => f.breedCode === breedCode);
+};
+
+const filePreviewsLoaded = ref(false);
 
 // 获取当前区域的围栏数据
 const fenceData = computed(() => {
-    if (!currentArea.value || !currentArea.value.coordinate) {
+    const area = getCurrentArea();
+    if (!area || !area.coordinate) {
         return { path: [] };
     }
 
     try {
-        let pathData;
-        if (typeof currentArea.value.coordinate === 'string') {
-            pathData = JSON.parse(currentArea.value.coordinate);
-            return { path: pathData };
+        if (typeof area.coordinate === 'string') {
+            return { path: JSON.parse(area.coordinate) };
         } else {
-            return { path: currentArea.value.coordinate || [] };
+            return { path: area.coordinate || [] };
         }
     } catch (e) {
         console.error('解析围栏坐标失败:', e);
@@ -576,11 +589,11 @@ const loadCurrentFenceDetail = async () => {
     filePreviewsLoaded.value = false;
 
     const breedCode = getCurrentBreedCode();
-    const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
+    const currentFence = getCurrentFence(breedCode);
 
     if (!currentFence || !currentFence.fenceRegistId) {
         console.log('没有找到当前围栏信息或ID');
-        filePreviewsLoaded.value = true; // 标记加载完成，避免一直显示加载中
+        filePreviewsLoaded.value = true;
         currentFenceDetail.value = null;
         return;
     }
@@ -618,28 +631,10 @@ const loadCurrentFenceDetail = async () => {
     }
 };
 
-const hasFenceType = (breedCode) => {
-    if (!currentArea.value || !currentArea.value.fences) {
-        return false;
-    }
-
-    const fences = Array.isArray(currentArea.value.fences) ?
-        currentArea.value.fences : [];
-
-    return fences.some(f => f.breedCode === breedCode);
-};
-
-watch(currentAreaIndex, () => {
-    setDefaultActiveSubTab();
-});
-
-watch([currentAreaIndex, activeSubTab], () => {
-    loadCurrentFenceDetail();
-}, { immediate: false });
-
 // 设置默认选中的子标签
 const setDefaultActiveSubTab = () => {
-    if (currentArea.value && Array.isArray(currentArea.value.fences)) {
+    const area = getCurrentArea();
+    if (area && Array.isArray(area.fences)) {
         if (hasFenceType('PORKER')) {
             activeSubTab.value = 'fattening';
         } else if (hasFenceType('PIGLET')) {
@@ -684,11 +679,13 @@ const deathRecords = ref([]);
 // 计算审核员点数总和
 const calculateTotalReviewerCount = () => {
     let total = 0;
-    if (farmAreas.value && Array.isArray(farmAreas.value)) {
-        farmAreas.value.forEach(area => {
-            total += (area.fattening.reviewerCount || 0);
-            total += (area.piglets.reviewerCount || 0);
-            total += (area.sows.reviewerCount || 0);
+    if (auditData.value && auditData.value.auditFences) {
+        auditData.value.auditFences.forEach(area => {
+            if (area.fences && Array.isArray(area.fences)) {
+                area.fences.forEach(fence => {
+                    total += (fence.auditPersionalCheckCount || 0);
+                });
+            }
         });
     }
     return total;
@@ -773,8 +770,16 @@ const handleDeathDetailConfirm = async (reviewData) => {
             }
         };
 
-        // 调用死亡确认API
+        // 死亡
         await deadConfirm(requestData);
+
+        const farmId = auditData.value.farmId;
+        if (farmId) {
+            const leaveCountRes = await calculateLeaveCount(farmId);
+            if (leaveCountRes && auditData.value) {
+                auditData.value.leaveCount = leaveCountRes;
+            }
+        }
 
         // API调用成功，关闭对话框
         deathDetailVisible.value = false;
@@ -783,10 +788,9 @@ const handleDeathDetailConfirm = async (reviewData) => {
         message.success('死亡登记审核已保存');
 
         // 重新加载页面数据
-        await loadData();
+        // await loadData();
     } catch (error) {
         console.error('保存死亡登记审核失败:', error);
-        message.error('保存失败，请重试');
     } finally {
         // 重置对话框中的loading状态
         if (deathDetailRef.value) {
@@ -799,8 +803,8 @@ const goToDetailedComparison = (tabType: string) => {
     savePageState();
     // 获取当前选中的围栏信息
     const breedCode = getCurrentBreedCode();
-    const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
-    
+    const currentFence = getCurrentFence(breedCode);
+
     if (currentFence && currentFence.fenceRegistId && fenceDetailsCache[currentFence.fenceRegistId]) {
         // 如果有缓存数据，将其存入sessionStorage以便SuperDetail组件使用
         sessionStorage.setItem(
@@ -808,10 +812,10 @@ const goToDetailedComparison = (tabType: string) => {
             JSON.stringify(fenceDetailsCache[currentFence.fenceRegistId])
         );
     }
-    
+
     // 标记
     sessionStorage.setItem(`from_super_detail_${route.params.id}`, 'true');
-    
+
     router.push({
         path: `/AUDITD/super-detail/${route.params.id}`,
         query: {
@@ -841,16 +845,21 @@ const submitReview = async () => {
 
     // 检查是否所有区域都已填写审核员点数
     let hasEmptyCount = false;
-    farmAreas.value.forEach(area => {
-        // 只检查存在的猪类型
-        if (
-            (hasFenceType('PORKER') && area.fattening.reviewerCount === 0) ||
-            (hasFenceType('PIGLET') && area.piglets.reviewerCount === 0) ||
-            (hasFenceType('BROOD_SOW') && area.sows.reviewerCount === 0)
-        ) {
-            hasEmptyCount = true;
-        }
-    });
+    if (auditData.value && auditData.value.auditFences) {
+        auditData.value.auditFences.forEach(area => {
+            if (area.fences && Array.isArray(area.fences)) {
+                area.fences.forEach(fence => {
+                    if (
+                        (fence.breedCode === 'PORKER' && (!fence.auditPersionalCheckCount || fence.auditPersionalCheckCount === 0)) ||
+                        (fence.breedCode === 'PIGLET' && (!fence.auditPersionalCheckCount || fence.auditPersionalCheckCount === 0)) ||
+                        (fence.breedCode === 'BROOD_SOW' && (!fence.auditPersionalCheckCount || fence.auditPersionalCheckCount === 0))
+                    ) {
+                        hasEmptyCount = true;
+                    }
+                });
+            }
+        });
+    }
 
     if (hasEmptyCount) {
         message.warning('请确保所有区域的审核员点数已填写');
@@ -858,49 +867,38 @@ const submitReview = async () => {
     }
 
     try {
-        // 构建审核参数
         const auditFences = [];
 
         // 遍历所有养殖区域，收集每个围栏的审核员点数
-        farmAreas.value.forEach(area => {
-            if (area.fences && Array.isArray(area.fences)) {
-                area.fences.forEach(fence => {
-                    let auditPersionalCheckCount = 0;
-
-                    // 根据围栏类型获取对应的审核员点数
-                    if (fence.breedCode === 'PORKER') {
-                        auditPersionalCheckCount = area.fattening.reviewerCount;
-                    } else if (fence.breedCode === 'PIGLET') {
-                        auditPersionalCheckCount = area.piglets.reviewerCount;
-                    } else if (fence.breedCode === 'BROOD_SOW') {
-                        auditPersionalCheckCount = area.sows.reviewerCount;
-                    }
-
-                    auditFences.push({
-                        auditPersionalCheckCount,
-                        fenceRegistId: fence.fenceRegistId
+        if (auditData.value && auditData.value.auditFences) {
+            auditData.value.auditFences.forEach(area => {
+                if (area.fences && Array.isArray(area.fences)) {
+                    area.fences.forEach(fence => {
+                        auditFences.push({
+                            auditPersionalCheckCount: fence.auditPersionalCheckCount || 0,
+                            fenceRegistId: fence.fenceRegistId
+                        });
                     });
-                });
-            }
-        });
+                }
+            });
+        }
 
-        const auditData = {
+        const auditSubmitData = {
             auditFences,
             auditId: route.params.id.toString(),
             auditRemark: reviewData.comment,
             auditStatus: reviewData.result === 1 ? 'AUDITSUCC' : 'AUDITFAIL',
-            leaveCount: reviewData.expectedInventory,
-            registId: reviewData.registId
+            leaveCount: auditData.value.leaveCount,
+            registId: auditData.value.registId
         };
 
         // 调用审核API
-        await submitAudit(auditData);
+        await submitAudit(auditSubmitData);
 
         message.success('审核完成');
         router.push('/AUDITD');
     } catch (error) {
         console.error('提交审核失败:', error);
-        message.error('提交审核失败，请重试');
     }
 };
 
@@ -910,7 +908,7 @@ const loadData = async () => {
 
     if (auditId) {
         const fromSuperDetail = sessionStorage.getItem(`from_super_detail_${auditId}`);
-        
+
         // 如果是从 SuperDetail 页面返回，并且数据已经加载过，跳过重新加载
         if (fromSuperDetail === 'true' && dataLoaded.value) {
             // 清除标记，以便下次正常加载
@@ -924,84 +922,16 @@ const loadData = async () => {
             const res = await getAuditDetail(auditId.toString());
 
             if (res) {
+                auditData.value = res;
                 sessionStorage.setItem(`audit_data_${auditId}`, JSON.stringify(res));
-                // 填充基础信息
-                basicInfo.district = res.farmAddress || '';
-                basicInfo.farmName = res.farmName || '';
-                basicInfo.address = res.farmAddress || '';
-                basicInfo.reportUser = res.applyUserName || '';
-                basicInfo.reportTime = res.applyTime || '';
-                basicInfo.totalReportCount = res.persionalCheckCount?.toString() || '0';
-                basicInfo.aiTotalCount = res.aiCheckCount?.toString() || '0';
 
-                reviewData.registId = res.registId;
-
-                // 保存偏差率到变量，用于条件显示偏差警告
-                aiPersionDiffRate.value = res.aiPersionDiffRate || 0;
-                reviewData.expectedInventory = res.leaveCount || 0;
-
-                // 处理养殖区域数据
+                // 设置默认选中的区域和子标签
                 if (res.auditFences && res.auditFences.length > 0) {
-                    farmAreas.value = res.auditFences.map(fence => {
-                        // 确保坐标数据有效
-                        let validCoordinate = fence.coordinate;
-                        if (!validCoordinate || (typeof validCoordinate === 'string' && validCoordinate.trim() === '')) {
-                            validCoordinate = '[]';
-                        }
-
-                        // 创建区域对象
-                        const areaData = {
-                            name: fence.fenceName || '未命名区域',
-                            id: fence.fenceId,
-                            coordinate: validCoordinate,
-                            fences: fence.fences || [],
-                            fattening: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-                            piglets: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 },
-                            sows: { reportCount: 0, aiCount: 0, reviewerCount: 0, lastReportCount: 0 }
-                        };
-
-                        // 处理各类型猪的数据
-                        if (fence.fences && fence.fences.length > 0) {
-                            fence.fences.forEach(subFence => {
-                                const reviewerCount = props.isViewMode ?
-                                    (subFence.auditPersionalCheckCount || 0) :
-                                    (subFence.auditPersionalCheckCount || 0);
-
-                                if (subFence.breedCode === 'PORKER') {
-                                    areaData.fattening = {
-                                        reportCount: subFence.persionalCheckCount || 0,
-                                        aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: reviewerCount,
-                                        lastReportCount: subFence.lastPersionalCheckCount || 0
-                                    };
-                                } else if (subFence.breedCode === 'PIGLET') {
-                                    areaData.piglets = {
-                                        reportCount: subFence.persionalCheckCount || 0,
-                                        aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: reviewerCount,
-                                        lastReportCount: subFence.lastPersionalCheckCount || 0
-                                    };
-                                } else if (subFence.breedCode === 'BROOD_SOW') {
-                                    areaData.sows = {
-                                        reportCount: subFence.persionalCheckCount || 0,
-                                        aiCount: subFence.aiCheckCount || 0,
-                                        reviewerCount: reviewerCount,
-                                        lastReportCount: subFence.lastPersionalCheckCount || 0
-                                    };
-                                }
-                            });
-                        }
-
-                        return areaData;
-                    });
-
-                    // 默认选择第一个区域
                     currentAreaIndex.value = 0;
-
-                    // 根据数据设置默认选中的子标签
                     setDefaultActiveSubTab();
                 }
 
+                // 获取其他记录数据
                 const [deathsRes, restocksRes, slaughtersRes] = await Promise.all([
                     queryRangeRegistDeads(auditId.toString()),
                     queryRangeRegistRestocks(auditId.toString()),
@@ -1012,25 +942,18 @@ const loadData = async () => {
                 if (deathsRes) {
                     deathRecords.value = deathsRes.map(item => ({
                         ...item,
-                        key: item.bizId,
                         loading: false
                     }));
                 }
 
                 // 处理补栏记录数据
                 if (restocksRes) {
-                    inboundRecords.value = restocksRes.map(item => ({
-                        ...item,
-                        key: item.bizId
-                    }));
+                    inboundRecords.value = restocksRes;
                 }
 
                 // 处理出栏记录数据
                 if (slaughtersRes) {
-                    outboundRecords.value = slaughtersRes.map(item => ({
-                        ...item,
-                        key: item.bizId
-                    }));
+                    outboundRecords.value = slaughtersRes;
                 }
 
                 dataLoaded.value = true;
@@ -1044,37 +967,44 @@ const loadData = async () => {
         console.error('未找到审核ID');
     }
 };
+
 const savePageState = () => {
-  // 保存当前页面的所有重要状态到 sessionStorage
-  const pageState = {
-    basicInfo: { ...basicInfo },
-    farmAreas: farmAreas.value,
-    currentAreaIndex: currentAreaIndex.value,
-    activeMainTab: activeMainTab.value,
-    activeSubTab: activeSubTab.value,
-    fenceDetailsCache: { ...fenceDetailsCache },
-    outboundRecords: outboundRecords.value,
-    inboundRecords: inboundRecords.value,
-    deathRecords: deathRecords.value,
-    reviewData: { ...reviewData },
-    aiPersionDiffRate: aiPersionDiffRate.value,
-    dataLoaded: true
-  };
-  
-  sessionStorage.setItem(`review_detail_state_${route.params.id}`, JSON.stringify(pageState));
+    // 保存当前页面的所有重要状态到 sessionStorage
+    const pageState = {
+        auditData: auditData.value,
+        currentAreaIndex: currentAreaIndex.value,
+        activeMainTab: activeMainTab.value,
+        activeSubTab: activeSubTab.value,
+        fenceDetailsCache: { ...fenceDetailsCache },
+        outboundRecords: outboundRecords.value,
+        inboundRecords: inboundRecords.value,
+        deathRecords: deathRecords.value,
+        reviewData: { ...reviewData },
+        dataLoaded: true
+    };
+
+    sessionStorage.setItem(`review_detail_state_${route.params.id}`, JSON.stringify(pageState));
 };
+
+watch(currentAreaIndex, () => {
+    setDefaultActiveSubTab();
+});
+
+watch([currentAreaIndex, activeSubTab], () => {
+    loadCurrentFenceDetail();
+}, { immediate: false });
+
 onMounted(() => {
     const auditId = route.params.id;
     const savedState = sessionStorage.getItem(`review_detail_state_${auditId}`);
-    
+
     if (savedState) {
         // 存在保存的状态，恢复它
         try {
             const state = JSON.parse(savedState);
-            
+
             // 恢复各种状态
-            Object.assign(basicInfo, state.basicInfo);
-            farmAreas.value = state.farmAreas;
+            auditData.value = state.auditData;
             currentAreaIndex.value = state.currentAreaIndex;
             activeMainTab.value = state.activeMainTab;
             activeSubTab.value = state.activeSubTab;
@@ -1083,17 +1013,16 @@ onMounted(() => {
             inboundRecords.value = state.inboundRecords;
             deathRecords.value = state.deathRecords;
             Object.assign(reviewData, state.reviewData);
-            aiPersionDiffRate.value = state.aiPersionDiffRate;
             dataLoaded.value = state.dataLoaded;
-            
+
             // 恢复对应围栏的文件预览
             filePreviewsLoaded.value = true;
-            
+
             // 立即加载当前围栏的详细数据，确保视频等显示正常
             loadCurrentFenceDetail();
-            
+
             console.log('已从会话存储恢复页面状态');
-            
+
             // 清除已使用的状态
             sessionStorage.removeItem(`review_detail_state_${auditId}`);
         } catch (error) {

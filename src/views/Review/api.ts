@@ -114,3 +114,16 @@ export function submitAudit(data: any) {
         }
     });
 }
+
+// 计算应计存栏数
+export function calculateLeaveCount(farmId: string) {
+    return axios({
+        url: '/web/audit/calculateLeaveCount',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: farmId
+            }
+        }
+    });
+}
