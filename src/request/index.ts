@@ -91,6 +91,37 @@ axios.interceptors.response.use(
                 return Promise.resolve(blob);
             }
 
+            // 处理 Excel 文件下载
+            if (contentType && (
+                contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') ||
+                contentType.includes('application/vnd.ms-excel')
+            )) {
+                const blob = new Blob([res.data], { type: contentType });
+                if (res.config?.isDownload) {
+                    const aLink = document.createElement('a');
+                    aLink.style.display = 'none';
+                    aLink.href = URL.createObjectURL(blob);
+
+                    let filename = res.config.name;
+                    const disposition = res.headers['content-disposition'];
+                    if (disposition && disposition.includes('filename=')) {
+                        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                        const matches = filenameRegex.exec(disposition);
+                        if (matches != null && matches[1]) {
+                            filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                        }
+                    }
+
+                    aLink.download = filename;
+                    document.body.appendChild(aLink);
+                    aLink.click();
+                    document.body.removeChild(aLink);
+                    URL.revokeObjectURL(aLink.href);
+                    return Promise.resolve();
+                }
+                return Promise.resolve(blob);
+            }
+
             // 可能是错误响应，尝试读取内容
             const reader = new FileReader();
             reader.readAsText(res.data, 'utf-8');

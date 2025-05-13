@@ -395,7 +395,6 @@ const handleDownload = async () => {
         message.success({ content: '下载成功', key: 'download', duration: 2 });
     } catch (error) {
         console.error('下载清单失败:', error);
-        message.error({ content: '下载清单失败', key: 'download', duration: 2 });
     }
 };
 

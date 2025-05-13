@@ -24,7 +24,7 @@ export function exportLeaves(params) {
         method: 'post',
         data: params,
         responseType: 'blob',
-        name: '存栏清单.xlsx'
+        isDownload: true,
     });
 }
 
