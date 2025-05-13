@@ -1,59 +1,77 @@
 <template>
     <div class="farm-details-drawer">
-        <!-- 加载状态 -->
-        <div v-if="loading" class="loading-container">
-            <a-spin size="large" />
-        </div>
-
-        <template v-else>
+        <!-- Loading state -->
+        <a-spin :spinning="pageLoading" tip="正在加载数据..." class="global-loading">
+            <!-- Farm basic info -->
             <div class="info-warning-card">
-                <!-- 养殖场基础信息 -->
                 <farm-basic-info :farm-info="farmInfo" :show-detail-button="true" @view-detail="viewFarmDetail" />
 
-                <!-- 异常预警 -->
+                <!-- Warning data -->
                 <div style="margin-top: 20px;">
                     <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
                 </div>
             </div>
 
-            <!-- 第二行：养殖场存栏情况和上报情况 -->
+            <!-- Second row: Farm inventory and report status -->
             <div class="detail-section">
                 <a-row :gutter="16">
                     <a-col :span="12">
-                        <farm-inventory-pie :inventory-data="inventoryData" />
+                        <farm-inventory-pie :leave-data="leaveData" ref="inventoryPieRef" />
                     </a-col>
                     <a-col :span="12">
-                        <report-status-bar class="report-status-adjusted" :report-data="reportData"
-                            v-model:date-range="dateRange" />
+                        <report-status-bar class="report-status-adjusted" :farm-warn-data="farmWarnData"
+                            :farm-id="farmId" v-model:date-range="dateRange"
+                            @reload-report-data="handleReportDataReload" ref="reportStatusRef" />
                     </a-col>
                 </a-row>
             </div>
 
-            <!-- 养殖区存栏量变化趋势图 -->
+            <!-- Inventory trend line -->
             <div class="detail-section">
-                <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" />
+                <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" ref="trendLineRef" />
             </div>
 
-            <!-- 养殖场存栏量月度变化趋势 -->
+            <!-- Monthly change mixed chart -->
             <div class="detail-section">
-                <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange" />
+                <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange"
+                    ref="monthlyMixedRef" />
             </div>
 
-            <!-- 当前存栏信息 -->
+            <!-- Current inventory information -->
             <div class="detail-section">
                 <current-inventory-tabs :stock-data="stockData.slice(0, 5)" :outbound-data="outboundData.slice(0, 5)"
-                    :inbound-data="inboundData.slice(0, 5)" :death-data="deathData.slice(0, 5)" :pagination="pagination"
-                    :show-pagination="false" :show-view-more="true" @view-detail="handleViewDetail"
-                    @view-more="viewMoreInventory" />
+                    :inbound-data="inboundData.slice(0, 5)" :death-data="deathData.slice(0, 5)"
+                    :stock-pagination="stockPagination" :outbound-pagination="outboundPagination"
+                    :inbound-pagination="inboundPagination" :death-pagination="deathPagination" :show-pagination="false"
+                    :show-view-more="true" @view-detail="handleViewDetail" @view-more="viewMoreInventory"
+                    @tab-change="handleTabChange" />
             </div>
-        </template>
+
+            <!-- Death detail dialog -->
+            <death-detail-dialog ref="deathDetailRef" v-model:visible="deathDetailVisible" :record="currentDeathRecord"
+                :is-view-mode="true" />
+        </a-spin>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch, nextTick, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-
+import { useRouter } from 'vue-router';
+import {
+    getLivestockFarm,
+    queryErrorFarmWarns,
+    getLeave,
+    getFarmWarnStaticis,
+    selectLeaveFenceStaticis,
+    selectLeaveMonthStaticis,
+    selectLeaveRegists,
+    queryFarmRegistSlaughters,
+    queryFarmRegistRestocks,
+    queryFarmDeadRegistDeads
+} from '@/views/InventoryList/api';
+import DeathDetailDialog from '@/views/Review/details/DeathDetailDialog.vue';
+import { getWebDeadRegist } from '@/views/Review/api';
 import FarmBasicInfo from '@/components/FarmBasicInfo.vue';
 import AbnormalWarning from '@/components/AbnormalWarning.vue';
 import FarmInventoryPie from '@/components/FarmInventoryPie.vue';
@@ -61,9 +79,12 @@ import ReportStatusBar from '@/components/ReportStatusBar.vue';
 import InventoryTrendLine from '@/components/InventoryTrendLine.vue';
 import MonthlyChangeMixed from '@/components/MonthlyChangeMixed.vue';
 import CurrentInventoryTabs from '@/components/CurrentInventoryTabs.vue';
-import { useRouter } from 'vue-router';
+import dayjs from 'dayjs';
+
 const router = useRouter();
-// 接收养殖场数据属性
+const pageLoading = ref(true);
+
+// Props - expecting farmData with farmId
 const props = defineProps({
     farmData: {
         type: Object,
@@ -71,219 +92,497 @@ const props = defineProps({
     }
 });
 
-// 加载状态
-const loading = ref(false);
+// References to chart components
+const inventoryPieRef = ref(null);
+const reportStatusRef = ref(null);
+const trendLineRef = ref(null);
+const monthlyMixedRef = ref(null);
 
-// 初始化日期范围
+const farmId = ref('');
+
+// Initialize date ranges
 const dateRange = ref<any>([]);
 const trendDateRange = ref<any>([]);
 const mixedChartDateRange = ref<any>([]);
 
-// 分页配置 - 抽屉中显示少一些
-const pagination = reactive({
+// Pagination configs - only for internal usage since we're not showing pagination
+const stockPagination = reactive({
     current: 1,
     pageSize: 5,
-    total: 50,
+    total: 0,
     showTotal: (total) => `共 ${total} 条`,
-    onChange: (page) => {
-        pagination.current = page;
-    }
 });
 
-// 模拟养殖场基础信息
-const farmInfo = reactive({
-    district: '四川省成都市武侯区',
-    farmName: 'XXXXX养殖场',
-    address: 'XXXXXXXXXXXXXXXXXXXXXXX',
-    contactPerson: '张三',
-    contactPhone: '15508280883'
+const outboundPagination = reactive({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+    showTotal: (total) => `共 ${total} 条`,
 });
 
-// 异常预警表格数据
-const warningData = ref([
-    {
-        key: '1',
-        taskId: 'vvvvvvvvv',
-        reportTime: '2025-03-31 23:23:22',
-        totalReported: 11,
-        manualReviewCount: 15,
-        deviationRate: '',
-    },
-    {
-        key: '2',
-        taskId: 'bbbbbbbbbb',
-        reportTime: '2025-03-31 13:23:11',
-        totalReported: 20,
-        manualReviewCount: 28,
-        deviationRate: '',
-    }
-]);
-
-// 存栏饼图数据
-const inventoryData = ref([
-    { value: 20, name: '仔猪' },
-    { value: 40, name: '育肥猪' },
-    { value: 100, name: '能繁母猪' }
-]);
-
-// 上报情况柱状图数据
-const reportData = ref([
-    { name: '提醒上报', value: 20, color: '#40A9FF' },
-    { name: '延期未上报', value: 15, color: '#73D13D' },
-    { name: '实际上报', value: 25, color: '#36CFC9' }
-]);
-
-// 趋势折线图数据
-const trendData = reactive({
-    xAxis: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
-    series: [
-        { name: '养殖场1', data: [10, 20, 30, 40, 50, 60, 55, 50, 40, 42, 45, 40] },
-        { name: '养殖场2', data: [15, 25, 35, 45, 35, 90, 100, 105, 100, 105, 100, 95] },
-        { name: '养殖场3', data: [5, 15, 25, 35, 30, 80, 70, 75, 75, 70, 60, 70] }
-    ]
+const inboundPagination = reactive({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+    showTotal: (total) => `共 ${total} 条`,
 });
 
-// 月度变化混合图表数据
-const mixedData = reactive({
-    xAxis: ['上报起始月', '二月', '三月', '四月', '五月', '至今月/止期月'],
-    series: [
-        { name: '育肥猪', type: 'bar', data: [10, 20, 30, 40, 50, 60] },
-        { name: '仔猪', type: 'bar', data: [20, 25, 30, 45, 30, 100] },
-        { name: '母猪', type: 'bar', data: [25, 30, 61, 63, 63, 115] },
-        { name: '存栏总量', type: 'line', yAxisIndex: 1, data: [500, 200, 260, 330, 650, 333] }
-    ]
+const deathPagination = reactive({
+    current: 1,
+    pageSize: 5,
+    total: 0,
+    showTotal: (total) => `共 ${total} 条`,
 });
 
-// 查看更多异常预警
-const viewMoreWarnings = () => {
-    message.info('查看更多异常预警功能待实现');
+// Farm basic info
+const farmInfo = ref({});
+
+// Warning data
+const warningData = ref([]);
+
+// Inventory data
+const leaveData = ref({
+    pigletCount: 0,
+    porkerCount: 0,
+    sowCount: 0,
+    totalCount: 0
+});
+
+// Report status data
+const farmWarnData = ref({
+    nregistCount: 0,
+    oregistCount: 0,
+    sregistCount: 0
+});
+
+// Trend data
+const trendData = ref([]);
+
+// Monthly change data
+const mixedData = ref([]);
+
+// Table data
+const stockData = ref([]);
+const outboundData = ref([]);
+const inboundData = ref([]);
+const deathData = ref([]);
+
+// Death detail dialog
+const deathDetailVisible = ref(false);
+const currentDeathRecord = ref(null);
+const deathDetailRef = ref(null);
+const activeTabKey = ref('1');
+
+// Resize all charts
+const resizeAllCharts = () => {
+    // Need to wait for the DOM to fully render
+    setTimeout(() => {
+        // Check if chart refs are available and have resize method
+        if (inventoryPieRef.value?.$el?.querySelector('.chart')) {
+            const chart = inventoryPieRef.value?.$el?.querySelector('.chart').__vue__?.chart;
+            chart?.resize();
+        }
+
+        if (reportStatusRef.value?.$el?.querySelector('.chart')) {
+            const chart = reportStatusRef.value?.$el?.querySelector('.chart').__vue__?.chart;
+            chart?.resize();
+        }
+
+        if (trendLineRef.value?.$el?.querySelector('.chart')) {
+            const chart = trendLineRef.value?.$el?.querySelector('.chart').__vue__?.chart;
+            chart?.resize();
+        }
+
+        if (monthlyMixedRef.value?.$el?.querySelector('.chart')) {
+            const chart = monthlyMixedRef.value?.$el?.querySelector('.chart').__vue__?.chart;
+            chart?.resize();
+        }
+
+        // Alternatively, if components expose a resize method directly:
+        inventoryPieRef.value?.resizeChart?.();
+        reportStatusRef.value?.resizeChart?.();
+        trendLineRef.value?.resizeChart?.();
+        monthlyMixedRef.value?.resizeChart?.();
+
+        // Dispatch a window resize event as a fallback
+        window.dispatchEvent(new Event('resize'));
+    }, 300); // Small delay to ensure drawer is fully rendered
 };
+
+// Fetch farm data
+const fetchFarmData = async () => {
+    try {
+        const params = {
+            condition: {
+                primaryKey: farmId.value
+            }
+        };
+        const res = await getLivestockFarm(params);
+        if (res) {
+            farmInfo.value = res;
+        }
+    } catch (error) {
+        console.error('获取养殖场数据失败:', error);
+    }
+};
+
+// Fetch warning data
+const fetchWarningData = async () => {
+    try {
+        const params = {
+            condition: {
+                areacode: "",
+                farmId: farmId.value,
+                startDate: "",
+                endDate: ""
+            },
+            pageNo: 1,
+            pageSize: 3
+        };
+
+        const res = await queryErrorFarmWarns(params);
+        if (res && res.records) {
+            warningData.value = res.records;
+        } else {
+            warningData.value = [];
+        }
+    } catch (error) {
+        console.error('获取异常预警数据失败:', error);
+        warningData.value = [];
+    }
+};
+
+// Fetch inventory data
+const fetchInventoryData = async () => {
+    try {
+        const res = await getLeave(farmId.value);
+        if (res) {
+            leaveData.value = res;
+        }
+    } catch (error) {
+        console.error('获取存栏情况数据失败:', error);
+    }
+};
+
+// Fetch report status data
+const fetchReportStatusData = async (startDate = "", endDate = "") => {
+    try {
+        const params = {
+            condition: {
+                endDate: endDate,
+                farmId: farmId.value,
+                startDate: startDate
+            }
+        };
+
+        const res = await getFarmWarnStaticis(params);
+        if (res) {
+            farmWarnData.value = res;
+        }
+    } catch (error) {
+        console.error('获取存栏上报情况数据失败:', error);
+    }
+};
+
+// Handle report data reload
+const handleReportDataReload = (dateInfo) => {
+    fetchReportStatusData(dateInfo.startDate, dateInfo.endDate);
+};
+
+// Fetch trend data
+const fetchTrendData = async (startDate = "", endDate = "") => {
+    try {
+        const params = {
+            condition: {
+                endDate: endDate,
+                farmId: farmId.value,
+                startDate: startDate
+            }
+        };
+
+        const res = await selectLeaveFenceStaticis(params);
+        if (res) {
+            trendData.value = res;
+        }
+    } catch (error) {
+        console.error('获取养殖区存栏量变化趋势数据失败:', error);
+    }
+};
+
+// Watch trend date range changes
+watch(trendDateRange, (newValue) => {
+    let startDate = "";
+    let endDate = "";
+
+    if (newValue && newValue.length === 2) {
+        startDate = newValue[0] ? dayjs(newValue[0]).format('YYYY-MM-DD') : '';
+        endDate = newValue[1] ? dayjs(newValue[1]).format('YYYY-MM-DD') : '';
+    }
+
+    // Always call API whether dates are empty or not
+    fetchTrendData(startDate, endDate);
+}, { deep: true });
+
+// Fetch mixed chart data
+const fetchMixedData = async (startMonth = "", endMonth = "") => {
+    try {
+        const params = {
+            condition: {
+                endMonth: endMonth,
+                farmId: farmId.value,
+                startMonth: startMonth
+            }
+        };
+
+        const res = await selectLeaveMonthStaticis(params);
+        if (res) {
+            mixedData.value = res;
+        }
+    } catch (error) {
+        console.error('获取养殖场存栏量月度变化趋势数据失败:', error);
+    }
+};
+
+// Watch mixed chart date range changes
+watch(mixedChartDateRange, (newValue) => {
+    let startMonth = "";
+    let endMonth = "";
+
+    if (newValue && newValue.length === 2) {
+        startMonth = newValue[0] ? dayjs(newValue[0]).format('YYYY-MM') : '';
+        endMonth = newValue[1] ? dayjs(newValue[1]).format('YYYY-MM') : '';
+    }
+
+    // Always call API whether dates are empty or not
+    fetchMixedData(startMonth, endMonth);
+}, { deep: true });
+
+// Fetch table data
+const fetchTableData = async (type = 'all') => {
+    try {
+        if (type === 'all' || type === 'stock') {
+            // Stock records
+            const stockParams = {
+                condition: {
+                    primaryKey: farmId.value
+                },
+                pageNo: stockPagination.current,
+                pageSize: stockPagination.pageSize
+            };
+            const stockRes = await selectLeaveRegists(stockParams);
+            if (stockRes && stockRes.records) {
+                stockData.value = stockRes.records;
+                stockPagination.total = stockRes.total || 0;
+            }
+        }
+
+        if (type === 'all' || type === 'outbound') {
+            // Outbound records
+            const outboundParams = {
+                condition: {
+                    primaryKey: farmId.value
+                },
+                pageNo: outboundPagination.current,
+                pageSize: outboundPagination.pageSize
+            };
+            const outboundRes = await queryFarmRegistSlaughters(outboundParams);
+            if (outboundRes && outboundRes.records) {
+                outboundData.value = outboundRes.records;
+                outboundPagination.total = outboundRes.total || 0;
+            }
+        }
+
+        if (type === 'all' || type === 'inbound') {
+            // Inbound records
+            const inboundParams = {
+                condition: {
+                    primaryKey: farmId.value
+                },
+                pageNo: inboundPagination.current,
+                pageSize: inboundPagination.pageSize
+            };
+            const inboundRes = await queryFarmRegistRestocks(inboundParams);
+            if (inboundRes && inboundRes.records) {
+                inboundData.value = inboundRes.records;
+                inboundPagination.total = inboundRes.total || 0;
+            }
+        }
+
+        if (type === 'all' || type === 'death') {
+            // Death records
+            const deathParams = {
+                condition: {
+                    primaryKey: farmId.value
+                },
+                pageNo: deathPagination.current,
+                pageSize: deathPagination.pageSize
+            };
+            const deathRes = await queryFarmDeadRegistDeads(deathParams);
+            if (deathRes && deathRes.records) {
+                deathData.value = deathRes.records;
+                deathPagination.total = deathRes.total || 0;
+            }
+        }
+    } catch (error) {
+        console.error('获取存栏信息数据失败:', error);
+    }
+};
+
+// Handle tab change
+const handleTabChange = (key) => {
+    activeTabKey.value = key;
+
+    switch (key) {
+        case '1': // Stock records
+            fetchTableData('stock');
+            break;
+        case '2': // Outbound records
+            fetchTableData('outbound');
+            break;
+        case '3': // Inbound records
+            fetchTableData('inbound');
+            break;
+        case '4': // Death records
+            fetchTableData('death');
+            break;
+    }
+};
+
+// View farm detail
 const viewFarmDetail = () => {
-    if (props.farmData && props.farmData.id) {
-        router.push(`/farm/edit/?id=${props.farmData.id}`);
+    if (farmId.value) {
+        router.push({
+            path: `/FARM/edit`,
+            query: { id: farmId.value }
+        });
     } else {
         message.info('无法获取养殖场ID，请稍后再试');
     }
 };
 
-// 生成模拟数据
-const generateStockData = () => {
-    return Array.from({ length: 10 }, (_, i) => ({
-        key: i + 1,
-        index: i + 1,
-        time: `2025-04-${10 + i}`,
-        reportTime: `2025-04-${10 + i} 10:30:00`,
-        fatteningPigs: 52,
-        piglets: 60,
-        sows: 20,
-        reviewResult: i % 3 === 0 ? '审核不通过' : '审核通过',
-    }));
+// View more warnings
+const viewMoreWarnings = () => {
+    router.push('/E-WARN');
 };
 
-const generateOutboundData = () => {
-    return Array.from({ length: 10 }, (_, i) => ({
-        key: i + 1,
-        index: i + 1,
-        date: `2025-04-${10 + i}`,
-        type: i % 2 === 0 ? '育肥猪' : '仔猪',
-        quantity: 10 + i,
-        reason: '出售',
-    }));
-};
-
-const generateInboundData = () => {
-    return Array.from({ length: 10 }, (_, i) => ({
-        key: i + 1,
-        index: i + 1,
-        date: `2025-04-${10 + i}`,
-        type: i % 3 === 0 ? '育肥猪' : i % 3 === 1 ? '仔猪' : '母猪',
-        quantity: 8 + i,
-        source: '购入',
-    }));
-};
-
-const generateDeathData = () => {
-    return Array.from({ length: 10 }, (_, i) => ({
-        key: i + 1,
-        index: i + 1,
-        date: `2025-04-${10 + i}`,
-        type: i % 3 === 0 ? '育肥猪' : i % 3 === 1 ? '仔猪' : '母猪',
-        quantity: 2 + i % 5,
-        reason: i % 2 === 0 ? '疾病' : '意外',
-    }));
-};
-
-// 初始化表格数据
-const stockData = ref(generateStockData());
-const outboundData = ref(generateOutboundData());
-const inboundData = ref(generateInboundData());
-const deathData = ref(generateDeathData());
-
-// 查看详情
-const handleViewDetail = (record) => {
-    message.info(`查看记录详情: ${record.index}`);
-};
+// View more inventory
 const viewMoreInventory = () => {
-    if (props.farmData && props.farmData.id) {
-        router.push(`/KEEP/details/${props.farmData.id}`);
+    if (farmId.value) {
+        router.push(`/KEEP/details/${farmId.value}`);
     } else {
         message.info('无法获取养殖场ID，请稍后再试');
     }
 };
 
-// 监听farmData变化更新组件数据
-watch(() => props.farmData, async (newData) => {
-    if (newData) {
-        loading.value = true;
+// Handle view detail
+const handleViewDetail = async (record) => {
+    if (activeTabKey.value === '4') { // Death records
+        // Set current record's loading state to true
+        const index = deathData.value.findIndex(item => item.bizId === record.bizId);
+        if (index !== -1) {
+            deathData.value[index].loading = true;
+        }
 
         try {
-            // 更新基础信息
-            farmInfo.district = newData.district || farmInfo.district;
-            farmInfo.farmName = newData.name || farmInfo.farmName;
-            farmInfo.address = newData.address || farmInfo.address;
-            farmInfo.contactPerson = newData.contactPerson || farmInfo.contactPerson;
-            farmInfo.contactPhone = newData.contactPhone || farmInfo.contactPhone;
+            const detailRes = await getWebDeadRegist(record.bizId);
 
-            // 模拟加载其他数据的延迟
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Prepare file preview URLs
+            if (detailRes.files && detailRes.files.length > 0) {
+                detailRes.filePreviewUrls = {
+                    images: [],
+                    videos: []
+                };
 
-            // 这里可以根据需要获取更多数据
-            // 例如：更新预警数据、存栏数据、历史记录等
+                detailRes.files.forEach(file => {
+                    // Determine if it's a video or image based on file extension
+                    const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
 
-            // 可以根据farmId生成不同的随机数据
-            if (newData.id) {
-                // 为不同养殖场生成稍微不同的数据
-                const modifier = newData.id % 3 + 1;
-
-                // 更新饼图数据
-                inventoryData.value = [
-                    { value: 20 * modifier, name: '仔猪' },
-                    { value: 40 * modifier, name: '育肥猪' },
-                    { value: 100 * (modifier / 2), name: '能繁母猪' }
-                ];
-
-                // 更新报表数据
-                reportData.value = [
-                    { name: '提醒上报', value: 20 * modifier, color: '#40A9FF' },
-                    { name: '延期未上报', value: 15 * modifier, color: '#73D13D' },
-                    { name: '实际上报', value: 25 * modifier, color: '#36CFC9' }
-                ];
+                    if (isVideo) {
+                        detailRes.filePreviewUrls.videos.push({
+                            id: file.fileId,
+                            name: file.fileName,
+                            url: file.fileUrl
+                        });
+                    } else {
+                        detailRes.filePreviewUrls.images.push({
+                            id: file.fileId,
+                            name: file.fileName,
+                            url: file.fileUrl
+                        });
+                    }
+                });
             }
+
+            currentDeathRecord.value = detailRes;
+            deathDetailVisible.value = true;
         } catch (error) {
-            console.error('加载养殖场数据失败:', error);
-            message.error('加载养殖场数据失败');
+            console.error('获取死亡登记详情失败:', error);
+            message.error('获取详情失败');
         } finally {
-            loading.value = false;
+            if (index !== -1) {
+                deathData.value[index].loading = false;
+            }
         }
+    } else {
+        router.push({
+            path: `/AUDITD/detail/${record.auditId}`,
+            query: { viewMode: 'true' }
+        });
+    }
+};
+
+// Load all data
+const loadData = async () => {
+    pageLoading.value = true;
+    try {
+        await Promise.all([
+            fetchFarmData(),
+            fetchInventoryData(),
+            fetchReportStatusData(),
+            fetchTrendData(),
+            fetchMixedData(),
+            fetchTableData()
+        ]);
+        // Fetch warning data after farm info is available
+        await fetchWarningData();
+
+        // After data is loaded, wait for the next tick and resize charts
+        nextTick(() => {
+            resizeAllCharts();
+        });
+    } catch (error) {
+        console.error('Error loading page data:', error);
+        message.error('加载数据失败，请刷新页面重试');
+    } finally {
+        pageLoading.value = false;
+    }
+};
+
+// Watch farmData changes
+watch(() => props.farmData, (newData) => {
+    if (newData && newData.farmId) {
+        farmId.value = newData.farmId;
+        loadData();
     }
 }, { immediate: true });
 
-// 可以在组件外暴露一些方法或数据
+// Add onMounted hook to handle chart resize
+onMounted(() => {
+    // First time when mounted
+    resizeAllCharts();
+
+    // Add a resize event listener to handle window resizing
+    window.addEventListener('resize', resizeAllCharts);
+});
+
+// Expose methods
 defineExpose({
     refreshData: () => {
-        // 刷新数据的方法
-        message.info('刷新数据...');
-    }
+        if (farmId.value) {
+            loadData();
+        }
+    },
+    resizeCharts: resizeAllCharts
 });
 </script>
 
@@ -293,11 +592,29 @@ defineExpose({
     height: 100%;
     overflow-y: auto;
 
-    .loading-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    .global-loading {
         height: 100%;
+
+        :deep(.ant-spin-container) {
+            height: 100%;
+        }
+
+        :deep(.ant-spin) {
+            max-height: none;
+        }
+
+        :deep(.ant-spin-spinning) {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
     }
 
     .info-warning-card {
@@ -313,10 +630,6 @@ defineExpose({
 
         &:last-child {
             margin-bottom: 0;
-        }
-
-        :deep(.chart-container) {
-            height: 280px !important;
         }
     }
 }

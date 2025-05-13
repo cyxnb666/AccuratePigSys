@@ -10,3 +10,16 @@ export function logout() {
         method: 'get'
     })
 }
+
+/**
+ * 修改密码接口
+ * @param {Object} data - 密码信息
+ * @returns {Promise}
+ */
+export function resetPassword(data) {
+    return request({
+        url: '/web/sys/resetPwd',
+        method: 'post',
+        data
+    })
+}

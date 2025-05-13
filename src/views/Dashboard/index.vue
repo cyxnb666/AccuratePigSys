@@ -4,8 +4,9 @@
 
     <div id="map-container" class="map-container"></div>
 
-    <a-drawer title="养殖场详情" placement="right" :width="1000" :open="drawerVisible" @close="closeDrawer">
-      <farm-details-drawer v-if="drawerVisible" :farmData="currentFarmData" />
+    <a-drawer title="养殖场详情" placement="right" :width="1000" :open="drawerVisible" @close="closeDrawer"
+      @afterVisibleChange="handleDrawerVisibleChange">
+      <farm-details-drawer v-if="drawerVisible" :farmData="currentFarmData" ref="farmDetailsRef" />
     </a-drawer>
   </div>
 </template>
@@ -22,6 +23,7 @@ let map = null;
 let markers = [];
 let districtLayer = null;
 let district = null; // 行政区查询实例
+const farmDetailsRef = ref(null);
 
 // 养殖场点位
 const farmLocations = ref([]);
@@ -163,6 +165,15 @@ const handleMarkerClick = (farmId) => {
     showDrawer();
   } else {
     message.error('养殖场数据不存在');
+  }
+};
+
+const handleDrawerVisibleChange = (visible) => {
+  if (visible && farmDetailsRef.value) {
+    // When drawer is open, resize the charts
+    setTimeout(() => {
+      farmDetailsRef.value.resizeCharts();
+    }, 300); // Add a slight delay to ensure drawer is fully rendered
   }
 };
 

@@ -91,8 +91,8 @@ const columns = [
   },
   {
     title: '行政区划',
-    dataIndex: 'provinceName',
-    key: 'provinceName',
+    dataIndex: 'districtName',
+    key: 'districtName',
     align: 'center'
   },
   {

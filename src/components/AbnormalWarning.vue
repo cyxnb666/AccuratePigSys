@@ -9,6 +9,13 @@
         <div class="warning-table">
             <a-table :columns="warningColumns" :data-source="warningData" :pagination="false" size="small"
                 :bordered="true">
+                <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'deviationRate'">
+                        <span :style="{ color: getDeviationColor(record.deviationRate) }">
+                            {{ record.deviationRate }}%
+                        </span>
+                    </template>
+                </template>
             </a-table>
         </div>
     </div>
@@ -34,6 +41,14 @@ const warningColumns = [
     { title: '人工审核数量', dataIndex: 'auditPersionalCheckCount', key: 'auditPersionalCheckCount', align: 'center' },
     { title: '偏差率', dataIndex: 'deviationRate', key: 'deviationRate', align: 'center' },
 ];
+
+// 获取偏差率颜色
+const getDeviationColor = (rate) => {
+    const numRate = parseFloat(rate);
+    if (numRate > 15) return '#FF4D4F';  // 红色 - 警告
+    if (numRate > 8) return '#FAAD14';   // 黄色 - 注意
+    return '#52C41A';                    // 绿色 - 正常
+};
 </script>
 
 <style lang="scss" scoped>

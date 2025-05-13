@@ -26,6 +26,7 @@
 <script lang="ts" setup>
 import { ref, reactive, computed, defineProps, defineEmits } from 'vue';
 import { message } from 'ant-design-vue';
+import { resetPassword } from '../api';
 
 const props = defineProps({
     modelValue: {
@@ -95,15 +96,29 @@ const handleSubmit = () => {
     formRef.value.validate()
         .then(() => {
             submitting.value = true;
-
-            // 模拟API调用
-            setTimeout(() => {
-                submitting.value = false;
-                message.success('修改成功，请重新登录');
-                emit('success', { ...formData, shouldLogout: true });
-                dialogVisible.value = false;
-                resetForm();
-            }, 500);
+            
+            // 构造请求参数
+            const params = {
+                condition: {
+                    oldUserCipher: formData.oldPassword,
+                    newUserCipher: formData.newPassword,
+                    confirmUserCipher: formData.confirmPassword
+                }
+            };
+            
+            resetPassword(params)
+                .then(() => {
+                    message.success('修改成功，请重新登录');
+                    emit('success', { ...formData, shouldLogout: true });
+                    dialogVisible.value = false;
+                    resetForm();
+                })
+                .catch((error) => {
+                    console.error('修改密码失败:', error);
+                })
+                .finally(() => {
+                    submitting.value = false;
+                });
         })
         .catch(errorInfo => {
             console.log('验证失败:', errorInfo);

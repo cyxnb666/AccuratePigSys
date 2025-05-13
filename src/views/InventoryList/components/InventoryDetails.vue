@@ -162,7 +162,7 @@ const fetchWarningData = async () => {
         const params = {
             "condition": {
                 "areacode": "",
-                "farmName": "",
+                farmId: farmId,
                 "startDate": "",
                 "endDate": ""
             },
