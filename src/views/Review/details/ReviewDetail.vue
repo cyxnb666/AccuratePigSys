@@ -796,10 +796,11 @@ const handleDeathDetailConfirm = async (reviewData) => {
 };
 
 const goToDetailedComparison = (tabType: string) => {
+    savePageState();
     // 获取当前选中的围栏信息
     const breedCode = getCurrentBreedCode();
     const currentFence = currentArea.value?.fences?.find(f => f.breedCode === breedCode);
-
+    
     if (currentFence && currentFence.fenceRegistId && fenceDetailsCache[currentFence.fenceRegistId]) {
         // 如果有缓存数据，将其存入sessionStorage以便SuperDetail组件使用
         sessionStorage.setItem(
@@ -807,7 +808,10 @@ const goToDetailedComparison = (tabType: string) => {
             JSON.stringify(fenceDetailsCache[currentFence.fenceRegistId])
         );
     }
-
+    
+    // 标记
+    sessionStorage.setItem(`from_super_detail_${route.params.id}`, 'true');
+    
     router.push({
         path: `/AUDITD/super-detail/${route.params.id}`,
         query: {
@@ -905,6 +909,14 @@ const loadData = async () => {
     const auditId = route.params.id;
 
     if (auditId) {
+        const fromSuperDetail = sessionStorage.getItem(`from_super_detail_${auditId}`);
+        
+        // 如果是从 SuperDetail 页面返回，并且数据已经加载过，跳过重新加载
+        if (fromSuperDetail === 'true' && dataLoaded.value) {
+            // 清除标记，以便下次正常加载
+            sessionStorage.removeItem(`from_super_detail_${auditId}`);
+            return;
+        }
         loading.value = true;
         dataLoaded.value = false;
         try {
@@ -1032,9 +1044,66 @@ const loadData = async () => {
         console.error('未找到审核ID');
     }
 };
-
+const savePageState = () => {
+  // 保存当前页面的所有重要状态到 sessionStorage
+  const pageState = {
+    basicInfo: { ...basicInfo },
+    farmAreas: farmAreas.value,
+    currentAreaIndex: currentAreaIndex.value,
+    activeMainTab: activeMainTab.value,
+    activeSubTab: activeSubTab.value,
+    fenceDetailsCache: { ...fenceDetailsCache },
+    outboundRecords: outboundRecords.value,
+    inboundRecords: inboundRecords.value,
+    deathRecords: deathRecords.value,
+    reviewData: { ...reviewData },
+    aiPersionDiffRate: aiPersionDiffRate.value,
+    dataLoaded: true
+  };
+  
+  sessionStorage.setItem(`review_detail_state_${route.params.id}`, JSON.stringify(pageState));
+};
 onMounted(() => {
-    loadData();
+    const auditId = route.params.id;
+    const savedState = sessionStorage.getItem(`review_detail_state_${auditId}`);
+    
+    if (savedState) {
+        // 存在保存的状态，恢复它
+        try {
+            const state = JSON.parse(savedState);
+            
+            // 恢复各种状态
+            Object.assign(basicInfo, state.basicInfo);
+            farmAreas.value = state.farmAreas;
+            currentAreaIndex.value = state.currentAreaIndex;
+            activeMainTab.value = state.activeMainTab;
+            activeSubTab.value = state.activeSubTab;
+            Object.assign(fenceDetailsCache, state.fenceDetailsCache);
+            outboundRecords.value = state.outboundRecords;
+            inboundRecords.value = state.inboundRecords;
+            deathRecords.value = state.deathRecords;
+            Object.assign(reviewData, state.reviewData);
+            aiPersionDiffRate.value = state.aiPersionDiffRate;
+            dataLoaded.value = state.dataLoaded;
+            
+            // 恢复对应围栏的文件预览
+            filePreviewsLoaded.value = true;
+            
+            // 立即加载当前围栏的详细数据，确保视频等显示正常
+            loadCurrentFenceDetail();
+            
+            console.log('已从会话存储恢复页面状态');
+            
+            // 清除已使用的状态
+            sessionStorage.removeItem(`review_detail_state_${auditId}`);
+        } catch (error) {
+            console.error('恢复状态失败，将重新加载数据:', error);
+            loadData();
+        }
+    } else {
+        // 没有保存的状态，正常加载数据
+        loadData();
+    }
 });
 </script>
 
