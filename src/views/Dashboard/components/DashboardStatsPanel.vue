@@ -1,15 +1,14 @@
 <template>
     <div class="dashboard-stats-panel">
-        <!-- Region selector -->
         <div class="region-selector">
             <a-tree-select v-model:value="selectedRegion" style="width: 100%"
                 :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="regionTreeData"
-                placeholder="请选择地区" tree-default-expand-all
-                :replaceFields="{ title: 'title', value: 'value', children: 'children' }" :loading="treeLoading">
+                placeholder="请选择地区" :fieldNames="{ label: 'title', value: 'value', children: 'children' }"
+                :loading="treeLoading" :tree-node-filter-prop="'title'" :show-search="true" allow-clear
+                :filter-tree-node="filterTreeNode">
             </a-tree-select>
         </div>
 
-        <!-- Farm count -->
         <div class="stats-section">
             <div class="section-label">养殖场总数</div>
             <div class="stat-boxes">
@@ -22,7 +21,6 @@
             </div>
         </div>
 
-        <!-- Farm situation table -->
         <div class="stats-section">
             <div class="section-label">养殖场情况 ({{ selectedRegionName }})</div>
             <div class="table-container">
@@ -32,7 +30,6 @@
             </div>
         </div>
 
-        <!-- Inventory type pie chart -->
         <div class="stats-section">
             <div class="section-label">存栏品种</div>
             <div ref="pieChartRef" class="pie-chart" :class="{ 'loading': chartLoading }"></div>
@@ -41,7 +38,6 @@
             </div>
         </div>
 
-        <!-- Abnormal warning -->
         <div class="stats-section">
             <div class="section-header-with-link">
                 <div class="title">异常预警</div>
@@ -51,7 +47,14 @@
             </div>
             <div class="table-container">
                 <a-table :columns="warningColumns" :data-source="warningData" :pagination="false" size="small"
-                    :bordered="true">
+                    :bordered="true" :loading="warningDataLoading">
+                    <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'deviationRate'">
+                            <span :style="{ color: getDeviationColor(record.deviationRate) }">
+                                {{ record.deviationRate }}%
+                            </span>
+                        </template>
+                    </template>
                 </a-table>
             </div>
         </div>
@@ -62,26 +65,61 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 import { message } from 'ant-design-vue';
-import { selectUserTree, selectAreaFarms, selectHomeFarms } from '../api';
+import { selectUserTree, selectAreaFarms, selectHomeFarms, getWarningList } from '../api';
+import { useRouter } from 'vue-router';
 
-// 加载状态
+const router = useRouter();
+const warningDataLoading = ref(false);
+const warningData = ref([]);
+const fetchWarningData = async (areacode) => {
+    warningDataLoading.value = true;
+
+    try {
+        const params = {
+            condition: {
+                areacode: areacode || '',
+                farmName: '',
+                startDate: '',
+                endDate: ''
+            },
+            pageNo: 1,
+            pageSize: 5
+        };
+
+        const res = await getWarningList(params);
+
+        if (res && res.records) {
+            warningData.value = res.records.map((item, index) => ({
+                ...item,
+                key: index.toString()
+            })).slice(0, 5); // 确保最多只有5条数据
+        } else {
+            warningData.value = [];
+        }
+    } catch (error) {
+        console.error('获取异常预警数据失败:', error);
+        warningData.value = [];
+    } finally {
+        warningDataLoading.value = false;
+    }
+};
+
 const treeLoading = ref(false);
 const tableLoading = ref(false);
 const chartLoading = ref(false);
 
-// 统计数据
 const totalFarmCount = ref(0);
 const totalLeaveCount = ref(0);
 const selectedRegionName = ref('全部');
 
-// 发出事件
 const emit = defineEmits(['region-change', 'farms-loaded']);
-
-// Region selector
 const regionTreeData = ref([]);
 const selectedRegion = ref('');
-// 添加一个标志位，防止初始加载时重复调用API
-const isInitialLoad = ref(true);
+
+// 树节点过滤函数
+const filterTreeNode = (inputValue, treeNode) => {
+    return treeNode.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
+};
 
 // 转换行政区划数据为树形结构
 const transformAreaData = (areaList: any[]): any[] => {
@@ -103,15 +141,12 @@ const fetchAreaTrees = async () => {
         const res = await selectUserTree();
         if (res) {
             regionTreeData.value = transformAreaData(res);
-            
+
             // 默认选中第一个节点
             if (regionTreeData.value.length > 0) {
                 const firstNode = regionTreeData.value[0];
                 selectedRegion.value = firstNode.value;
                 selectedRegionName.value = firstNode.title;
-                
-                // 注意：不再这里调用loadRegionData，而是让watch监听器处理
-                // 初始设置selectedRegion会触发watch
             }
         }
     } catch (error) {
@@ -127,12 +162,21 @@ const loadRegionData = async (areacode) => {
     try {
         await Promise.all([
             fetchAreaFarmsData(areacode),
-            fetchHomeFarmsData(areacode)
+            fetchHomeFarmsData(areacode),
+            fetchWarningData(areacode)
         ]);
     } catch (error) {
         console.error('加载区域数据失败:', error);
         message.error('加载区域数据失败');
     }
+};
+
+// 获取偏差率颜色
+const getDeviationColor = (rate) => {
+    const numRate = parseFloat(rate);
+    if (numRate > 15) return '#FF4D4F';
+    if (numRate > 8) return '#FAAD14';
+    return '#52C41A';
 };
 
 // 养殖场情况表格数据
@@ -174,7 +218,7 @@ const fetchAreaFarmsData = async (areacode) => {
     }
 };
 
-// 养殖场数据 - 用于地图和饼图
+// 养殖场数据 - 地图和饼图
 const farmData = ref([]);
 
 // 获取养殖场数据
@@ -188,7 +232,6 @@ const fetchHomeFarmsData = async (areacode) => {
             // 更新饼图
             updatePieChart();
 
-            // 发送事件通知地图更新
             emit('farms-loaded', farmData.value);
         } else {
             farmData.value = [];
@@ -201,22 +244,15 @@ const fetchHomeFarmsData = async (areacode) => {
     }
 };
 
-// Warning table
 const warningColumns = [
     { title: '养殖场名称', dataIndex: 'farmName', key: 'farmName', width: 80 },
-    { title: '上报时间', dataIndex: 'reportTime', key: 'reportTime', width: 80 },
-    { title: '偏差率', dataIndex: 'deviationRate', key: 'deviationRate', width: 60 }
+    { title: '上报时间', dataIndex: 'registTime', key: 'registTime', width: 80 },
+    {
+        title: '偏差率', dataIndex: 'deviationRate', key: 'deviationRate', width: 60,
+        customRender: ({ text }) => `${text}%`
+    }
 ];
 
-const warningData = [
-    { key: '1', farmName: 'xx养殖场', reportTime: '2025/3/29', deviationRate: '20%' },
-    { key: '2', farmName: 'xx养殖场', reportTime: '2025/3/29', deviationRate: '21%' },
-    { key: '3', farmName: 'xx养殖场', reportTime: '2025/3/27', deviationRate: '24%' },
-    { key: '4', farmName: 'xx养殖场', reportTime: '2025/3/22', deviationRate: '32%' },
-    { key: '5', farmName: 'xx养殖场', reportTime: '2025/3/22', deviationRate: '54%' },
-];
-
-// Pie chart reference
 const pieChartRef = ref<HTMLElement | null>(null);
 let pieChart: echarts.ECharts | null = null;
 
@@ -240,7 +276,6 @@ const processInventoryData = () => {
     ];
 };
 
-// Initialize pie chart
 const initPieChart = () => {
     if (!pieChartRef.value) return;
 
@@ -248,7 +283,6 @@ const initPieChart = () => {
     updatePieChart();
 };
 
-// Update pie chart with new data
 const updatePieChart = () => {
     if (!pieChart) return;
 
@@ -296,12 +330,10 @@ const updatePieChart = () => {
     pieChart.setOption(option);
 };
 
-// View more warnings handler
 const viewMoreWarnings = () => {
-    message.info('查看更多异常预警功能待实现');
+    router.push('/E-WARN');
 };
 
-// Handle window resize
 const handleResize = () => {
     pieChart?.resize();
 };
@@ -322,16 +354,14 @@ watch(() => selectedRegion.value, async (newValue, oldValue) => {
             }
             return null;
         };
-        
+
         const regionName = findNodeName(regionTreeData.value, newValue);
         if (regionName) {
             selectedRegionName.value = regionName;
         }
-        
+
         // 加载新区域数据
         await loadRegionData(newValue);
-        
-        // 触发区域变化事件
         emit('region-change', newValue);
     }
 });
@@ -339,6 +369,7 @@ watch(() => selectedRegion.value, async (newValue, oldValue) => {
 onMounted(() => {
     fetchAreaTrees();
     initPieChart();
+    fetchWarningData();
     window.addEventListener('resize', handleResize);
 });
 

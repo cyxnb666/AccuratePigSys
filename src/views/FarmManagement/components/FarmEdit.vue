@@ -360,7 +360,6 @@ const addContact = async () => {
         const farmId = route.query.id as string;
         contactDialogLoading.value = true;
         try {
-            // 调用API添加联系人
             const contactData = {
                 farmId: farmId,
                 userName: newContact.name,
