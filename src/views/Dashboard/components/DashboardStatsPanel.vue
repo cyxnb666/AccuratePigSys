@@ -2,15 +2,10 @@
     <div class="dashboard-stats-panel">
         <!-- Region selector -->
         <div class="region-selector">
-            <a-tree-select
-                v-model:value="selectedRegion"
-                style="width: 100%"
-                :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-                :tree-data="regionTreeData"
-                placeholder="请选择地区"
-                tree-default-expand-all
-                :replaceFields="{title: 'title', value: 'value', children: 'children'}"
-            >
+            <a-tree-select v-model:value="selectedRegion" style="width: 100%"
+                :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="regionTreeData"
+                placeholder="请选择地区" tree-default-expand-all
+                :replaceFields="{ title: 'title', value: 'value', children: 'children' }" :loading="treeLoading">
             </a-tree-select>
         </div>
 
@@ -19,20 +14,20 @@
             <div class="section-label">养殖场总数</div>
             <div class="stat-boxes">
                 <div class="stat-box">
-                    <div class="stat-value">56个</div>
+                    <div class="stat-value">{{ totalFarmCount }}个</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">7620头</div>
+                    <div class="stat-value">{{ totalLeaveCount }}头</div>
                 </div>
             </div>
         </div>
 
         <!-- Farm situation table -->
         <div class="stats-section">
-            <div class="section-label">养殖场情况 (四川省)</div>
+            <div class="section-label">养殖场情况 ({{ selectedRegionName }})</div>
             <div class="table-container">
                 <a-table :columns="situationColumns" :data-source="situationData" :pagination="false" size="small"
-                    :bordered="true">
+                    :bordered="true" :loading="tableLoading">
                 </a-table>
             </div>
         </div>
@@ -40,7 +35,10 @@
         <!-- Inventory type pie chart -->
         <div class="stats-section">
             <div class="section-label">存栏品种</div>
-            <div ref="pieChartRef" class="pie-chart"></div>
+            <div ref="pieChartRef" class="pie-chart" :class="{ 'loading': chartLoading }"></div>
+            <div v-if="chartLoading" class="chart-loading">
+                <a-spin />
+            </div>
         </div>
 
         <!-- Abnormal warning -->
@@ -61,82 +59,147 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 import { message } from 'ant-design-vue';
+import { selectUserTree, selectAreaFarms, selectHomeFarms } from '../api';
+
+// 加载状态
+const treeLoading = ref(false);
+const tableLoading = ref(false);
+const chartLoading = ref(false);
+
+// 统计数据
+const totalFarmCount = ref(0);
+const totalLeaveCount = ref(0);
+const selectedRegionName = ref('全部');
+
+// 发出事件
+const emit = defineEmits(['region-change', 'farms-loaded']);
 
 // Region selector
-const regionTreeData = ref([
-    {
-        title: '四川省',
-        value: 'sichuan',
-        key: 'sichuan',
-        children: [
-            {
-                title: '成都市',
-                value: 'chengdu',
-                key: 'chengdu',
-                children: [
-                    {
-                        title: '武侯区',
-                        value: 'wuhou',
-                        key: 'wuhou',
-                    },
-                    {
-                        title: '锦江区',
-                        value: 'jinjiang',
-                        key: 'jinjiang',
-                    },
-                    {
-                        title: '青羊区',
-                        value: 'qingyang',
-                        key: 'qingyang',
-                    }
-                ]
-            },
-            {
-                title: '绵阳市',
-                value: 'mianyang',
-                key: 'mianyang',
-                children: [
-                    {
-                        title: '涪城区',
-                        value: 'fucheng',
-                        key: 'fucheng',
-                    },
-                    {
-                        title: '安州区',
-                        value: 'anzhou',
-                        key: 'anzhou',
-                    }
-                ]
-            },
-            {
-                title: '南充市',
-                value: 'nanchong',
-                key: 'nanchong',
+const regionTreeData = ref([]);
+const selectedRegion = ref('');
+// 添加一个标志位，防止初始加载时重复调用API
+const isInitialLoad = ref(true);
+
+// 转换行政区划数据为树形结构
+const transformAreaData = (areaList: any[]): any[] => {
+    return areaList.map(area => {
+        const node = {
+            title: area.areaname,
+            value: area.areacode,
+            key: area.areacode,
+            children: area.children ? transformAreaData(area.children) : []
+        };
+        return node;
+    });
+};
+
+// 获取行政区划数据
+const fetchAreaTrees = async () => {
+    treeLoading.value = true;
+    try {
+        const res = await selectUserTree();
+        if (res) {
+            regionTreeData.value = transformAreaData(res);
+            
+            // 默认选中第一个节点
+            if (regionTreeData.value.length > 0) {
+                const firstNode = regionTreeData.value[0];
+                selectedRegion.value = firstNode.value;
+                selectedRegionName.value = firstNode.title;
+                
+                // 注意：不再这里调用loadRegionData，而是让watch监听器处理
+                // 初始设置selectedRegion会触发watch
             }
-        ]
+        }
+    } catch (error) {
+        console.error('获取行政区划数据失败:', error);
+        message.error('获取行政区划数据失败');
+    } finally {
+        treeLoading.value = false;
     }
-]);
+};
 
-// 默认选中四川省
-const selectedRegion = ref('sichuan');
+// 加载区域相关数据
+const loadRegionData = async (areacode) => {
+    try {
+        await Promise.all([
+            fetchAreaFarmsData(areacode),
+            fetchHomeFarmsData(areacode)
+        ]);
+    } catch (error) {
+        console.error('加载区域数据失败:', error);
+        message.error('加载区域数据失败');
+    }
+};
 
-// Farm situation table
+// 养殖场情况表格数据
 const situationColumns = [
-    { title: '行政区划', dataIndex: 'district', key: 'district', align: 'center', width: 80 },
+    { title: '行政区划', dataIndex: 'areaname', key: 'areaname', align: 'center', width: 80 },
     { title: '养殖场数量', dataIndex: 'farmCount', key: 'farmCount', align: 'center', width: 80 },
-    { title: '存栏数量', dataIndex: 'inventoryCount', key: 'inventoryCount', align: 'center', width: 80 }
+    { title: '存栏数量', dataIndex: 'leaveCount', key: 'leaveCount', align: 'center', width: 80 }
 ];
 
-const situationData = [
-    { key: '1', district: '成都', farmCount: 23, inventoryCount: 2432 },
-    { key: '2', district: '绵阳', farmCount: 17, inventoryCount: 2031 },
-    { key: '3', district: '乐山', farmCount: 8, inventoryCount: 1587 },
-    { key: '4', district: '简阳', farmCount: 6, inventoryCount: 1090 },
-    { key: '5', district: '自贡', farmCount: 2, inventoryCount: 480 },
-];
+const situationData = ref([]);
+
+// 获取养殖场情况数据
+const fetchAreaFarmsData = async (areacode) => {
+    tableLoading.value = true;
+    try {
+        const res = await selectAreaFarms(areacode);
+        if (res && Array.isArray(res)) {
+            // 更新表格数据
+            situationData.value = res.map((item, index) => ({
+                ...item,
+                key: index.toString()
+            }));
+
+            // 计算总数
+            totalFarmCount.value = res.reduce((sum, item) => sum + (item.farmCount || 0), 0);
+            totalLeaveCount.value = res.reduce((sum, item) => sum + (item.leaveCount || 0), 0);
+        } else {
+            situationData.value = [];
+            totalFarmCount.value = 0;
+            totalLeaveCount.value = 0;
+        }
+    } catch (error) {
+        console.error('获取养殖场情况数据失败:', error);
+        situationData.value = [];
+        totalFarmCount.value = 0;
+        totalLeaveCount.value = 0;
+    } finally {
+        tableLoading.value = false;
+    }
+};
+
+// 养殖场数据 - 用于地图和饼图
+const farmData = ref([]);
+
+// 获取养殖场数据
+const fetchHomeFarmsData = async (areacode) => {
+    chartLoading.value = true;
+    try {
+        const res = await selectHomeFarms(areacode);
+        if (res && Array.isArray(res)) {
+            farmData.value = res;
+
+            // 更新饼图
+            updatePieChart();
+
+            // 发送事件通知地图更新
+            emit('farms-loaded', farmData.value);
+        } else {
+            farmData.value = [];
+        }
+    } catch (error) {
+        console.error('获取存栏品种数据失败:', error);
+        farmData.value = [];
+    } finally {
+        chartLoading.value = false;
+    }
+};
 
 // Warning table
 const warningColumns = [
@@ -157,11 +220,39 @@ const warningData = [
 const pieChartRef = ref<HTMLElement | null>(null);
 let pieChart: echarts.ECharts | null = null;
 
+// 从养殖场数据中分析存栏品种数据
+const processInventoryData = () => {
+    // 由于API返回的数据没有直接包含品种信息，这里使用模拟数据
+    // 实际项目中应该根据后端返回的数据结构进行适当处理
+
+    const totalLeave = farmData.value.reduce((sum, farm) => sum + (farm.leaveCount || 0), 0);
+
+    // 简单的模拟数据处理，实际应根据API返回调整
+    // 这里假设API返回的leaveCount是总数，我们按比例分配给各品种
+    const sowCount = Math.round(totalLeave * 0.3);
+    const pigletCount = Math.round(totalLeave * 0.5);
+    const porkerCount = totalLeave - sowCount - pigletCount;
+
+    return [
+        { value: sowCount, name: '母猪', itemStyle: { color: '#4096ff' } },
+        { value: pigletCount, name: '仔猪', itemStyle: { color: '#52c41a' } },
+        { value: porkerCount, name: '育肥猪', itemStyle: { color: '#87d068' } }
+    ];
+};
+
 // Initialize pie chart
 const initPieChart = () => {
     if (!pieChartRef.value) return;
 
     pieChart = echarts.init(pieChartRef.value);
+    updatePieChart();
+};
+
+// Update pie chart with new data
+const updatePieChart = () => {
+    if (!pieChart) return;
+
+    const inventoryData = processInventoryData();
 
     const option = {
         tooltip: {
@@ -197,11 +288,7 @@ const initPieChart = () => {
                         color: '#fff'
                     }
                 },
-                data: [
-                    { value: 2398, name: '母猪', itemStyle: { color: '#4096ff' } },
-                    { value: 4321, name: '仔猪', itemStyle: { color: '#52c41a' } },
-                    { value: 635, name: '育肥猪', itemStyle: { color: '#87d068' } }
-                ]
+                data: inventoryData
             }
         ]
     };
@@ -219,7 +306,38 @@ const handleResize = () => {
     pieChart?.resize();
 };
 
+// 监听区域选择变化
+watch(() => selectedRegion.value, async (newValue, oldValue) => {
+    if (newValue) {
+        // 查找选中节点的名称
+        const findNodeName = (nodes, value) => {
+            for (const node of nodes) {
+                if (node.value === value) {
+                    return node.title;
+                }
+                if (node.children && node.children.length) {
+                    const foundName = findNodeName(node.children, value);
+                    if (foundName) return foundName;
+                }
+            }
+            return null;
+        };
+        
+        const regionName = findNodeName(regionTreeData.value, newValue);
+        if (regionName) {
+            selectedRegionName.value = regionName;
+        }
+        
+        // 加载新区域数据
+        await loadRegionData(newValue);
+        
+        // 触发区域变化事件
+        emit('region-change', newValue);
+    }
+});
+
 onMounted(() => {
+    fetchAreaTrees();
     initPieChart();
     window.addEventListener('resize', handleResize);
 });
@@ -237,7 +355,6 @@ onUnmounted(() => {
     padding: 12px;
     color: white;
     width: 300px;
-    // max-height: calc(100vh - 32px);
     max-height: calc(80vh);
     overflow-y: auto;
 
@@ -283,6 +400,7 @@ onUnmounted(() => {
 
     .stats-section {
         margin-bottom: 12px;
+        position: relative;
 
         .stat-boxes {
             display: flex;
@@ -305,6 +423,19 @@ onUnmounted(() => {
 
     .pie-chart {
         height: 170px;
+        position: relative;
+
+        &.loading {
+            opacity: 0.6;
+        }
+    }
+
+    .chart-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
     }
 
     .table-container {

@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <dashboard-stats-panel class="stats-panel" />
+    <dashboard-stats-panel class="stats-panel" @region-change="handleRegionChange" @farms-loaded="updateMapMarkers" />
 
     <div id="map-container" class="map-container"></div>
 
@@ -11,24 +11,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import mapConfig from '@/utils/map-config';
 import FarmDetailsDrawer from './components/FarmDetailsDrawer.vue';
 import DashboardStatsPanel from './components/DashboardStatsPanel.vue';
+import { message } from 'ant-design-vue';
+import { selectHomeFarms } from './api';
 
 let map = null;
 let markers = [];
 let districtLayer = null;
+let district = null; // 行政区查询实例
 
-// 默认地图中心点和缩放级别 - 设置为四川省中心
-const defaultCenter = [104.07, 30.67]; // 成都
-const defaultZoom = 7; // 缩小级别以显示整个四川省
+// 养殖场点位
+const farmLocations = ref([]);
 
-// 模拟的养殖场点位
-const farmLocations = [
-  { id: 1, position: [104.101698, 30.677180], name: "XXXXX养殖场1", situation: "1" },
-  { id: 2, position: [104.066507, 30.669798], name: "XXXXX养殖场2", situation: "0" }
-];
+// 当前区域编码
+const currentRegionCode = ref('');
 
 // 当前选中的养殖场数据
 const currentFarmData = ref(null);
@@ -46,36 +45,124 @@ const closeDrawer = () => {
   drawerVisible.value = false;
 };
 
-// 模拟API调用获取养殖场详情
-const fetchFarmData = async (farmId) => {
-  // 这里是模拟的API调用，实际项目中会替换为真实的API请求
-  console.log(`Fetching data for farm ID: ${farmId}`);
+// 处理区域变更
+const handleRegionChange = async (regionCode) => {
+  console.log('Region changed to:', regionCode);
+  currentRegionCode.value = regionCode;
+  
+  // 获取该区域的养殖场数据
+  await fetchFarmsByArea(regionCode);
+  
+  // 更新区域边界显示和地图聚焦
+  updateDistrictLayer(regionCode);
+};
 
-  // 模拟异步请求
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: farmId,
-        name: `XXXXX养殖场${farmId}`,
-        district: "四川省成都市武侯区",
-        address: "XXXXXXXXXXXXXXXXXXXXXXX",
-        contactPerson: "张三",
-        contactPhone: "15508280883"
-      });
-    }, 500);
+// 获取区域内的养殖场数据
+const fetchFarmsByArea = async (areacode) => {
+  try {
+    const farms = await selectHomeFarms(areacode);
+    updateMapMarkers(farms);
+  } catch (error) {
+    console.error('获取养殖场数据失败:', error);
+    message.error('获取养殖场数据失败');
+  }
+};
+
+// 更新区域边界图层和聚焦到相应区域
+const updateDistrictLayer = (adcode) => {
+  if (!map) return;
+  
+  // 清除现有区域图层
+  if (districtLayer) {
+    map.remove(districtLayer);
+    districtLayer = null;
+  }
+  
+  // 使用行政区查询获取区域边界并聚焦
+  if (!district) {
+    district = new AMap.DistrictSearch({
+      extensions: 'all',
+      subdistrict: 1
+    });
+  }
+  
+  district.search(adcode, (status, result) => {
+    if (status === 'complete') {
+      // 获取区域边界信息
+      const data = result.districtList[0];
+      
+      // 边界坐标数组
+      const bounds = data.boundaries;
+      
+      if (bounds) {
+        // 添加新的区域边界覆盖物
+        const polygons = [];
+        for (let i = 0; i < bounds.length; i++) {
+          // 创建区域覆盖物
+          const polygon = new AMap.Polygon({
+            path: bounds[i],
+            strokeWeight: 1,
+            strokeColor: '#0091ea',
+            fillColor: '#1791fc',
+            fillOpacity: 0.3,
+            zIndex: 10
+          });
+          polygons.push(polygon);
+        }
+        
+        // 添加覆盖物到地图
+        map.add(polygons);
+        
+        // 保存引用，以便后续清除
+        districtLayer = polygons;
+        
+        // 获取区域中心点和适合的缩放级别，并聚焦地图
+        map.setFitView(polygons, false, [60, 60, 60, 60]);
+        
+        // 确保缩放级别不会太小
+        const currentZoom = map.getZoom();
+        if (currentZoom < 7) {
+          map.setZoom(7);
+        }
+      }
+    } else {
+      console.error('获取区域边界失败');
+      message.error('获取区域边界失败');
+    }
   });
 };
 
+// 更新地图标记点
+const updateMapMarkers = (farms) => {
+  // 转换API返回的养殖场数据为地图标记点格式
+  if (farms && Array.isArray(farms)) {
+    farmLocations.value = farms.map(farm => ({
+      id: farm.farmId,
+      position: [parseFloat(farm.longitude) || 0, parseFloat(farm.latitude) || 0],
+      name: farm.farmName,
+      situation: farm.leaveCount > 0 ? "0" : "1", // 有存栏使用蓝色，无存栏使用红色
+      leaveCount: farm.leaveCount,
+      farmData: farm // 保存原始数据，用于抽屉展示
+    }));
+    
+    // 如果地图已初始化，添加标记点
+    if (map) {
+      addMarkers();
+    }
+  }
+};
+
 // 点击标记时的处理函数
-const handleMarkerClick = async (farmId) => {
-  // 调用API获取数据
-  const farmData = await fetchFarmData(farmId);
-
-  // 更新当前养殖场数据
-  currentFarmData.value = farmData;
-
-  // 打开抽屉
-  showDrawer();
+const handleMarkerClick = (farmId) => {
+  // 从已加载的养殖场数据中查找
+  const farm = farmLocations.value.find(f => f.id === farmId);
+  
+  if (farm) {
+    currentFarmData.value = farm.farmData;
+    showDrawer();
+  } else {
+    message.error('养殖场数据不存在');
+  }
 };
 
 // 添加标记到地图
@@ -89,7 +176,13 @@ const addMarkers = () => {
   markers = [];
 
   // 添加新标记
-  farmLocations.forEach(farm => {
+  farmLocations.value.forEach(farm => {
+    // 确保有有效的经纬度
+    if (!farm.position[0] || !farm.position[1]) {
+      console.warn(`养殖场 ${farm.name} 缺少有效的经纬度信息`);
+      return;
+    }
+    
     // 根据situation参数选择标记颜色
     const markerColor = farm.situation === "1" ? 'r' : 'b'; // 1使用红色标记，0使用蓝色标记
 
@@ -119,26 +212,6 @@ const addMarkers = () => {
   });
 };
 
-// 添加四川省行政区划
-const addSichuanDistrict = () => {
-  // 四川省的adcode为510000
-  districtLayer = new AMap.DistrictLayer({
-    zIndex: 10,
-    adcode: '510000', // 四川省的行政区编码
-    depth: 1,         // 显示省级下面一级行政区划
-    styles: {
-      'fill': 'rgba(44, 85, 151, 0.7)',         // 填充色
-    }
-  });
-
-  // 将行政区划图层添加到地图
-  map.add(districtLayer);
-
-  // 调整视图以聚焦四川省
-  map.setZoomAndCenter(7, [102.07, 30.67]);
-  // map.setZoomAndCenter(7, [104.07, 30.67]); 本来是这个的但是位置看起来不太对就手动往右了些
-};
-
 onMounted(() => {
   // 设置安全密钥
   window._AMapSecurityConfig = {
@@ -148,7 +221,7 @@ onMounted(() => {
   // 动态加载高德地图API脚本
   const script = document.createElement('script');
   script.type = 'text/javascript';
-  script.src = `https://webapi.amap.com/maps?v=2.0&key=${mapConfig.AMAPKEY}&plugin=AMap.ToolBar,AMap.Scale,AMap.DistrictLayer`;
+  script.src = `https://webapi.amap.com/maps?v=2.0&key=${mapConfig.AMAPKEY}&plugin=AMap.ToolBar,AMap.Scale,AMap.DistrictSearch`;
   document.head.appendChild(script);
 
   // 地图加载完成后初始化
@@ -162,8 +235,8 @@ const initMap = () => {
   // 创建地图实例
   map = new AMap.Map('map-container', {
     viewMode: '3D',
-    center: defaultCenter,
-    zoom: defaultZoom,
+    center: [104.07, 30.67], // 成都
+    zoom: 7, // 缩小级别以显示整个四川省
     mapStyle: "amap://styles/blue", // 使用靛青蓝展示自定义图层
     showBuildingBlock: false, // 不显示楼块
     resizeEnable: true, // 是否监控地图容器尺寸变化
@@ -180,11 +253,8 @@ const initMap = () => {
     position: 'RB' // 右下角
   }));
 
-  // 添加四川省行政区划
-  addSichuanDistrict();
-
-  // 添加标记点
-  addMarkers();
+  // 默认显示四川省
+  updateDistrictLayer('510000');
 };
 
 onUnmounted(() => {
