@@ -470,7 +470,7 @@ const deleteSelectedPolygon = () => {
                 labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
             }
 
-            // 尝试所有可能的删除方法
+            // 尝试所有删除方法
             try {
                 selectedPolygon.value.remove();
             } catch (e) {
@@ -520,7 +520,7 @@ const directlyDeletePolygon = () => {
         labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
     }
 
-    // 尝试所有可能的删除方法
+    // 尝试所有删除方法
     try {
         selectedPolygon.value.remove();
     } catch (e) {

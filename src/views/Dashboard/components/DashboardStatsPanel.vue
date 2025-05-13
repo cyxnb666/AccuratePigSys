@@ -65,7 +65,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 import { message } from 'ant-design-vue';
-import { selectUserTree, selectAreaFarms, selectHomeFarms, getWarningList } from '../api';
+import { selectUserTree, selectAreaFarms, selectHomeFarms, getWarningList, selectBreedFarms } from '../api';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -116,6 +116,8 @@ const emit = defineEmits(['region-change', 'farms-loaded']);
 const regionTreeData = ref([]);
 const selectedRegion = ref('');
 
+const breedData = ref([]);
+
 // 树节点过滤函数
 const filterTreeNode = (inputValue, treeNode) => {
     return treeNode.title.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1;
@@ -157,14 +159,37 @@ const fetchAreaTrees = async () => {
     }
 };
 
+// 获取品种数据
+const fetchBreedData = async (areacode) => {
+    chartLoading.value = true;
+    try {
+        const res = await selectBreedFarms(areacode);
+        if (res && Array.isArray(res)) {
+            breedData.value = res;
+            // 更新饼图
+            updatePieChart();
+        } else {
+            breedData.value = [];
+        }
+    } catch (error) {
+        console.error('获取品种数据失败:', error);
+        breedData.value = [];
+    } finally {
+        chartLoading.value = false;
+    }
+};
+
 // 加载区域相关数据
 const loadRegionData = async (areacode) => {
     try {
-        await Promise.all([
-            fetchAreaFarmsData(areacode),
-            fetchHomeFarmsData(areacode),
-            fetchWarningData(areacode)
-        ]);
+        if (areacode) {
+            await Promise.all([
+                fetchAreaFarmsData(areacode),
+                fetchHomeFarmsData(areacode),
+                fetchWarningData(areacode),
+                // fetchBreedData(areacode)
+            ]);
+        }
     } catch (error) {
         console.error('加载区域数据失败:', error);
         message.error('加载区域数据失败');
@@ -258,22 +283,32 @@ let pieChart: echarts.ECharts | null = null;
 
 // 从养殖场数据中分析存栏品种数据
 const processInventoryData = () => {
-    // 由于API返回的数据没有直接包含品种信息，这里使用模拟数据
-    // 实际项目中应该根据后端返回的数据结构进行适当处理
+    // 使用API返回的品种数据
+    if (!breedData.value || breedData.value.length === 0) {
+        // 如果没有数据，返回默认空数据
+        return [
+            { value: 0, name: '母猪', itemStyle: { color: '#4096ff' } },
+            { value: 0, name: '仔猪', itemStyle: { color: '#52c41a' } },
+            { value: 0, name: '育肥猪', itemStyle: { color: '#87d068' } }
+        ];
+    }
 
-    const totalLeave = farmData.value.reduce((sum, farm) => sum + (farm.leaveCount || 0), 0);
+    // 映射品种代码到中文名称和颜色
+    const breedMap = {
+        'BROOD_SOW': { name: '母猪', color: '#4096ff' },
+        'PIGLET': { name: '仔猪', color: '#52c41a' },
+        'PORKER': { name: '育肥猪', color: '#87d068' }
+    };
 
-    // 简单的模拟数据处理，实际应根据API返回调整
-    // 这里假设API返回的leaveCount是总数，我们按比例分配给各品种
-    const sowCount = Math.round(totalLeave * 0.3);
-    const pigletCount = Math.round(totalLeave * 0.5);
-    const porkerCount = totalLeave - sowCount - pigletCount;
-
-    return [
-        { value: sowCount, name: '母猪', itemStyle: { color: '#4096ff' } },
-        { value: pigletCount, name: '仔猪', itemStyle: { color: '#52c41a' } },
-        { value: porkerCount, name: '育肥猪', itemStyle: { color: '#87d068' } }
-    ];
+    // 转换API数据为饼图所需格式
+    return breedData.value.map(item => {
+        const breedInfo = breedMap[item.breedCode] || { name: item.breedName, color: '#1890ff' };
+        return {
+            value: item.persionalCheckCount || 0,
+            name: breedInfo.name,
+            itemStyle: { color: breedInfo.color }
+        };
+    });
 };
 
 const initPieChart = () => {
@@ -369,7 +404,6 @@ watch(() => selectedRegion.value, async (newValue, oldValue) => {
 onMounted(() => {
     fetchAreaTrees();
     initPieChart();
-    fetchWarningData();
     window.addEventListener('resize', handleResize);
 });
 

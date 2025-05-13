@@ -251,7 +251,7 @@ watch(() => props.modelValue, (visible) => {
     }
 }, { immediate: true });
 
-// 视频播放相关方法
+// 视频播放
 const viewFile = (url) => {
     if (url) {
         window.open(url, '_blank');

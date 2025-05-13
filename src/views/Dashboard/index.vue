@@ -5,7 +5,7 @@
     <div id="map-container" class="map-container"></div>
 
     <a-drawer title="养殖场详情" placement="right" :width="1000" :open="drawerVisible" @close="closeDrawer"
-      @afterVisibleChange="handleDrawerVisibleChange">
+      @afterOpenChange="handleDrawerVisibleChange">
       <farm-details-drawer v-if="drawerVisible" :farmData="currentFarmData" ref="farmDetailsRef" />
     </a-drawer>
   </div>
@@ -17,7 +17,6 @@ import mapConfig from '@/utils/map-config';
 import FarmDetailsDrawer from './components/FarmDetailsDrawer.vue';
 import DashboardStatsPanel from './components/DashboardStatsPanel.vue';
 import { message } from 'ant-design-vue';
-import { selectHomeFarms } from './api';
 
 let map = null;
 let markers = [];
@@ -51,21 +50,8 @@ const closeDrawer = () => {
 const handleRegionChange = async (regionCode) => {
   currentRegionCode.value = regionCode;
 
-  // 获取该区域的养殖场数据
-  await fetchFarmsByArea(regionCode);
-
   // 更新区域边界显示和地图聚焦
   updateDistrictLayer(regionCode);
-};
-
-// 获取区域内的养殖场数据
-const fetchFarmsByArea = async (areacode) => {
-  try {
-    const farms = await selectHomeFarms(areacode);
-    updateMapMarkers(farms);
-  } catch (error) {
-    console.error('获取养殖场数据失败:', error);
-  }
 };
 
 // 更新区域边界图层和聚焦到相应区域
@@ -170,10 +156,9 @@ const handleMarkerClick = (farmId) => {
 
 const handleDrawerVisibleChange = (visible) => {
   if (visible && farmDetailsRef.value) {
-    // When drawer is open, resize the charts
     setTimeout(() => {
       farmDetailsRef.value.resizeCharts();
-    }, 300); // Add a slight delay to ensure drawer is fully rendered
+    }, 300);
   }
 };
 

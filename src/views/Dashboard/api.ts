@@ -42,3 +42,16 @@ export function getWarningList(params: any) {
         data: params
     });
 }
+
+// 获取品种信息数据
+export function selectBreedFarms(areacode) {
+    return axios({
+        url: '/web/home/selectBreedFarms',
+        method: 'post',
+        data: {
+            condition: {
+                areacode: areacode
+            }
+        }
+    });
+}

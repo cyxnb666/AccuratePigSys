@@ -1,18 +1,14 @@
 <template>
     <div class="farm-details-drawer">
-        <!-- Loading state -->
         <a-spin :spinning="pageLoading" tip="正在加载数据..." class="global-loading">
-            <!-- Farm basic info -->
             <div class="info-warning-card">
                 <farm-basic-info :farm-info="farmInfo" :show-detail-button="true" @view-detail="viewFarmDetail" />
 
-                <!-- Warning data -->
                 <div style="margin-top: 20px;">
                     <abnormal-warning :warning-data="warningData" @view-more="viewMoreWarnings" />
                 </div>
             </div>
 
-            <!-- Second row: Farm inventory and report status -->
             <div class="detail-section">
                 <a-row :gutter="16">
                     <a-col :span="12">
@@ -26,18 +22,15 @@
                 </a-row>
             </div>
 
-            <!-- Inventory trend line -->
             <div class="detail-section">
                 <inventory-trend-line :trend-data="trendData" v-model:date-range="trendDateRange" ref="trendLineRef" />
             </div>
 
-            <!-- Monthly change mixed chart -->
             <div class="detail-section">
                 <monthly-change-mixed :mixed-data="mixedData" v-model:date-range="mixedChartDateRange"
                     ref="monthlyMixedRef" />
             </div>
 
-            <!-- Current inventory information -->
             <div class="detail-section">
                 <current-inventory-tabs :stock-data="stockData.slice(0, 5)" :outbound-data="outboundData.slice(0, 5)"
                     :inbound-data="inboundData.slice(0, 5)" :death-data="deathData.slice(0, 5)"
@@ -47,7 +40,6 @@
                     @tab-change="handleTabChange" />
             </div>
 
-            <!-- Death detail dialog -->
             <death-detail-dialog ref="deathDetailRef" v-model:visible="deathDetailVisible" :record="currentDeathRecord"
                 :is-view-mode="true" />
         </a-spin>
@@ -84,7 +76,6 @@ import dayjs from 'dayjs';
 const router = useRouter();
 const pageLoading = ref(true);
 
-// Props - expecting farmData with farmId
 const props = defineProps({
     farmData: {
         type: Object,
@@ -92,7 +83,6 @@ const props = defineProps({
     }
 });
 
-// References to chart components
 const inventoryPieRef = ref(null);
 const reportStatusRef = ref(null);
 const trendLineRef = ref(null);
@@ -100,12 +90,10 @@ const monthlyMixedRef = ref(null);
 
 const farmId = ref('');
 
-// Initialize date ranges
 const dateRange = ref<any>([]);
 const trendDateRange = ref<any>([]);
 const mixedChartDateRange = ref<any>([]);
 
-// Pagination configs - only for internal usage since we're not showing pagination
 const stockPagination = reactive({
     current: 1,
     pageSize: 5,
@@ -134,13 +122,10 @@ const deathPagination = reactive({
     showTotal: (total) => `共 ${total} 条`,
 });
 
-// Farm basic info
 const farmInfo = ref({});
 
-// Warning data
 const warningData = ref([]);
 
-// Inventory data
 const leaveData = ref({
     pigletCount: 0,
     porkerCount: 0,
@@ -148,36 +133,29 @@ const leaveData = ref({
     totalCount: 0
 });
 
-// Report status data
 const farmWarnData = ref({
     nregistCount: 0,
     oregistCount: 0,
     sregistCount: 0
 });
 
-// Trend data
 const trendData = ref([]);
 
-// Monthly change data
+
 const mixedData = ref([]);
 
-// Table data
 const stockData = ref([]);
 const outboundData = ref([]);
 const inboundData = ref([]);
 const deathData = ref([]);
 
-// Death detail dialog
 const deathDetailVisible = ref(false);
 const currentDeathRecord = ref(null);
 const deathDetailRef = ref(null);
 const activeTabKey = ref('1');
 
-// Resize all charts
 const resizeAllCharts = () => {
-    // Need to wait for the DOM to fully render
     setTimeout(() => {
-        // Check if chart refs are available and have resize method
         if (inventoryPieRef.value?.$el?.querySelector('.chart')) {
             const chart = inventoryPieRef.value?.$el?.querySelector('.chart').__vue__?.chart;
             chart?.resize();
@@ -198,18 +176,15 @@ const resizeAllCharts = () => {
             chart?.resize();
         }
 
-        // Alternatively, if components expose a resize method directly:
         inventoryPieRef.value?.resizeChart?.();
         reportStatusRef.value?.resizeChart?.();
         trendLineRef.value?.resizeChart?.();
         monthlyMixedRef.value?.resizeChart?.();
 
-        // Dispatch a window resize event as a fallback
         window.dispatchEvent(new Event('resize'));
-    }, 300); // Small delay to ensure drawer is fully rendered
+    }, 300);
 };
 
-// Fetch farm data
 const fetchFarmData = async () => {
     try {
         const params = {
@@ -226,7 +201,6 @@ const fetchFarmData = async () => {
     }
 };
 
-// Fetch warning data
 const fetchWarningData = async () => {
     try {
         const params = {
@@ -252,7 +226,6 @@ const fetchWarningData = async () => {
     }
 };
 
-// Fetch inventory data
 const fetchInventoryData = async () => {
     try {
         const res = await getLeave(farmId.value);
@@ -264,7 +237,6 @@ const fetchInventoryData = async () => {
     }
 };
 
-// Fetch report status data
 const fetchReportStatusData = async (startDate = "", endDate = "") => {
     try {
         const params = {
@@ -284,12 +256,10 @@ const fetchReportStatusData = async (startDate = "", endDate = "") => {
     }
 };
 
-// Handle report data reload
 const handleReportDataReload = (dateInfo) => {
     fetchReportStatusData(dateInfo.startDate, dateInfo.endDate);
 };
 
-// Fetch trend data
 const fetchTrendData = async (startDate = "", endDate = "") => {
     try {
         const params = {
@@ -309,7 +279,6 @@ const fetchTrendData = async (startDate = "", endDate = "") => {
     }
 };
 
-// Watch trend date range changes
 watch(trendDateRange, (newValue) => {
     let startDate = "";
     let endDate = "";
@@ -319,11 +288,9 @@ watch(trendDateRange, (newValue) => {
         endDate = newValue[1] ? dayjs(newValue[1]).format('YYYY-MM-DD') : '';
     }
 
-    // Always call API whether dates are empty or not
     fetchTrendData(startDate, endDate);
 }, { deep: true });
 
-// Fetch mixed chart data
 const fetchMixedData = async (startMonth = "", endMonth = "") => {
     try {
         const params = {
@@ -343,7 +310,6 @@ const fetchMixedData = async (startMonth = "", endMonth = "") => {
     }
 };
 
-// Watch mixed chart date range changes
 watch(mixedChartDateRange, (newValue) => {
     let startMonth = "";
     let endMonth = "";
@@ -353,15 +319,12 @@ watch(mixedChartDateRange, (newValue) => {
         endMonth = newValue[1] ? dayjs(newValue[1]).format('YYYY-MM') : '';
     }
 
-    // Always call API whether dates are empty or not
     fetchMixedData(startMonth, endMonth);
 }, { deep: true });
 
-// Fetch table data
 const fetchTableData = async (type = 'all') => {
     try {
         if (type === 'all' || type === 'stock') {
-            // Stock records
             const stockParams = {
                 condition: {
                     primaryKey: farmId.value
@@ -377,7 +340,6 @@ const fetchTableData = async (type = 'all') => {
         }
 
         if (type === 'all' || type === 'outbound') {
-            // Outbound records
             const outboundParams = {
                 condition: {
                     primaryKey: farmId.value
@@ -393,7 +355,6 @@ const fetchTableData = async (type = 'all') => {
         }
 
         if (type === 'all' || type === 'inbound') {
-            // Inbound records
             const inboundParams = {
                 condition: {
                     primaryKey: farmId.value
@@ -409,7 +370,6 @@ const fetchTableData = async (type = 'all') => {
         }
 
         if (type === 'all' || type === 'death') {
-            // Death records
             const deathParams = {
                 condition: {
                     primaryKey: farmId.value
@@ -428,27 +388,25 @@ const fetchTableData = async (type = 'all') => {
     }
 };
 
-// Handle tab change
 const handleTabChange = (key) => {
     activeTabKey.value = key;
 
     switch (key) {
-        case '1': // Stock records
+        case '1':
             fetchTableData('stock');
             break;
-        case '2': // Outbound records
+        case '2':
             fetchTableData('outbound');
             break;
-        case '3': // Inbound records
+        case '3':
             fetchTableData('inbound');
             break;
-        case '4': // Death records
+        case '4':
             fetchTableData('death');
             break;
     }
 };
 
-// View farm detail
 const viewFarmDetail = () => {
     if (farmId.value) {
         router.push({
@@ -460,12 +418,10 @@ const viewFarmDetail = () => {
     }
 };
 
-// View more warnings
 const viewMoreWarnings = () => {
     router.push('/E-WARN');
 };
 
-// View more inventory
 const viewMoreInventory = () => {
     if (farmId.value) {
         router.push(`/KEEP/details/${farmId.value}`);
@@ -474,10 +430,9 @@ const viewMoreInventory = () => {
     }
 };
 
-// Handle view detail
+
 const handleViewDetail = async (record) => {
-    if (activeTabKey.value === '4') { // Death records
-        // Set current record's loading state to true
+    if (activeTabKey.value === '4') {
         const index = deathData.value.findIndex(item => item.bizId === record.bizId);
         if (index !== -1) {
             deathData.value[index].loading = true;
@@ -486,7 +441,6 @@ const handleViewDetail = async (record) => {
         try {
             const detailRes = await getWebDeadRegist(record.bizId);
 
-            // Prepare file preview URLs
             if (detailRes.files && detailRes.files.length > 0) {
                 detailRes.filePreviewUrls = {
                     images: [],
@@ -494,7 +448,6 @@ const handleViewDetail = async (record) => {
                 };
 
                 detailRes.files.forEach(file => {
-                    // Determine if it's a video or image based on file extension
                     const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
 
                     if (isVideo) {
@@ -531,7 +484,6 @@ const handleViewDetail = async (record) => {
     }
 };
 
-// Load all data
 const loadData = async () => {
     pageLoading.value = true;
     try {
@@ -543,10 +495,8 @@ const loadData = async () => {
             fetchMixedData(),
             fetchTableData()
         ]);
-        // Fetch warning data after farm info is available
         await fetchWarningData();
 
-        // After data is loaded, wait for the next tick and resize charts
         nextTick(() => {
             resizeAllCharts();
         });
@@ -558,7 +508,6 @@ const loadData = async () => {
     }
 };
 
-// Watch farmData changes
 watch(() => props.farmData, (newData) => {
     if (newData && newData.farmId) {
         farmId.value = newData.farmId;
@@ -566,16 +515,12 @@ watch(() => props.farmData, (newData) => {
     }
 }, { immediate: true });
 
-// Add onMounted hook to handle chart resize
 onMounted(() => {
-    // First time when mounted
     resizeAllCharts();
 
-    // Add a resize event listener to handle window resizing
     window.addEventListener('resize', resizeAllCharts);
 });
 
-// Expose methods
 defineExpose({
     refreshData: () => {
         if (farmId.value) {
