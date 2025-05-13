@@ -168,7 +168,6 @@ const handleMarkerClick = (farmId) => {
 
 let infoWindows = [];
 
-// 修改addMarkers函数
 const addMarkers = () => {
   if (!map) return;
 

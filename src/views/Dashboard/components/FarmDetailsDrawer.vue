@@ -321,31 +321,3 @@ defineExpose({
     }
 }
 </style>
-
-<style lang="scss" scoped>
-.farm-details-drawer {
-    padding: 0 8px;
-    height: 100%;
-    overflow-y: auto;
-
-    .info-warning-card {
-        background-color: white;
-        border-radius: 4px;
-        box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
-        padding: 16px;
-        margin-bottom: 20px;
-    }
-
-    .detail-section {
-        margin-bottom: 20px;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-
-        :deep(.chart-container) {
-            height: 280px !important;
-        }
-    }
-}
-</style>
