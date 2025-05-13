@@ -185,6 +185,16 @@ axios.interceptors.response.use(
                 return Promise.reject('登录状态已过期，请重新登录');
             }
 
+            // 处理租户冻结
+            if (code === 700 || code === 701) {
+                notification.error({
+                    message: '登录提示',
+                    description: '账户被冻结，请联系管理员',
+                    duration: 3,
+                });
+                return Promise.reject('账户被冻结，请联系管理员');
+            }
+
             // 处理其他错误情况
             notification.error({
                 message: '提示',

@@ -223,10 +223,10 @@ const hasEditPermission = computed(() => {
     try {
         const userInfoStr = sessionStorage.getItem('userInfo');
         if (!userInfoStr) return false;
-        
+
         const userInfo = JSON.parse(userInfoStr);
         const allowedRoles = ['BUSI_MANAGER', 'SURVEY_MANAGER'];
-        
+
         return allowedRoles.includes(userInfo.roleCode);
     } catch (error) {
         console.error('Error checking user permissions:', error);
@@ -235,18 +235,18 @@ const hasEditPermission = computed(() => {
 });
 // 专门计算操作栏可见性的计算属性
 const toolbarVisible = computed(() => {
-  // 新增模式下始终显示操作栏
-  if (!isEdit.value) {
-    return true;
-  }
-  
-  // 有特定权限的用户始终可以看到操作栏
-  if (hasEditPermission.value) {
-    return true;
-  }
-  
-  // 对于其他用户，根据editFence状态决定
-  return editFenceStatus.value === '1';
+    // 新增模式下始终显示操作栏
+    if (!isEdit.value) {
+        return true;
+    }
+
+    // 有特定权限的用户始终可以看到操作栏
+    if (hasEditPermission.value) {
+        return true;
+    }
+
+    // 对于其他用户，根据editFence状态决定
+    return editFenceStatus.value === '1';
 });
 
 // 表单数据
@@ -484,6 +484,15 @@ const setPrimaryContact = async (record) => {
             // 如果已经是主要联系人，不做操作
             if (record.isPrimary) return;
 
+            // 先找到当前的主要联系人
+            const currentPrimaryContact = contacts.value.find(c => c.isPrimary);
+
+            // 如果存在当前主要联系人，先取消其主要状态
+            if (currentPrimaryContact) {
+                await setAsPrimaryContact(currentPrimaryContact.key);
+            }
+
+            // 然后设置新的主要联系人
             await setAsPrimaryContact(record.key);
 
             // 更新UI状态
@@ -631,34 +640,34 @@ const saveForm = async () => {
 
 // 围栏编辑状态变化
 const handleFenceEditChange = async (checked) => {
-  // 检查权限
-  if (!hasEditPermission.value) {
-    message.error('您没有权限操作电子围栏编辑功能');
-    fenceEditEnabled.value = false; // 重置开关状态
-    return;
-  }
-  
-  try {
-    const farmId = route.query.id as string;
-    if (!farmId) {
-      message.error('养殖场ID不存在');
-      return;
+    // 检查权限
+    if (!hasEditPermission.value) {
+        message.error('您没有权限操作电子围栏编辑功能');
+        fenceEditEnabled.value = false; // 重置开关状态
+        return;
     }
-    
-    // 调用API更新服务器上的状态
-    await toggleFenceEdit(farmId);
-    
-    // 更新本地状态
-    editFenceStatus.value = checked ? '1' : '0';
-    showMapToolbar.value = checked;
-    
-    console.log('电子围栏编辑状态:', checked ? '已开启' : '已关闭');
-    message.success(`电子围栏编辑已${checked ? '开启' : '关闭'}`);
-  } catch (error) {
-    console.error('切换电子围栏编辑状态失败:', error);
-    // 操作失败时回滚UI状态
-    fenceEditEnabled.value = !checked;
-  }
+
+    try {
+        const farmId = route.query.id as string;
+        if (!farmId) {
+            message.error('养殖场ID不存在');
+            return;
+        }
+
+        // 调用API更新服务器上的状态
+        await toggleFenceEdit(farmId);
+
+        // 更新本地状态
+        editFenceStatus.value = checked ? '1' : '0';
+        showMapToolbar.value = checked;
+
+        console.log('电子围栏编辑状态:', checked ? '已开启' : '已关闭');
+        message.success(`电子围栏编辑已${checked ? '开启' : '关闭'}`);
+    } catch (error) {
+        console.error('切换电子围栏编辑状态失败:', error);
+        // 操作失败时回滚UI状态
+        fenceEditEnabled.value = !checked;
+    }
 };
 
 onMounted(async () => {
