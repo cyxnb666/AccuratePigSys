@@ -52,9 +52,8 @@ const formData = reactive({
     confirmPassword: ''
 });
 
-// 密码格式正则：6-12位字母+数字组合
-const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,12}$/;
-
+// 密码格式正则：6-12位字母+数字+特殊字符组合
+const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,8}$/;
 const validateConfirmPassword = async (rule, value) => {
   if (value && value !== formData.newPassword) {
     return Promise.reject('两次输入的密码不一致');
@@ -97,7 +96,6 @@ const handleSubmit = () => {
         .then(() => {
             submitting.value = true;
             
-            // 构造请求参数
             const params = {
                 condition: {
                     oldUserCipher: formData.oldPassword,

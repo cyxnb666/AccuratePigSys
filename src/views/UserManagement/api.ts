@@ -82,9 +82,9 @@ export function enableUser(userId: string) {
 }
 
 // 重置密码
-export function resetPassword(userId: string) {
+export function resetUserPwd(userId: string) {
     return axios({
-        url: '/web/sys/resetPwd',
+        url: '/web/sys/resetUserPwd',
         method: 'post',
         data: {
             condition: {

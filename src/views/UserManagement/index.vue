@@ -95,7 +95,7 @@ import {
   enableUser,
   deleteUser,
   getUserDetail,
-  resetPassword
+  resetUserPwd
 } from './api';
 
 const dialogVisible = ref(false);
@@ -363,7 +363,7 @@ const handleResetPassword = (record) => {
     cancelText: '取消',
     async onOk() {
       try {
-        await resetPassword(record.userId);
+        await resetUserPwd(record.userId);
         message.success(`已重置${record.userName}的密码`);
       } catch (error) {
         console.error('重置密码失败:', error);

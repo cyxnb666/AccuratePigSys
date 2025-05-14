@@ -170,7 +170,7 @@ const rules = computed(() => {
       ...baseRules,
       userAccount: [{ required: true, message: '请输入登录账号', trigger: 'blur' }],
       userCipher: props.isEdit
-        ? []
+        ? [{ pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,8}$/, message: '密码必须为6-8位字母+数字+特殊符号组合', trigger: 'blur' }]
         : [{ required: true, message: '请输入登录密码', trigger: 'blur' }]
     };
   }

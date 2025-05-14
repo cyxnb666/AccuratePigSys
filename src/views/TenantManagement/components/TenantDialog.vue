@@ -120,10 +120,10 @@ const rules = computed(() => ({
         { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$/, message: '租户账号必须为6-8位字母+数字组合', trigger: 'blur' }
     ],
     tencentCipher: props.isEdit
-        ? [{ pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$/, message: '租户密码必须为6-8位字母+数字组合', trigger: 'blur' }]
+        ? [{ pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,8}$/, message: '租户密码必须为6-8位字母+数字+特殊符号组合', trigger: 'blur' }]
         : [
             { required: true, message: '请输入租户密码', trigger: 'blur' },
-            { pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,8}$/, message: '租户密码必须为6-8位字母+数字组合', trigger: 'blur' }
+            { pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,8}$/, message: '租户密码必须为6-8位字母+数字+特殊符号组合', trigger: 'blur' }
         ],
     areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
     enabled: [{ required: true, message: '请选择状态', trigger: 'change' }],
