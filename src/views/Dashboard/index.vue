@@ -141,7 +141,7 @@ const updateMapMarkers = (farms) => {
   }
 };
 
-// 点击标记时的处理函数
+// 点击标记时的处理
 const handleMarkerClick = (farmId) => {
   // 从已加载的养殖场数据中查找
   const farm = farmLocations.value.find(f => f.id === farmId);
@@ -230,7 +230,7 @@ const addMarkers = () => {
   });
 };
 
-// 创建信息窗体内容的函数
+// 创建信息窗体内容的
 const createInfoContent = (farm) => {
   // 设置存栏量显示文本
   const countText = farm.leaveCount ? `${farm.leaveCount}头` : '0头';

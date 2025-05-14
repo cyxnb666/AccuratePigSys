@@ -86,7 +86,7 @@
 import { ref, reactive, defineProps, defineEmits, watch, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { saveUser, updateUser } from '../api';
-import { MD5 } from 'crypto-js'; // 导入 MD5 加密函数
+import { MD5 } from 'crypto-js'; // MD5 加密
 
 const props = defineProps({
   modelValue: {

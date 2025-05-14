@@ -104,22 +104,51 @@ const accessibleMenuItems = computed(() => {
 
 // 监听路由变化，更新选中的菜单项
 watch(
-  () => route.path,
-  (path) => {
-    const currentRoute = router.getRoutes().find(r => r.path === path);
-    if (currentRoute && currentRoute.name) {
-      state.selectedKeys = [currentRoute.name.toString()];
+  () => route,
+  (newRoute) => {
+    // 使用当前路由的 meta.permission 属性来确定菜单项
+    if (newRoute.meta && newRoute.meta.permission) {
+      const permission = newRoute.meta.permission as string;
+      // 查找具有相同权限且不隐藏的菜单项
+      const menuItem = allMenuItems.value.find(item =>
+        item.meta?.permission === permission &&
+        !item.meta?.hideInMenu
+      );
+
+      if (menuItem && menuItem.name) {
+        state.selectedKeys = [menuItem.name.toString()];
+        return;
+      }
+    }
+
+    // 如果没有找到匹配的权限，则使用路由名称
+    if (newRoute.name) {
+      state.selectedKeys = [newRoute.name.toString()];
     }
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 );
 
 // 在组件挂载时初始化选中的菜单
 onMounted(() => {
-  const path = route.path;
-  const currentRoute = router.getRoutes().find(r => r.path === path);
-  if (currentRoute && currentRoute.name) {
-    state.selectedKeys = [currentRoute.name.toString()];
+  // 使用当前路由的 meta.permission 属性来确定菜单项
+  if (route.meta && route.meta.permission) {
+    const permission = route.meta.permission as string;
+    // 查找具有相同权限且不隐藏的菜单项
+    const menuItem = allMenuItems.value.find(item =>
+      item.meta?.permission === permission &&
+      !item.meta?.hideInMenu
+    );
+
+    if (menuItem && menuItem.name) {
+      state.selectedKeys = [menuItem.name.toString()];
+      return;
+    }
+  }
+
+  // 如果没有找到匹配的权限，则使用路由名称
+  if (route.name) {
+    state.selectedKeys = [route.name.toString()];
   }
 });
 
@@ -131,17 +160,32 @@ const clickMenu = (menuInfo) => {
   }
 };
 
-// 实际执行退出登录的函数
+// 退出登录
 const performLogout = async () => {
+  let tenantCode = '';
+  try {
+    const userInfoStr = sessionStorage.getItem('userInfo');
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr);
+      tenantCode = userInfo.tenantCode || userInfo.tencentCode || '';
+    }
+  } catch (error) {
+    console.error('Error extracting tenant code:', error);
+  }
+
   try {
     await logout();
     message.success('退出登录成功');
   } catch (error) {
     console.error('退出登录失败:', error);
   } finally {
-    // 无论API是否成功，都清除会话并跳转
     sessionStorage.clear();
-    router.push('/login');
+
+    if (tenantCode) {
+      router.push(`/login?code=${tenantCode}`);
+    } else {
+      router.push('/login');
+    }
   }
 };
 

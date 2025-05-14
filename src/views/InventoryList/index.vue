@@ -209,7 +209,7 @@ const handleDistrictSearch = () => {
     }
 };
 
-// 高亮显示函数
+// 高亮显示
 const getHighlightFragments = (title, searchValue) => {
     if (!searchValue || !title) return [{ text: title, highlight: false }];
 
@@ -252,7 +252,7 @@ const getHighlightFragments = (title, searchValue) => {
     return fragments;
 };
 
-// 在input变化时调用搜索函数
+// 在input变化时调用搜索
 const handleDistrictSearchInput = (e) => {
     districtSearchText.value = e.target.value;
     handleDistrictSearch();

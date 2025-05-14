@@ -102,7 +102,7 @@ onMounted(async () => {
     
     let fenceRegistId = null;
     
-    // 尝试从sessionStorage中获取缓存数据
+    // 从sessionStorage中获取缓存数据
     try {
         // 获取审核数据
         const auditDataStr = sessionStorage.getItem(`audit_data_${props.recordId}`);

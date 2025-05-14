@@ -16,7 +16,7 @@
             <!-- 存栏变化数累计达到比例 -->
             <a-form-item class="marked-form-item" label="存栏变化数累计达到比例（出栏/补栏/死亡）" name="stockChangeRatio">
                 <div class="marker"></div>
-                <a-input placeholder="请输入百分比" v-model:value="formData.stockChangeRatio" />
+                <a-input placeholder="请输入百分比" v-model:value="formData.stockChangeRatio" suffix="%"/>
             </a-form-item>
 
             <!-- 上次存栏上报至今累计达到天数 -->
@@ -74,7 +74,7 @@ const rules = {
     ],
     stockChangeCount: [
         { required: true, message: '请输入存栏变化数', trigger: 'blur' },
-        { pattern: /^\d+$/, message: '请输入数字', trigger: 'blur' }
+        { pattern: /^\d+$/, message: '请输入正整数', trigger: 'blur' }
     ],
     stockChangeRatio: [
         { required: true, message: '请输入存栏变化比例', trigger: 'blur' },
@@ -82,11 +82,11 @@ const rules = {
     ],
     daysSinceLastReport: [
         { required: true, message: '请输入天数', trigger: 'blur' },
-        { pattern: /^\d+$/, message: '请输入数字', trigger: 'blur' }
+        { pattern: /^\d+$/, message: '请输入正整数', trigger: 'blur' }
     ]
 };
 
-// 当对话框打开时，尝试填充现有数据
+// 当对话框打开时填充现有数据
 watch(
     () => [props.modelValue, props.record],
     ([visible, record]) => {
