@@ -463,7 +463,6 @@ const handleViewDetail = async (record) => {
             deathDetailVisible.value = true;
         } catch (error) {
             console.error('获取死亡登记详情失败:', error);
-            message.error('获取详情失败');
         } finally {
             if (index !== -1) {
                 deathData.value[index].loading = false;
@@ -491,7 +490,6 @@ const loadData = async () => {
         ]);
     } catch (error) {
         console.error('Error loading page data:', error);
-        message.error('加载数据失败，请刷新页面重试');
     } finally {
         pageLoading.value = false;
     }

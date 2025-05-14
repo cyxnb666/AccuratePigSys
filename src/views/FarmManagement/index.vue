@@ -229,7 +229,6 @@ const handleReportConfig = async (record) => {
     reportTaskDialogVisible.value = true;
   } catch (error) {
     console.error('获取上报任务配置失败:', error);
-    message.error('获取上报任务配置失败');
   } finally {
     reportConfigLoadingMap.value[record.farmId] = false;
   }

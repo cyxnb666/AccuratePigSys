@@ -153,7 +153,6 @@ const fetchAreaTrees = async () => {
         }
     } catch (error) {
         console.error('获取行政区划数据失败:', error);
-        message.error('获取行政区划数据失败');
     } finally {
         treeLoading.value = false;
     }
@@ -192,7 +191,6 @@ const loadRegionData = async (areacode) => {
         }
     } catch (error) {
         console.error('加载区域数据失败:', error);
-        message.error('加载区域数据失败');
     }
 };
 

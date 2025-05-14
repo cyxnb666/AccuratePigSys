@@ -1,7 +1,29 @@
 import axios from 'axios';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
-import { notification } from 'ant-design-vue';
+import { notification, Modal } from 'ant-design-vue';
+const handleLogout = () => {
+    let tenantCode = '';
+    try {
+        const userInfoStr = sessionStorage.getItem('userInfo');
+        if (userInfoStr) {
+            const userInfo = JSON.parse(userInfoStr);
+            tenantCode = userInfo.tenantCode || userInfo.tencentCode || '';
+        }
+    } catch (error) {
+        console.error('Error extracting tenant code:', error);
+    }
+
+    // 清空会话存储
+    sessionStorage.clear();
+
+    // 获取应用基础路径
+    const basePath = import.meta.env.BASE_URL || '/'; // vite的这个环境变量
+
+    // 构建完整的登录路径
+    const loginPath = tenantCode ? `${basePath}#/login?code=${tenantCode}` : `${basePath}#/login`;
+    window.location.href = loginPath;
+};
 
 // 配置axios默认值
 axios.defaults.timeout = 30000;
@@ -177,20 +199,28 @@ axios.interceptors.response.use(
 
             // 处理登录失效
             if (code === 401 || code === 403) {
-                notification.error({
-                    message: '登录提示',
-                    description: '登录状态已过期，请重新登录',
-                    duration: 3,
+                Modal.confirm({
+                    title: '登录提示',
+                    content: '登录状态已过期，请点击确认重新登录',
+                    okText: '确认',
+                    cancelText: '取消',
+                    onOk: () => {
+                        handleLogout();
+                    }
                 });
                 return Promise.reject('登录状态已过期，请重新登录');
             }
 
             // 处理租户冻结
             if (code === 700 || code === 701) {
-                notification.error({
-                    message: '登录提示',
-                    description: '账户被冻结，请联系管理员',
-                    duration: 3,
+                Modal.confirm({
+                    title: '账户状态提示',
+                    content: '账户被冻结，请联系管理员',
+                    okText: '确认',
+                    cancelText: '取消',
+                    onOk: () => {
+                        handleLogout();
+                    }
                 });
                 return Promise.reject('账户被冻结，请联系管理员');
             }

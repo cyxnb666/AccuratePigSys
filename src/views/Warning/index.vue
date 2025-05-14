@@ -214,7 +214,6 @@ const fetchWarningData = async () => {
         }
     } catch (error) {
         console.error('获取异常预警数据失败:', error);
-        message.error('获取异常预警数据失败');
     } finally {
         loading.value = false;
     }

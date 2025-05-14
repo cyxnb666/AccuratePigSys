@@ -189,7 +189,6 @@ const fetchReportReminderData = async () => {
         }
     } catch (error) {
         console.error('获取上报提醒数据失败:', error);
-        message.error('获取上报提醒数据失败');
     } finally {
         loading.value = false;
     }
