@@ -736,7 +736,7 @@ onMounted(async () => {
                             });
 
                             fenceMapRef.value.setFenceList(fenceData);
-                            message.success(`已加载${fenceData.length}个电子围栏`);
+                            message.success(`已加载${fenceData.length}个电子围栏`, 2);
                         } catch (e) {
                             console.error('设置围栏失败:', e);
                             // 如果失败，再次尝试
