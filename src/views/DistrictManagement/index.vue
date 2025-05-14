@@ -182,12 +182,18 @@ onMounted(() => {
 });
 
 const handleSearch = () => {
+    const condition = {
+        areacode: searchForm.areacode,
+        areaname: searchForm.areaname,
+    };
+    
+    // 如果用户没有输入任何搜索条件就添加parentAreacode: '0'参数查询
+    if (!searchForm.areacode && !searchForm.areaname) {
+        condition.parentAreacode = '0';
+    }
+    
     const params = {
-        condition: {
-            areacode: searchForm.areacode,
-            areaname: searchForm.areaname,
-            // 查询时不传parentAreacode
-        }
+        condition: condition
     };
     fetchDistrictList(params);
 };
