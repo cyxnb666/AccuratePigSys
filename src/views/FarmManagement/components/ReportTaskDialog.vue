@@ -16,7 +16,7 @@
             <!-- 存栏变化数累计达到比例 -->
             <a-form-item class="marked-form-item" label="存栏变化数累计达到比例（出栏/补栏/死亡）" name="stockChangeRatio">
                 <div class="marker"></div>
-                <a-input placeholder="请输入百分比" v-model:value="formData.stockChangeRatio" suffix="%"/>
+                <a-input placeholder="请输入百分比" v-model:value="formData.stockChangeRatio" suffix="%" />
             </a-form-item>
 
             <!-- 上次存栏上报至今累计达到天数 -->
@@ -74,15 +74,33 @@ const rules = {
     ],
     stockChangeCount: [
         { required: true, message: '请输入存栏变化数', trigger: 'blur' },
-        { pattern: /^\d+$/, message: '请输入正整数', trigger: 'blur' }
+        { pattern: /^\d+$/, message: '请输入正整数', trigger: 'blur' },
+        {
+            validator: (rule, value) => {
+                const num = Number(value);
+                if (isNaN(num) || num < 0 || num > 10000 || !Number.isInteger(num)) {
+                    return Promise.reject('请输入0-10000的整数');
+                }
+                return Promise.resolve();
+            }, trigger: 'blur'
+        }
     ],
     stockChangeRatio: [
         { required: true, message: '请输入存栏变化比例', trigger: 'blur' },
-        { pattern: /^\d+(\.\d+)?$/, message: '请输入有效的百分比数字', trigger: 'blur' }
+        { pattern: /^\d+(\.\d{0,2})?$/, message: '请输入最多保留两位小数的数字', trigger: 'blur' },
+        {
+            validator: (rule, value) => {
+                const num = Number(value);
+                if (isNaN(num) || num < 0 || num > 100) {
+                    return Promise.reject('请输入0-100之间的数字');
+                }
+                return Promise.resolve();
+            }, trigger: 'blur'
+        }
     ],
     daysSinceLastReport: [
         { required: true, message: '请输入天数', trigger: 'blur' },
-        { pattern: /^\d+$/, message: '请输入正整数', trigger: 'blur' }
+        { pattern: /^[1-9]\d*$/, message: '请输入正整数', trigger: 'blur' }
     ]
 };
 
@@ -95,7 +113,7 @@ watch(
                 const config = record.reportConfig;
                 const startDate = config.rptStartDate ? dayjs(config.rptStartDate) : null;
                 const endDate = config.rptEndDate ? dayjs(config.rptEndDate) : null;
-                
+
                 formData.reportPeriod = startDate && endDate ? [startDate, endDate] : [];
                 formData.stockChangeCount = config.keepChangeCount?.toString() || '';
                 formData.stockChangeRatio = config.keepChangeRate?.toString() || '';
@@ -128,7 +146,7 @@ const handleSubmit = () => {
     formRef.value.validate()
         .then(async () => {
             submitting.value = true;
-            
+
             try {
                 const configData = {
                     farmId: props.record.farmId,
@@ -138,14 +156,14 @@ const handleSubmit = () => {
                     keepChangeRate: parseFloat(formData.stockChangeRatio),
                     nrptDay: parseInt(formData.daysSinceLastReport)
                 };
-                
+
                 // 如果有configId就保留
                 if (props.record.reportConfig?.configId) {
                     configData.configId = props.record.reportConfig.configId;
                 }
-                
+
                 await saveReportTaskConfig(configData);
-                
+
                 emit('success', configData);
                 dialogVisible.value = false;
                 resetForm();
