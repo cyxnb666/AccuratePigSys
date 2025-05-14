@@ -27,6 +27,7 @@
 import { ref, reactive, computed, defineProps, defineEmits } from 'vue';
 import { message } from 'ant-design-vue';
 import { resetPassword } from '../api';
+import { MD5 } from 'crypto-js';
 
 const props = defineProps({
     modelValue: {
@@ -55,10 +56,10 @@ const formData = reactive({
 // 密码格式正则：6-12位字母+数字+特殊字符组合
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,12}$/;
 const validateConfirmPassword = async (rule, value) => {
-  if (value && value !== formData.newPassword) {
-    return Promise.reject('两次输入的密码不一致');
-  }
-  return Promise.resolve();
+    if (value && value !== formData.newPassword) {
+        return Promise.reject('两次输入的密码不一致');
+    }
+    return Promise.resolve();
 };
 
 const rules = {
@@ -95,15 +96,18 @@ const handleSubmit = () => {
     formRef.value.validate()
         .then(() => {
             submitting.value = true;
-            
+            const encryptedOldPassword = MD5(formData.oldPassword).toString();
+            const encryptedNewPassword = MD5(formData.newPassword).toString();
+            const encryptedConfirmPassword = MD5(formData.confirmPassword).toString();
+
             const params = {
                 condition: {
-                    oldUserCipher: formData.oldPassword,
-                    newUserCipher: formData.newPassword,
-                    confirmUserCipher: formData.confirmPassword
+                    oldUserCipher: encryptedOldPassword,
+                    newUserCipher: encryptedNewPassword,
+                    confirmUserCipher: encryptedConfirmPassword
                 }
             };
-            
+
             resetPassword(params)
                 .then(() => {
                     message.success('修改成功，请重新登录');
