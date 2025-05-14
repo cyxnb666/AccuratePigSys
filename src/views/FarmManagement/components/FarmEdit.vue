@@ -739,7 +739,6 @@ onMounted(async () => {
                             message.success(`已加载${fenceData.length}个电子围栏`, 2);
                         } catch (e) {
                             console.error('设置围栏失败:', e);
-                            // 如果失败，再次尝试
                             setTimeout(loadFences, 1000);
                         }
                     } else {
@@ -748,8 +747,8 @@ onMounted(async () => {
                     }
                 };
 
-                // 延迟1秒等待地图初始化完成
-                setTimeout(loadFences, 1000);
+                // 延迟0.5秒等待地图初始化完成
+                setTimeout(loadFences, 500);
             }
 
         } catch (error) {
