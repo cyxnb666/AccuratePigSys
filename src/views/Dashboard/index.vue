@@ -129,7 +129,7 @@ const updateMapMarkers = (farms) => {
       id: farm.farmId,
       position: [parseFloat(farm.longitude) || 0, parseFloat(farm.latitude) || 0],
       name: farm.farmName,
-      situation: farm.leaveCount > 0 ? "0" : "1", // 有存栏使用蓝色，无存栏使用红色，之后要改！！！！
+      situation: farm.auditStatus === "AUDITFAIL" ? "1" : "0", // 审核失败使用红色，其他情况使用蓝色
       leaveCount: farm.leaveCount,
       farmData: farm // 保存原始数据，用于抽屉展示
     }));
