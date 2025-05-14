@@ -41,7 +41,7 @@
                 {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
             </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
-            }}</a-button>
+                }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover" :getPopupContainer="getContainer">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
@@ -257,6 +257,13 @@ const initMap = () => {
 };
 
 // 初始化地图图层
+// const initMapLayers = () => {
+//     wmsLayer.value = new AMap.TileLayer.Satellite();
+
+//     // 默认隐藏卫星图层
+//     wmsLayer.value.setMap(map);
+//     wmsLayer.value.hide();
+// };
 const initMapLayers = () => {
     // 天地图图层
     wmsLayer.value = new AMap.TileLayer.WMTS({

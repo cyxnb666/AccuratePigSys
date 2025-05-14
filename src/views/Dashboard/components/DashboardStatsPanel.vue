@@ -186,7 +186,7 @@ const loadRegionData = async (areacode) => {
                 fetchAreaFarmsData(areacode),
                 fetchHomeFarmsData(areacode),
                 fetchWarningData(areacode),
-                // fetchBreedData(areacode)
+                fetchBreedData(areacode)
             ]);
         }
     } catch (error) {

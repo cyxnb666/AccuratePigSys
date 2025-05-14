@@ -33,13 +33,14 @@
         :scroll="{ y: tableHeight }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'remark'">
-            <a-tooltip placement="topLeft" :title="record.remark">
-              <span class="col-sql">{{ record.remark }}</span>
+            <a-tooltip placement="topLeft" :title="record.remark || '-'">
+              <span class="col-sql">{{ record.remark || '-' }}</span>
             </a-tooltip>
           </template>
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)">编辑</a-button>
-            <a-button type="link" @click="handleReportConfig(record)" :loading="reportConfigLoadingMap[record.farmId]">上报任务配置</a-button>
+            <a-button type="link" @click="handleReportConfig(record)"
+              :loading="reportConfigLoadingMap[record.farmId]">上报任务配置</a-button>
             <a-button type="link" danger @click="handleDelete(record)">删除</a-button>
           </template>
         </template>
@@ -216,16 +217,16 @@ const handleEdit = (record) => {
 const handleReportConfig = async (record) => {
   // 加载状态
   reportConfigLoadingMap.value[record.farmId] = true;
-  
+
   try {
     const res = await getEffectiveTaskConfig(record.farmId);
-    
+
     // 设置当前记录和配置信息
-    currentRecord.value = { 
+    currentRecord.value = {
       ...record,
       reportConfig: res
     };
-    
+
     reportTaskDialogVisible.value = true;
   } catch (error) {
     console.error('获取上报任务配置失败:', error);

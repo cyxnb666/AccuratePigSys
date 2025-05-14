@@ -620,8 +620,6 @@ const saveForm = async () => {
         }));
     }
 
-    console.log('准备提交的数据:', JSON.stringify(submitData, null, 2));
-
     try {
         if (isEdit.value) {
             // 添加主键用于更新
@@ -654,7 +652,6 @@ const handleFenceEditChange = async (checked) => {
             return;
         }
 
-        // 调用API更新服务器上的状态
         await toggleFenceEdit(farmId);
 
         // 更新本地状态
@@ -736,7 +733,7 @@ onMounted(async () => {
                             });
 
                             fenceMapRef.value.setFenceList(fenceData);
-                            message.success(`已加载${fenceData.length}个电子围栏`, 2);
+                            // message.success(`已加载${fenceData.length}个电子围栏`, 2);
                         } catch (e) {
                             console.error('设置围栏失败:', e);
                             setTimeout(loadFences, 1000);
@@ -785,12 +782,12 @@ onMounted(async () => {
 
     .scrollable-content {
         flex: 1;
-        padding: 20px;
+        padding: 20px 20px 0 20px;
         padding-bottom: 0;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 12px;
     }
 
     .form-section {

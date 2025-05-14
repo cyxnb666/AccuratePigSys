@@ -4,7 +4,8 @@
         <a-form :model="formData" ref="formRef" :rules="rules" layout="vertical">
             <!-- 上报起止期 -->
             <a-form-item label="上报起止期" name="reportPeriod">
-                <a-range-picker v-model:value="formData.reportPeriod" :format="'YYYY-MM-DD'" style="width: 100%;" />
+                <a-range-picker v-model:value="formData.reportPeriod" :format="'YYYY-MM-DD'"
+                    :disabledDate="disabledDate" style="width: 100%;" />
             </a-form-item>
 
             <!-- 存栏变化数累计达到数量 -->
@@ -49,6 +50,11 @@ const props = defineProps({
         default: () => ({})
     }
 });
+
+const disabledDate = (current: dayjs.Dayjs) => {
+    // 日期早于今天（不含今天）的日期会被禁用
+    return current && current < dayjs().startOf('day');
+};
 
 const emit = defineEmits(['update:modelValue', 'success']);
 

@@ -34,8 +34,8 @@
             <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
           </template>
           <template v-if="column.key === 'remark'">
-            <a-tooltip placement="topLeft" :title="record.remark">
-              <span class="col-sql">{{ record.remark }}</span>
+            <a-tooltip placement="topLeft" :title="record.remark || '-'">
+              <span class="col-sql">{{ record.remark || '-' }}</span>
             </a-tooltip>
           </template>
           <template v-if="column.key === 'action'">

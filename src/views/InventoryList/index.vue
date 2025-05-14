@@ -28,7 +28,7 @@
                                                 v-for="(fragment, i) in getHighlightFragments(title, districtSearchText)"
                                                 :key="i">
                                                 <span v-if="fragment.highlight" class="highlight-text">{{ fragment.text
-                                                    }}</span>
+                                                }}</span>
                                                 <span v-else>{{ fragment.text }}</span>
                                             </template>
                                         </span>
@@ -58,6 +58,15 @@
                         <a-table :columns="columns" :data-source="tableData" :loading="tableLoading" :pagination="false"
                             bordered row-key="id" :scroll="{ y: tableHeight }">
                             <template #bodyCell="{ column, record }">
+                                <template v-if="column.key === 'porkerCount'">
+                                    <span>{{ record.porkerCount || 0 }}</span>
+                                </template>
+                                <template v-if="column.key === 'pigletCount'">
+                                    <span>{{ record.pigletCount || 0 }}</span>
+                                </template>
+                                <template v-if="column.key === 'sowCount'">
+                                    <span>{{ record.sowCount || 0 }}</span>
+                                </template>
                                 <template v-if="column.key === 'action'">
                                     <a-button type="link" @click="viewDetails(record)">详情</a-button>
                                 </template>

@@ -4,7 +4,6 @@ import 'ant-design-vue/dist/reset.css';
 import App from './App.vue'
 import router, { addDynamicRoutes } from '@/routes/index'
 import "lib-flexible/flexible.js"
-
 // 如果已登录，初始化动态路由
 const token = sessionStorage.getItem('token');
 if (token) {

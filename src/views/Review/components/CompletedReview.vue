@@ -37,9 +37,19 @@
             <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
                 row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'porkerCount'">
+                        <span>{{ record.porkerCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'pigletCount'">
+                        <span>{{ record.pigletCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'sowCount'">
+                        <span>{{ record.sowCount || 0 }}</span>
+                    </template>
                     <template v-if="column.key === 'auditStatus'">
-                        <a-tag :color="record.auditStatus === 'AUDITSUCC' || record.auditStatus === '审核通过' ? 'success' :
-                            record.auditStatus === 'AUDITING' || record.auditStatus === '待审核' ? 'processing' : 'error'">
+                        <a-tag
+                            :color="record.auditStatus === 'AUDITSUCC' || record.auditStatus === '审核通过' ? 'success' :
+                                record.auditStatus === 'AUDITING' || record.auditStatus === '待审核' ? 'processing' : 'error'">
                             {{ record.auditStatus === 'AUDITSUCC' ? '审核通过' :
                                 record.auditStatus === 'AUDITING' ? '待审核' :
                                     record.auditStatus === 'AUDITFAIL' ? '审核驳回' : record.auditStatus }}

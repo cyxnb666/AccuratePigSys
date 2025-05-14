@@ -37,6 +37,15 @@
             <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
                 row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'porkerCount'">
+                        <span>{{ record.porkerCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'pigletCount'">
+                        <span>{{ record.pigletCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'sowCount'">
+                        <span>{{ record.sowCount || 0 }}</span>
+                    </template>
                     <template v-if="column.key === 'action'">
                         <a-button type="link" @click="handleReview(record)">审核</a-button>
                     </template>

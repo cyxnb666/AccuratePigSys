@@ -32,6 +32,21 @@
             <a-table :columns="columns" :data-source="dataSource" :pagination="false" :loading="loading" bordered
                 row-key="id" :scroll="{ y: tableHeight }">
                 <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'persionalCheckCount'">
+                        <span>{{ record.persionalCheckCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'registTime'">
+                        <span>{{ record.registTime || '-' }}</span>
+                    </template>
+                    <template v-if="column.key === 'totalWarnCount'">
+                        <span>{{ record.totalWarnCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'nregistCount'">
+                        <span>{{ record.nregistCount || 0 }}</span>
+                    </template>
+                    <template v-if="column.key === 'sregistCount'">
+                        <span>{{ record.sregistCount || 0 }}</span>
+                    </template>
                     <template v-if="column.key === 'action'">
                         <a-button type="link" @click="viewReminderDetails(record)">详情</a-button>
                     </template>

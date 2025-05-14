@@ -4,10 +4,10 @@
 
     <div id="map-container" class="map-container"></div>
 
-    <a-drawer title="养殖场详情" placement="right" :width="1000" :open="drawerVisible" @close="closeDrawer"
+    <!-- <a-drawer title="养殖场详情" placement="right" :width="1000" :open="drawerVisible" @close="closeDrawer"
       @afterOpenChange="handleDrawerVisibleChange">
       <farm-details-drawer v-if="drawerVisible" :farmData="currentFarmData" ref="farmDetailsRef" />
-    </a-drawer>
+    </a-drawer> -->
   </div>
 </template>
 

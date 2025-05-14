@@ -54,8 +54,14 @@
       <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="false" bordered
         row-key="userId" :scroll="{ y: tableHeight }">
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'areaname'">
+            <span>{{ record.areaname || '-' }}</span>
+          </template>
           <template v-if="column.key === 'status'">
             <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
+          </template>
+          <template v-if="column.key === 'loginTime'">
+            <span>{{ record.loginTime || '-' }}</span>
           </template>
           <template v-if="column.key === 'action'">
             <a-button type="link" @click="handleEdit(record)" :loading="editingId === record.userId && editLoading">编
@@ -75,9 +81,8 @@
     </div>
 
     <!-- 用户表单对话框 -->
-    <user-dialog v-model="dialogVisible" :is-edit="isEdit" :record="currentRecord" 
-    :area-tree-data="areaTreeData" :role-options="roleOptions" 
-    :livestock-farms="livestockFarms" @success="handleDialogSuccess" />
+    <user-dialog v-model="dialogVisible" :is-edit="isEdit" :record="currentRecord" :area-tree-data="areaTreeData"
+      :role-options="roleOptions" :livestock-farms="livestockFarms" @success="handleDialogSuccess" />
   </div>
 </template>
 
