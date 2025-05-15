@@ -1091,11 +1091,11 @@ onMounted(() => {
 
     .scrollable-content {
         flex: 1;
-        padding: 20px;
+        padding: 20px 20px 0 20px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 12px;
     }
 
     .section-header {
@@ -1158,7 +1158,7 @@ onMounted(() => {
     }
 
     .inventory-section {
-        margin-bottom: 24px;
+        // margin-bottom: 24px;
     }
 
     .placeholder-message {

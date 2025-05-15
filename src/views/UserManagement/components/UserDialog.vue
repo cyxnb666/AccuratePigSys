@@ -71,7 +71,7 @@
       </template>
 
       <a-form-item label="备注" name="remark">
-        <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" show-count :maxlength="200"/>
+        <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" show-count :maxlength="200" />
       </a-form-item>
 
       <div class="form-footer">
@@ -170,8 +170,11 @@ const rules = computed(() => {
       ...baseRules,
       userAccount: [{ required: true, message: '请输入登录账号', trigger: 'blur' }],
       userCipher: props.isEdit
-        ? [{ pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,8}$/, message: '密码必须为6-8位字母+数字+特殊符号组合', trigger: 'blur' }]
-        : [{ required: true, message: '请输入登录密码', trigger: 'blur' }]
+        ? [{ pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,12}$/, message: '密码必须为6-12位字母+数字+特殊符号组合', trigger: 'blur' }]
+        : [
+          { required: true, message: '请输入登录密码', trigger: 'blur' },
+          { pattern: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,12}$/, message: '密码必须为6-12位字母+数字+特殊符号组合', trigger: 'blur' }
+        ]
     };
   }
 });

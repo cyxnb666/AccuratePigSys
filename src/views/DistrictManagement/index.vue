@@ -27,7 +27,8 @@
         <!-- 数据表格 -->
         <div class="data-table">
             <a-table :columns="columns" :data-source="dataSource" :loading="loading" :pagination="false" bordered
-                row-key="areacode" :scroll="{ y: tableHeight }" :indentSize="20" @expand="handleExpand">
+                row-key="areacode" :scroll="{ y: tableHeight }" :indentSize="20" @expand="handleExpand"
+                :expanded-row-keys="expandedRowKeys">
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'status'">
                         <a-switch :checked="record.enabled === '1'" @change="() => handleStatusChange(record)" />
@@ -58,6 +59,7 @@ const loading = ref(false);
 const editLoading = ref(false);
 const editingId = ref(null);
 const areaTreeData = ref([]);
+const expandedRowKeys = ref([]);
 
 // 搜索表单
 const searchForm = reactive({
@@ -186,12 +188,15 @@ const handleSearch = () => {
         areacode: searchForm.areacode,
         areaname: searchForm.areaname,
     };
-    
+
     // 如果用户没有输入任何搜索条件就添加parentAreacode: '0'参数查询
     if (!searchForm.areacode && !searchForm.areaname) {
         condition.parentAreacode = '0';
     }
-    
+
+    // 重置展开行状态
+    expandedRowKeys.value = [];
+
     const params = {
         condition: condition
     };
@@ -201,6 +206,9 @@ const handleSearch = () => {
 const handleReset = () => {
     searchForm.areaname = '';
     searchForm.areacode = '';
+
+    // 重置展开行状态
+    expandedRowKeys.value = [];
 
     // 重置后重新加载顶级区划
     const params = {
@@ -215,41 +223,69 @@ const handleReset = () => {
 
 // 切换状态
 const handleStatusChange = async (record) => {
-    try {
-        await enableDistrict(record.areacode);
+  try {
+    // 仍然调用API来更新当前记录的状态
+    await enableDistrict(record.areacode);
 
-        message.success(`${record.enabled === '1' ? '禁用' : '启用'}行政区划成功`);
+    message.success(`${record.enabled === '1' ? '禁用' : '启用'}行政区划成功`);
 
-        // 更新本地数据状态
-        const updateState = (data) => {
-            for (let i = 0; i < data.length; i++) {
-                if (data[i].areacode === record.areacode) {
-                    data[i].enabled = data[i].enabled === '1' ? '0' : '1';
-                    return true;
-                }
-                if (data[i].children && data[i].children.length > 0) {
-                    if (updateState(data[i].children)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        };
+    // 更新本地数据状态 - 递归函数，同时处理当前记录和其子记录
+    const updateRecordAndChildren = (data, targetCode, newStatus) => {
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].areacode === targetCode) {
+          // 更新当前记录的状态
+          data[i].enabled = newStatus;
+          
+          // 如果有已加载的子记录，递归更新它们的状态
+          if (data[i].children && data[i].children.length > 0) {
+            data[i].children.forEach(child => {
+              child.enabled = newStatus;
+              // 如果子记录还有子记录，继续递归
+              if (child.children && child.children.length > 0) {
+                updateRecordAndChildren(child.children, child.areacode, newStatus);
+              }
+            });
+          }
+          return true;
+        }
+        // 如果当前记录不是目标，但有子记录，则在子记录中查找
+        if (data[i].children && data[i].children.length > 0) {
+          if (updateRecordAndChildren(data[i].children, targetCode, newStatus)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
 
-        const newDataSource = [...dataSource.value];
-        updateState(newDataSource);
-        dataSource.value = newDataSource;
+    // 计算新的状态值
+    const newStatus = record.enabled === '1' ? '0' : '1';
+    
+    // 创建数据源的新副本
+    const newDataSource = [...dataSource.value];
+    
+    // 更新当前记录及其所有已加载的子记录
+    updateRecordAndChildren(newDataSource, record.areacode, newStatus);
+    
+    // 更新数据源，触发重新渲染
+    dataSource.value = newDataSource;
 
-    } catch (error) {
-        console.error('更新状态失败:', error);
-    }
+  } catch (error) {
+    console.error('更新状态失败:', error);
+    message.error('更新状态失败');
+  }
 };
 
 // 展开事件处理
 const handleExpand = async (expanded, record) => {
     if (expanded) {
-        // 如果是展开操作，加载子节点数据
+        // 如果是展开操作，将该行的key添加到expandedRowKeys中
+        expandedRowKeys.value.push(record.areacode);
+        // 加载子节点数据
         await loadChildrenData(record);
+    } else {
+        // 如果是折叠操作，从expandedRowKeys中移除该行的key
+        expandedRowKeys.value = expandedRowKeys.value.filter(key => key !== record.areacode);
     }
 };
 
