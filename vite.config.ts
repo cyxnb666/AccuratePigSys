@@ -34,8 +34,8 @@ export default defineConfig({
         cors: true,
         proxy: {
             '/baseURL': {
-                // target: 'https://uat.zhixunchelian.com/accurate_pig_backend/',
-                target: 'http://192.168.8.174:8099/accurate_pig_backend/',
+                target: 'https://uat.zhixunchelian.com/accurate_pig_backend/',
+                // target: 'http://192.168.8.174:8099/accurate_pig_backend/',
                 changeOrigin: true,
                 rewrite: (path) => path.replace('/baseURL', '')
             }

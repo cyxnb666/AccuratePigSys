@@ -65,11 +65,11 @@ const validateConfirmPassword = async (rule, value) => {
 const rules = {
     oldPassword: [
         { required: true, message: '请输入原密码', trigger: 'blur' },
-        { pattern: passwordPattern, message: '密码必须为6-12位字母和数字组合', trigger: 'blur' }
+        { pattern: passwordPattern, message: '密码必须为6-12位字母+数字+特殊符号组合', trigger: 'blur' }
     ],
     newPassword: [
         { required: true, message: '请输入新密码', trigger: 'blur' },
-        { pattern: passwordPattern, message: '密码必须为6-12位字母和数字组合', trigger: 'blur' }
+        { pattern: passwordPattern, message: '密码必须为6-12位字母+数字+特殊符号组合', trigger: 'blur' }
     ],
     confirmPassword: [
         { required: true, message: '请再次输入新密码', trigger: 'blur' },

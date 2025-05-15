@@ -133,13 +133,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('PORKER')?.auditPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('PORKER')?.lastPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -210,13 +210,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('PIGLET')?.auditPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('PIGLET')?.lastPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -274,7 +274,7 @@
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.persionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
@@ -288,13 +288,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.auditPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.lastPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -648,7 +648,17 @@ const setDefaultActiveSubTab = () => {
 };
 
 const outboundColumns = [
-    { title: '时间', dataIndex: 'startDate', key: 'startDate', align: 'center' },
+    { 
+        title: '时间', 
+        dataIndex: 'startDate', 
+        key: 'startDate', 
+        align: 'center',
+        customRender: ({ text, record }) => {
+            return record.startDate && record.endDate 
+                ? `${record.startDate} - ${record.endDate}` 
+                : record.startDate || '';
+        }
+    },
     { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
     { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
     { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
@@ -656,7 +666,17 @@ const outboundColumns = [
 ];
 
 const inboundColumns = [
-    { title: '时间', dataIndex: 'startDate', key: 'startDate', align: 'center' },
+    { 
+        title: '时间', 
+        dataIndex: 'startDate', 
+        key: 'startDate', 
+        align: 'center',
+        customRender: ({ text, record }) => {
+            return record.startDate && record.endDate 
+                ? `${record.startDate} - ${record.endDate}` 
+                : record.startDate || '';
+        }
+    },
     { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
     { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
     { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
@@ -664,7 +684,17 @@ const inboundColumns = [
 ];
 
 const deathColumns = [
-    { title: '时间', dataIndex: 'startDate', key: 'startDate', align: 'center' },
+    { 
+        title: '时间', 
+        dataIndex: 'startDate', 
+        key: 'startDate', 
+        align: 'center',
+        customRender: ({ text, record }) => {
+            return record.startDate && record.endDate 
+                ? `${record.startDate} - ${record.endDate}` 
+                : record.startDate || '';
+        }
+    },
     { title: '上报时间', dataIndex: 'registTime', key: 'registTime', align: 'center' },
     { title: '育肥猪数量', dataIndex: 'porkerCount', key: 'porkerCount', align: 'center' },
     { title: '仔猪数量', dataIndex: 'pigletCount', key: 'pigletCount', align: 'center' },
@@ -850,9 +880,9 @@ const submitReview = async () => {
             if (area.fences && Array.isArray(area.fences)) {
                 area.fences.forEach(fence => {
                     if (
-                        (fence.breedCode === 'PORKER' && (!fence.auditPersionalCheckCount || fence.auditPersionalCheckCount === 0)) ||
-                        (fence.breedCode === 'PIGLET' && (!fence.auditPersionalCheckCount || fence.auditPersionalCheckCount === 0)) ||
-                        (fence.breedCode === 'BROOD_SOW' && (!fence.auditPersionalCheckCount || fence.auditPersionalCheckCount === 0))
+                        (fence.breedCode === 'PORKER' && (fence.auditPersionalCheckCount === undefined || fence.auditPersionalCheckCount === null)) ||
+                        (fence.breedCode === 'PIGLET' && (fence.auditPersionalCheckCount === undefined || fence.auditPersionalCheckCount === null)) ||
+                        (fence.breedCode === 'BROOD_SOW' && (fence.auditPersionalCheckCount === undefined || fence.auditPersionalCheckCount === null))
                     ) {
                         hasEmptyCount = true;
                     }
@@ -924,6 +954,7 @@ const loadData = async () => {
             if (res) {
                 auditData.value = res;
                 sessionStorage.setItem(`audit_data_${auditId}`, JSON.stringify(res));
+                reviewData.comment = res.auditRemark || '';
 
                 // 设置默认选中的区域和子标签
                 if (res.auditFences && res.auditFences.length > 0) {
