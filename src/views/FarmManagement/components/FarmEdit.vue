@@ -32,19 +32,19 @@
                             </a-col>
                             <a-col :span="12">
                                 <a-form-item label="养殖场名称" name="farmName" required>
-                                    <a-input v-model:value="formData.farmName" placeholder="请输入" />
+                                    <a-input v-model:value="formData.farmName" placeholder="请输入" show-count :maxlength="50"/>
                                 </a-form-item>
                             </a-col>
                         </a-row>
                         <a-row :gutter="16">
                             <a-col :span="12">
                                 <a-form-item label="养殖场地址" name="address" required>
-                                    <a-input v-model:value="formData.address" placeholder="请输入" />
+                                    <a-input v-model:value="formData.address" placeholder="请输入" show-count :maxlength="150"/>
                                 </a-form-item>
                             </a-col>
                             <a-col :span="12">
                                 <a-form-item label="备注" name="remark">
-                                    <a-input v-model:value="formData.remark" placeholder="请输入" />
+                                    <a-input v-model:value="formData.remark" placeholder="请输入" show-count :maxlength="250"/>
                                 </a-form-item>
                             </a-col>
                         </a-row>
@@ -90,7 +90,7 @@
                                 <a-tooltip v-if="!record.isEditing" placement="topLeft" :title="record.remark">
                                     <span class="col-sql">{{ record.remark }}</span>
                                 </a-tooltip>
-                                <a-textarea v-else v-model:value="record.remark" :rows="1" />
+                                <a-textarea v-else v-model:value="record.remark" :rows="1" show-count :maxlength="200"/>
                             </template>
                             <template v-if="column.key === 'action'">
                                 <a-space>
@@ -134,7 +134,7 @@
             <a-form :model="newContact" layout="vertical">
                 <a-form-item label="联系人姓名" required :validate-status="newContactErrors.name ? 'error' : ''"
                     :help="newContactErrors.name">
-                    <a-input v-model:value="newContact.name" placeholder="请输入联系人姓名" />
+                    <a-input v-model:value="newContact.name" placeholder="请输入联系人姓名" show-count :maxlength="20"/>
                 </a-form-item>
                 <a-form-item label="手机号" required :validate-status="newContactErrors.phone ? 'error' : ''"
                     :help="newContactErrors.phone">
@@ -147,7 +147,7 @@
                     </a-select>
                 </a-form-item>
                 <a-form-item label="备注">
-                    <a-textarea v-model:value="newContact.remark" placeholder="请输入" :rows="4" />
+                    <a-textarea v-model:value="newContact.remark" placeholder="请输入" :rows="4" show-count :maxlength="200"/>
                 </a-form-item>
             </a-form>
             <template #footer>

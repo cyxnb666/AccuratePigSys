@@ -14,7 +14,7 @@
             <a-row :gutter="16">
                 <a-col :span="12">
                     <a-form-item label="行政区划名称" name="districtName">
-                        <a-input v-model:value="formData.districtName" placeholder="请输入行政区划名称" />
+                        <a-input v-model:value="formData.districtName" placeholder="请输入行政区划名称" show-count :maxlength="150" />
                     </a-form-item>
                 </a-col>
                 <a-col :span="12">

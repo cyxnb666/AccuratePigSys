@@ -60,10 +60,10 @@
             @cancel="handleFenceCancel" :getContainer="modalContainer">
             <a-form :model="fenceForm" :rules="fenceRules" ref="fenceFormRef" layout="vertical">
                 <a-form-item name="name" label="围栏名称" :rules="[{ required: true, message: '请输入围栏名称!' }]">
-                    <a-input v-model:value="fenceForm.name" placeholder="请输入围栏名称" />
+                    <a-input v-model:value="fenceForm.name" placeholder="请输入围栏名称" show-count :maxlength="200" />
                 </a-form-item>
                 <a-form-item name="remark" label="备注">
-                    <a-textarea v-model:value="fenceForm.remark" placeholder="请输入备注信息" />
+                    <a-textarea v-model:value="fenceForm.remark" placeholder="请输入备注信息" show-count :maxlength="500" />
                 </a-form-item>
             </a-form>
         </a-modal>

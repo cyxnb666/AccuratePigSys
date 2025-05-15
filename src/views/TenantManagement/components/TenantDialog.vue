@@ -5,7 +5,7 @@
             <a-row :gutter="16">
                 <a-col :span="12">
                     <a-form-item label="租户名称" name="tencentName">
-                        <a-input v-model:value="formData.tencentName" placeholder="请输入租户名称" />
+                        <a-input v-model:value="formData.tencentName" placeholder="请输入租户名称" show-count :maxlength="50" />
                     </a-form-item>
                 </a-col>
                 <a-col :span="12">
@@ -49,7 +49,7 @@
             <a-row>
                 <a-col :span="24">
                     <a-form-item label="备注" name="remark">
-                        <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" />
+                        <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" show-count :maxlength="250" />
                     </a-form-item>
                 </a-col>
             </a-row>

@@ -12,7 +12,7 @@
       <a-row :gutter="16">
         <a-col :span="12">
           <a-form-item label="用户名" name="userName" required>
-            <a-input v-model:value="formData.userName" placeholder="请输入用户名" />
+            <a-input v-model:value="formData.userName" placeholder="请输入用户名" show-count :maxlength="20" />
           </a-form-item>
         </a-col>
         <a-col :span="12">
@@ -71,7 +71,7 @@
       </template>
 
       <a-form-item label="备注" name="remark">
-        <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" />
+        <a-textarea v-model:value="formData.remark" placeholder="请输入备注信息" :rows="4" show-count :maxlength="200"/>
       </a-form-item>
 
       <div class="form-footer">

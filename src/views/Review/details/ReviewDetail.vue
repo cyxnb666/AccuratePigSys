@@ -426,7 +426,7 @@
                     <div class="comment-section">
                         <span class="review-label">审核备注:</span>
                         <a-textarea v-model:value="reviewData.comment" :disabled="isViewMode" placeholder="请输入审核备注信息"
-                            :rows="1" :maxlength="200" show-count />
+                            :rows="1" :maxlength="250" show-count />
                     </div>
                     <div class="action-buttons">
                         <a-button @click="goBack">返回</a-button>
