@@ -857,7 +857,15 @@ const goToDetailedComparison = (tabType: string) => {
 
 // 返回上一页
 const goBack = () => {
-    router.go(-1);
+    const source = route.query.source;
+    if (source === 'pending' || source === 'completed') {
+        router.push({
+            path: '/AUDITD',
+            query: { activeKey: source }
+        });
+    } else {
+        router.go(-1);
+    }
 };
 
 // 提交审核
@@ -988,6 +996,8 @@ const loadData = async () => {
                 }
 
                 dataLoaded.value = true;
+
+                loadCurrentFenceDetail();
             }
         } catch (error) {
             console.error('获取审核详情失败:', error);

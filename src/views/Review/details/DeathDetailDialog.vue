@@ -59,7 +59,7 @@
                     <a-col :span="8">
                         <div class="info-item">
                             <span class="label">死亡时间:</span>
-                            <span class="value">{{ record.startDate }}</span>
+                            <span class="value">{{ record.startDate + '至' + record.endDate }}</span>
                         </div>
                     </a-col>
                     <a-col :span="8">

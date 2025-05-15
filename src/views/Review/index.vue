@@ -12,13 +12,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import PendingReview from './components/PendingReview.vue';
 import CompletedReview from './components/CompletedReview.vue';
 import { getAreaTrees } from './api';
 
+const route = useRoute();
 const activeKey = ref('pending');
 const areaTreeData = ref<any[]>([]);
+
+watch(() => route.query.activeKey, (newActiveKey) => {
+    if (newActiveKey === 'pending' || newActiveKey === 'completed') {
+        activeKey.value = newActiveKey as string;
+    }
+}, { immediate: true });
 
 // 转换行政区划数据为树形结构
 const transformAreaData = (areaList: any[]): any[] => {

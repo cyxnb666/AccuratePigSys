@@ -220,7 +220,7 @@ const handleReset = () => {
 const handleReview = (record) => {
     router.push({
         path: `/AUDITD/detail/${record.auditId}`,
-        query: { viewMode: 'false' }
+        query: { viewMode: 'false', source: 'pending' }
     });
 };
 
