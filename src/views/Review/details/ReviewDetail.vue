@@ -488,7 +488,7 @@ const auditData = ref(null);
 
 // 审核数据
 const reviewData = reactive({
-    result: props.isViewMode ? 1 : null,  // 1通过, 0不通过
+    result: null,
     comment: '',
 });
 
@@ -648,14 +648,14 @@ const setDefaultActiveSubTab = () => {
 };
 
 const outboundColumns = [
-    { 
-        title: '时间', 
-        dataIndex: 'startDate', 
-        key: 'startDate', 
+    {
+        title: '时间',
+        dataIndex: 'startDate',
+        key: 'startDate',
         align: 'center',
         customRender: ({ text, record }) => {
-            return record.startDate && record.endDate 
-                ? `${record.startDate} - ${record.endDate}` 
+            return record.startDate && record.endDate
+                ? `${record.startDate} - ${record.endDate}`
                 : record.startDate || '';
         }
     },
@@ -666,14 +666,14 @@ const outboundColumns = [
 ];
 
 const inboundColumns = [
-    { 
-        title: '时间', 
-        dataIndex: 'startDate', 
-        key: 'startDate', 
+    {
+        title: '时间',
+        dataIndex: 'startDate',
+        key: 'startDate',
         align: 'center',
         customRender: ({ text, record }) => {
-            return record.startDate && record.endDate 
-                ? `${record.startDate} - ${record.endDate}` 
+            return record.startDate && record.endDate
+                ? `${record.startDate} - ${record.endDate}`
                 : record.startDate || '';
         }
     },
@@ -684,14 +684,14 @@ const inboundColumns = [
 ];
 
 const deathColumns = [
-    { 
-        title: '时间', 
-        dataIndex: 'startDate', 
-        key: 'startDate', 
+    {
+        title: '时间',
+        dataIndex: 'startDate',
+        key: 'startDate',
         align: 'center',
         customRender: ({ text, record }) => {
-            return record.startDate && record.endDate 
-                ? `${record.startDate} - ${record.endDate}` 
+            return record.startDate && record.endDate
+                ? `${record.startDate} - ${record.endDate}`
                 : record.startDate || '';
         }
     },
@@ -963,6 +963,12 @@ const loadData = async () => {
                 auditData.value = res;
                 sessionStorage.setItem(`audit_data_${auditId}`, JSON.stringify(res));
                 reviewData.comment = res.auditRemark || '';
+
+                if (props.isViewMode && res.auditStatus) {
+                    // 将API返回的状态映射到组件使用的值
+                    reviewData.result = res.auditStatus === 'AUDITSUCC' ? 1 : 0;
+                    reviewData.comment = res.auditRemark || '';
+                }
 
                 // 设置默认选中的区域和子标签
                 if (res.auditFences && res.auditFences.length > 0) {
@@ -1315,12 +1321,21 @@ onMounted(() => {
     }
 
     .video-content {
-        // width: 100%;
-        // height: 300px;
-        // display: flex;
-        // align-items: center;
-        // justify-content: center;
-        // background-color: #000;
+        width: 100%;
+        height: 300px;
+        /* 固定高度 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #000;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .video-content video {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
     }
 
     .placeholder-text {
