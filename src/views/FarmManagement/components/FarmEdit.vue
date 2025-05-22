@@ -269,7 +269,7 @@ const formRules = {
     ],
     farmName: [
         { required: true, message: '请输入养殖场名称', trigger: 'blur' },
-        { pattern: /^[\u4e00-\u9fa5]{1,50}$/, message: '养殖场名称只能输入1-50个中文字符', trigger: 'blur' }
+        { max: 50, message: '养殖场名称不能超过50个字符', trigger: 'blur' }
     ],
     address: [
         { required: true, message: '请输入养殖场地址', trigger: 'blur' },

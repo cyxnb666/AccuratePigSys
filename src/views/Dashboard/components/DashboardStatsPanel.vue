@@ -1,61 +1,65 @@
 <template>
     <div class="dashboard-stats-panel">
-        <div class="region-selector">
-            <a-tree-select v-model:value="selectedRegion" style="width: 100%"
-                :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="regionTreeData"
-                placeholder="请选择地区" :fieldNames="{ label: 'title', value: 'value', children: 'children' }"
-                :loading="treeLoading" :tree-node-filter-prop="'title'" :show-search="true" allow-clear
-                :filter-tree-node="filterTreeNode">
-            </a-tree-select>
-        </div>
-
-        <div class="stats-section">
-            <div class="section-label">养殖场总数</div>
-            <div class="stat-boxes">
-                <div class="stat-box">
-                    <div class="stat-value">{{ totalFarmCount }}个</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value">{{ totalLeaveCount }}头</div>
-                </div>
+        <div class="scrollable-content">
+            <div class="region-selector">
+                <a-tree-select v-model:value="selectedRegion" style="width: 100%"
+                    :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="regionTreeData"
+                    placeholder="请选择地区" :fieldNames="{ label: 'title', value: 'value', children: 'children' }"
+                    :loading="treeLoading" :tree-node-filter-prop="'title'" :show-search="true" allow-clear
+                    :filter-tree-node="filterTreeNode">
+                </a-tree-select>
             </div>
-        </div>
 
-        <div class="stats-section">
-            <div class="section-label">养殖场情况 ({{ selectedRegionName }})</div>
-            <div class="table-container">
-                <a-table :columns="situationColumns" :data-source="situationData" :pagination="false" size="small"
-                    :bordered="true" :loading="tableLoading">
-                </a-table>
-            </div>
-        </div>
-
-        <div class="stats-section">
-            <div class="section-label">存栏品种</div>
-            <div ref="pieChartRef" class="pie-chart" :class="{ 'loading': chartLoading }"></div>
-            <div v-if="chartLoading" class="chart-loading">
-                <a-spin />
-            </div>
-        </div>
-
-        <div class="stats-section">
-            <div class="section-header-with-link">
-                <div class="title">异常预警</div>
-                <div class="view-more">
-                    <a @click="viewMoreWarnings">查看更多 >></a>
+            <div class="stats-section">
+                <div class="section-label">养殖场总数</div>
+                <div class="stat-boxes">
+                    <div class="stat-box">
+                        <div class="stat-value">{{ totalFarmCount }}个</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">{{ totalLeaveCount }}头</div>
+                    </div>
                 </div>
             </div>
-            <div class="table-container">
-                <a-table :columns="warningColumns" :data-source="warningData" :pagination="false" size="small"
-                    :bordered="true" :loading="warningDataLoading">
-                    <template #bodyCell="{ column, record }">
-                        <template v-if="column.key === 'deviationRate'">
-                            <span :style="{ color: getDeviationColor(record.deviationRate) }">
-                                {{ record.deviationRate }}%
-                            </span>
+
+            <div class="stats-section">
+                <div class="section-label">养殖场情况 ({{ selectedRegionName }})</div>
+                <div class="table-container">
+                    <a-table :columns="situationColumns" :data-source="situationData" :pagination="false" size="small"
+                        :bordered="true" :loading="tableLoading">
+                    </a-table>
+                </div>
+            </div>
+        </div>
+
+        <div class="fixed-bottom-content">
+            <div class="stats-section">
+                <div class="section-label">存栏品种</div>
+                <div ref="pieChartRef" class="pie-chart" :class="{ 'loading': chartLoading }"></div>
+                <div v-if="chartLoading" class="chart-loading">
+                    <a-spin />
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <div class="section-header-with-link">
+                    <div class="title">异常预警</div>
+                    <div class="view-more">
+                        <a @click="viewMoreWarnings">查看更多 >></a>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <a-table :columns="warningColumns" :data-source="warningData" :pagination="false" size="small"
+                        :bordered="true" :loading="warningDataLoading">
+                        <template #bodyCell="{ column, record }">
+                            <template v-if="column.key === 'deviationRate'">
+                                <span :style="{ color: getDeviationColor(record.deviationRate) }">
+                                    {{ record.deviationRate }}%
+                                </span>
+                            </template>
                         </template>
-                    </template>
-                </a-table>
+                    </a-table>
+                </div>
             </div>
         </div>
     </div>
@@ -281,7 +285,6 @@ let pieChart: echarts.ECharts | null = null;
 
 // 从养殖场数据中分析存栏品种数据
 const processInventoryData = () => {
-    // 使用API返回的品种数据
     if (!breedData.value || breedData.value.length === 0) {
         // 如果没有数据，返回默认空数据
         return [
@@ -298,7 +301,6 @@ const processInventoryData = () => {
         'PORKER': { name: '育肥猪', color: '#87d068' }
     };
 
-    // 转换API数据为饼图所需格式
     return breedData.value.map(item => {
         const breedInfo = breedMap[item.breedCode] || { name: item.breedName, color: '#1890ff' };
         return {
@@ -419,66 +421,91 @@ onUnmounted(() => {
     color: white;
     width: 300px;
     max-height: calc(80vh);
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 
-    .region-selector {
-        margin-bottom: 10px;
-
-        :deep(.ant-select) {
-            .ant-select-selector {
-                background-color: rgba(0, 40, 80, 0.5);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                color: white;
-            }
-
-            .ant-select-arrow {
-                color: white;
-            }
-        }
-    }
-
-    .section-label {
-        margin-bottom: 6px;
-        font-weight: 500;
-        font-size: 13px;
-    }
-
-    .section-header-with-link {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 6px;
-
-        .title {
-            font-weight: 500;
-            font-size: 13px;
-        }
-
-        .view-more a {
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-        }
-    }
-
-    .stats-section {
+    .scrollable-content {
+        flex: 1;
+        overflow-y: auto;
         margin-bottom: 12px;
-        position: relative;
 
-        .stat-boxes {
-            display: flex;
-            gap: 8px;
+        .region-selector {
+            margin-bottom: 10px;
 
-            .stat-box {
-                flex: 1;
-                background-color: rgba(0, 40, 80, 0.5);
-                border-radius: 4px;
-                padding: 8px;
-                text-align: center;
+            :deep(.ant-select) {
+                .ant-select-selector {
+                    background-color: rgba(0, 40, 80, 0.5);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: white;
+                }
 
-                .stat-value {
-                    font-size: 16px;
-                    font-weight: bold;
+                .ant-select-arrow {
+                    color: white;
+                }
+            }
+        }
+
+        .stats-section {
+            margin-bottom: 12px;
+
+            .section-label {
+                margin-bottom: 6px;
+                font-weight: 500;
+                font-size: 13px;
+            }
+
+            .stat-boxes {
+                display: flex;
+                gap: 8px;
+
+                .stat-box {
+                    flex: 1;
+                    background-color: rgba(0, 40, 80, 0.5);
+                    border-radius: 4px;
+                    padding: 8px;
+                    text-align: center;
+
+                    .stat-value {
+                        font-size: 16px;
+                        font-weight: bold;
+                    }
+                }
+            }
+        }
+    }
+
+    .fixed-bottom-content {
+        flex-shrink: 0;
+
+        .stats-section {
+            margin-bottom: 12px;
+            position: relative;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+
+            .section-label {
+                margin-bottom: 6px;
+                font-weight: 500;
+                font-size: 13px;
+            }
+
+            .section-header-with-link {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+
+                .title {
+                    font-weight: 500;
+                    font-size: 13px;
+                }
+
+                .view-more a {
+                    color: white;
+                    cursor: pointer;
+                    font-size: 12px;
                 }
             }
         }
