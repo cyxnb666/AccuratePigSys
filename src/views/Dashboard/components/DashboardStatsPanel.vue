@@ -1,6 +1,7 @@
 <template>
     <div class="dashboard-stats-panel">
-        <div class="scrollable-content">
+        <!-- 固定的区域选择器 -->
+        <div class="fixed-top-content">
             <div class="region-selector">
                 <a-tree-select v-model:value="selectedRegion" style="width: 100%"
                     :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" :tree-data="regionTreeData"
@@ -24,14 +25,20 @@
 
             <div class="stats-section">
                 <div class="section-label">养殖场情况 ({{ selectedRegionName }})</div>
-                <div class="table-container">
-                    <a-table :columns="situationColumns" :data-source="situationData" :pagination="false" size="small"
-                        :bordered="true" :loading="tableLoading">
-                    </a-table>
-                </div>
             </div>
         </div>
 
+        <!-- 可滚动的表格容器 -->
+        <div class="scrollable-table-container">
+            <a-table :columns="situationColumns" :data-source="situationData" :pagination="false" size="small"
+                :bordered="true" :loading="tableLoading">
+            </a-table>
+        </div>
+
+        <!-- 分割线 -->
+        <div class="divider"></div>
+
+        <!-- 固定的底部内容 -->
         <div class="fixed-bottom-content">
             <div class="stats-section">
                 <div class="section-label">存栏品种</div>
@@ -40,6 +47,9 @@
                     <a-spin />
                 </div>
             </div>
+
+            <!-- 分割线 -->
+            <div class="divider"></div>
 
             <div class="stats-section">
                 <div class="section-header-with-link">
@@ -424,9 +434,8 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
 
-    .scrollable-content {
-        flex: 1;
-        overflow-y: auto;
+    .fixed-top-content {
+        flex-shrink: 0;
         margin-bottom: 12px;
 
         .region-selector {
@@ -448,6 +457,10 @@ onUnmounted(() => {
         .stats-section {
             margin-bottom: 12px;
 
+            &:last-child {
+                margin-bottom: 0;
+            }
+
             .section-label {
                 margin-bottom: 6px;
                 font-weight: 500;
@@ -459,6 +472,7 @@ onUnmounted(() => {
                 gap: 8px;
 
                 .stat-box {
+                    border: 1px solid rgba(255, 255, 255, 0.2);
                     flex: 1;
                     background-color: rgba(0, 40, 80, 0.5);
                     border-radius: 4px;
@@ -472,6 +486,98 @@ onUnmounted(() => {
                 }
             }
         }
+    }
+
+    .scrollable-table-container {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 12px;
+        min-height: 0; // 确保flex子元素可以收缩
+
+        // 自定义滚动条样式
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        // Firefox滚动条样式
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+
+        :deep(.ant-table) {
+            background-color: transparent;
+            font-size: 12px;
+
+            // 去掉表格顶部边框
+            &.ant-table-bordered .ant-table-container .ant-table-content table,
+            &.ant-table-bordered .ant-table-container .ant-table-header table {
+                border-top: none !important;
+            }
+
+            // 表格外边框
+            .ant-table-container {
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            }
+
+            .ant-table-thead>tr>th {
+                background-color: rgba(0, 60, 120, 0.5) !important;
+                color: white !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
+                padding: 4px;
+                font-size: 12px;
+
+                &:last-child {
+                    border-right: none !important;
+                }
+            }
+
+            .ant-table-tbody>tr>td {
+                background-color: transparent !important;
+                color: white !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
+                padding: 4px;
+                font-size: 12px;
+
+                &:last-child {
+                    border-right: none !important;
+                }
+            }
+
+            .ant-table-tbody>tr:hover>td {
+                background-color: rgba(255, 255, 255, 0.1) !important;
+            }
+
+            .ant-table-tbody>tr:last-child>td {
+                border-bottom: none !important;
+            }
+        }
+    }
+
+    // 分割线样式
+    .divider {
+        height: 1px;
+        background: linear-gradient(to right,
+                transparent,
+                rgba(255, 255, 255, 0.3) 20%,
+                rgba(255, 255, 255, 0.3) 80%,
+                transparent);
+        margin: 12px 0;
+        flex-shrink: 0;
     }
 
     .fixed-bottom-content {
@@ -506,6 +612,13 @@ onUnmounted(() => {
                     color: white;
                     cursor: pointer;
                     font-size: 12px;
+                    text-decoration: none;
+                    opacity: 0.8;
+                    transition: opacity 0.2s;
+
+                    &:hover {
+                        opacity: 1;
+                    }
                 }
             }
         }
@@ -533,24 +646,49 @@ onUnmounted(() => {
             background-color: transparent;
             font-size: 12px;
 
+            // 去掉表格顶部边框
+            &.ant-table-bordered .ant-table-container .ant-table-content table,
+            &.ant-table-bordered .ant-table-container .ant-table-header table {
+                border-top: none !important;
+            }
+
+            // 表格外边框
+            .ant-table-container {
+                border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            }
+
             .ant-table-thead>tr>th {
                 background-color: rgba(0, 60, 120, 0.5) !important;
                 color: white !important;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
                 padding: 4px;
                 font-size: 12px;
+
+                &:last-child {
+                    border-right: none !important;
+                }
             }
 
             .ant-table-tbody>tr>td {
                 background-color: transparent !important;
                 color: white !important;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
                 padding: 4px;
                 font-size: 12px;
+
+                &:last-child {
+                    border-right: none !important;
+                }
             }
 
             .ant-table-tbody>tr:hover>td {
                 background-color: rgba(255, 255, 255, 0.1) !important;
+            }
+
+            .ant-table-tbody>tr:last-child>td {
+                border-bottom: none !important;
             }
         }
     }
