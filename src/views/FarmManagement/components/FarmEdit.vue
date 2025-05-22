@@ -273,10 +273,10 @@ const formRules = {
     ],
     address: [
         { required: true, message: '请输入养殖场地址', trigger: 'blur' },
-        { pattern: /^[\u4e00-\u9fa5]{1,150}$/, message: '养殖场地址只能输入1-150个中文字符', trigger: 'blur' }
+        { max: 150, message: '养殖场地址只能输入1-150个字符', trigger: 'blur' }
     ],
     remark: [
-        { pattern: /^[\u4e00-\u9fa5]{0,250}$/, message: '备注只能输入0-250个中文字符', trigger: 'blur' }
+        { max: 250, message: '备注只能输入0-250个字符', trigger: 'blur' }
     ]
 };
 

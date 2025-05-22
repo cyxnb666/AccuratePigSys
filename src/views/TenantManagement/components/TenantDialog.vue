@@ -112,7 +112,7 @@ const formData = reactive({
 const rules = computed(() => ({
     tencentName: [
         { required: true, message: '请输入租户名称', trigger: 'blur' },
-        { pattern: /^[\u4e00-\u9fa5]{1,50}$/, message: '租户名称只能输入1-50个中文字符', trigger: 'blur' }
+        { max: 50, message: '租户名称只能输入1-50个字符', trigger: 'blur' }
     ],
     tencentCode: [{ required: true, message: '请输入租户编码', trigger: 'blur' }],
     tencentAccount: [
@@ -127,7 +127,7 @@ const rules = computed(() => ({
         ],
     areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
     enabled: [{ required: true, message: '请选择状态', trigger: 'change' }],
-    remark: [{ pattern: /^[\u4e00-\u9fa5]{0,250}$/, message: '备注只能输入0-250个中文字符', trigger: 'blur' }]
+    remark: [{ max: 250, message: '备注只能输入0-250个字符', trigger: 'blur' }]
 }));
 
 // 当编辑模式且有记录时，填充表单数据

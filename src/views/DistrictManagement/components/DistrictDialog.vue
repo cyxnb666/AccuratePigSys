@@ -112,7 +112,7 @@ const rules = {
     parentDistrict: [{ required: true, message: '请选择上级行政区划', trigger: 'change' }],
     districtName: [
         { required: true, message: '请输入行政区划名称', trigger: 'blur' },
-        { pattern: /^[\u4e00-\u9fa5]{1,50}$/, message: '行政区划名称只能输入1-50个中文字符', trigger: 'blur' }
+        { max: 50, message: '行政区划名称只能输入1-50个字符', trigger: 'blur' }
     ],
     districtCode: [{ required: true, message: '请输入行政区划代码', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }],

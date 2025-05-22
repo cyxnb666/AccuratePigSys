@@ -304,7 +304,6 @@ const processInventoryData = () => {
         ];
     }
 
-    // 映射品种代码到中文名称和颜色
     const breedMap = {
         'BROOD_SOW': { name: '母猪', color: '#4096ff' },
         'PIGLET': { name: '仔猪', color: '#52c41a' },

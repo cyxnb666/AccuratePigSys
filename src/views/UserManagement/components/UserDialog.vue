@@ -148,7 +148,7 @@ const rules = computed(() => {
     areacode: [{ required: true, message: '请选择行政区划', trigger: 'change' }],
     userName: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
-      { pattern: /^[\u4e00-\u9fa5]{1,20}$/, message: '用户名只能输入1-20个中文字符', trigger: 'blur' }
+      { max: 20, message: '用户名只能输入1-20个字符', trigger: 'blur' }
     ],
     userMobile: [
       { required: true, message: '请输入手机号', trigger: 'blur' },
