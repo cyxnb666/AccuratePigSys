@@ -28,48 +28,47 @@
             </div>
         </div>
 
-        <!-- 可滚动的表格容器 -->
-        <div class="scrollable-table-container">
+        <!-- 养殖场情况表格 -->
+        <div class="table-section">
             <a-table :columns="situationColumns" :data-source="situationData" :pagination="false" size="small"
-                :bordered="true" :loading="tableLoading">
+                :bordered="true" :loading="tableLoading" :scroll="{ y: 100 }">
             </a-table>
         </div>
 
         <!-- 分割线 -->
         <div class="divider"></div>
 
-        <!-- 固定的底部内容 -->
-        <div class="fixed-bottom-content">
-            <div class="stats-section">
-                <div class="section-label">存栏品种</div>
-                <div ref="pieChartRef" class="pie-chart" :class="{ 'loading': chartLoading }"></div>
-                <div v-if="chartLoading" class="chart-loading">
-                    <a-spin />
+        <!-- 存栏品种饼图 -->
+        <div class="chart-section">
+            <div class="section-label">存栏品种</div>
+            <div ref="pieChartRef" class="pie-chart" :class="{ 'loading': chartLoading }"></div>
+            <div v-if="chartLoading" class="chart-loading">
+                <a-spin />
+            </div>
+        </div>
+
+        <!-- 分割线 -->
+        <div class="divider"></div>
+
+        <!-- 异常预警表格 -->
+        <div class="warning-section">
+            <div class="section-header-with-link">
+                <div class="title">异常预警</div>
+                <div class="view-more">
+                    <a @click="viewMoreWarnings">查看更多 >></a>
                 </div>
             </div>
-
-            <!-- 分割线 -->
-            <div class="divider"></div>
-
-            <div class="stats-section">
-                <div class="section-header-with-link">
-                    <div class="title">异常预警</div>
-                    <div class="view-more">
-                        <a @click="viewMoreWarnings">查看更多 >></a>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <a-table :columns="warningColumns" :data-source="warningData" :pagination="false" size="small"
-                        :bordered="true" :loading="warningDataLoading">
-                        <template #bodyCell="{ column, record }">
-                            <template v-if="column.key === 'deviationRate'">
-                                <span :style="{ color: getDeviationColor(record.deviationRate) }">
-                                    {{ record.deviationRate }}%
-                                </span>
-                            </template>
+            <div class="table-container">
+                <a-table :columns="warningColumns" :data-source="warningData" :pagination="false" size="small"
+                    :bordered="true" :loading="warningDataLoading" :scroll="{ y: 100 }">
+                    <template #bodyCell="{ column, record }">
+                        <template v-if="column.key === 'deviationRate'">
+                            <span :style="{ color: getDeviationColor(record.deviationRate) }">
+                                {{ record.deviationRate }}%
+                            </span>
                         </template>
-                    </a-table>
-                </div>
+                    </template>
+                </a-table>
             </div>
         </div>
     </div>
@@ -429,7 +428,7 @@ onUnmounted(() => {
     padding: 12px;
     color: white;
     width: 300px;
-    max-height: calc(80vh);
+    max-height: calc(83vh);
     display: flex;
     flex-direction: column;
 
@@ -487,46 +486,19 @@ onUnmounted(() => {
         }
     }
 
-    .scrollable-table-container {
-        flex: 1;
-        overflow-y: auto;
+    .table-section {
+        flex-shrink: 0;
         margin-bottom: 12px;
-        min-height: 0; // 确保flex子元素可以收缩
-
-        // 自定义滚动条样式
-        &::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        &::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-
-            &:hover {
-                background: rgba(255, 255, 255, 0.5);
-            }
-        }
-
-        // Firefox滚动条样式
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 
         :deep(.ant-table) {
             background-color: transparent;
             font-size: 12px;
 
-            // 去掉表格顶部边框
             &.ant-table-bordered .ant-table-container .ant-table-content table,
             &.ant-table-bordered .ant-table-container .ant-table-header table {
                 border-top: none !important;
             }
 
-            // 表格外边框
             .ant-table-container {
                 border: 1px solid rgba(255, 255, 255, 0.3) !important;
             }
@@ -564,10 +536,32 @@ onUnmounted(() => {
             .ant-table-tbody>tr:last-child>td {
                 border-bottom: none !important;
             }
+
+            .ant-table-body {
+                &::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 2px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.3);
+                    border-radius: 2px;
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.5);
+                    }
+                }
+
+                scrollbar-width: thin;
+                scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+            }
         }
     }
 
-    // 分割线样式
     .divider {
         height: 1px;
         background: linear-gradient(to right,
@@ -579,115 +573,133 @@ onUnmounted(() => {
         flex-shrink: 0;
     }
 
-    .fixed-bottom-content {
+    .chart-section {
         flex-shrink: 0;
+        margin-bottom: 12px;
+        position: relative;
 
-        .stats-section {
-            margin-bottom: 12px;
+        .section-label {
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .pie-chart {
+            height: 140px;
             position: relative;
 
-            &:last-child {
-                margin-bottom: 0;
+            &.loading {
+                opacity: 0.6;
             }
+        }
 
-            .section-label {
-                margin-bottom: 6px;
+        .chart-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+    }
+
+    .warning-section {
+        flex-shrink: 0;
+
+        .section-header-with-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+
+            .title {
                 font-weight: 500;
                 font-size: 13px;
             }
 
-            .section-header-with-link {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 6px;
+            .view-more a {
+                color: white;
+                cursor: pointer;
+                font-size: 12px;
+                text-decoration: none;
+                opacity: 0.8;
+                transition: opacity 0.2s;
 
-                .title {
-                    font-weight: 500;
-                    font-size: 13px;
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+
+        .table-container {
+            :deep(.ant-table) {
+                background-color: transparent;
+                font-size: 12px;
+
+                &.ant-table-bordered .ant-table-container .ant-table-content table,
+                &.ant-table-bordered .ant-table-container .ant-table-header table {
+                    border-top: none !important;
                 }
 
-                .view-more a {
-                    color: white;
-                    cursor: pointer;
-                    font-size: 12px;
-                    text-decoration: none;
-                    opacity: 0.8;
-                    transition: opacity 0.2s;
+                .ant-table-container {
+                    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+                }
 
-                    &:hover {
-                        opacity: 1;
+                .ant-table-thead>tr>th {
+                    background-color: rgba(0, 60, 120, 0.5) !important;
+                    color: white !important;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                    border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
+                    padding: 4px;
+                    font-size: 12px;
+
+                    &:last-child {
+                        border-right: none !important;
                     }
                 }
-            }
-        }
-    }
 
-    .pie-chart {
-        height: 170px;
-        position: relative;
+                .ant-table-tbody>tr>td {
+                    background-color: transparent !important;
+                    color: white !important;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+                    border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
+                    padding: 4px;
+                    font-size: 12px;
 
-        &.loading {
-            opacity: 0.6;
-        }
-    }
-
-    .chart-loading {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 10;
-    }
-
-    .table-container {
-        :deep(.ant-table) {
-            background-color: transparent;
-            font-size: 12px;
-
-            // 去掉表格顶部边框
-            &.ant-table-bordered .ant-table-container .ant-table-content table,
-            &.ant-table-bordered .ant-table-container .ant-table-header table {
-                border-top: none !important;
-            }
-
-            // 表格外边框
-            .ant-table-container {
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            }
-
-            .ant-table-thead>tr>th {
-                background-color: rgba(0, 60, 120, 0.5) !important;
-                color: white !important;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
-                border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
-                padding: 4px;
-                font-size: 12px;
-
-                &:last-child {
-                    border-right: none !important;
+                    &:last-child {
+                        border-right: none !important;
+                    }
                 }
-            }
 
-            .ant-table-tbody>tr>td {
-                background-color: transparent !important;
-                color: white !important;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
-                border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
-                padding: 4px;
-                font-size: 12px;
-
-                &:last-child {
-                    border-right: none !important;
+                .ant-table-tbody>tr:hover>td {
+                    background-color: rgba(255, 255, 255, 0.1) !important;
                 }
-            }
 
-            .ant-table-tbody>tr:hover>td {
-                background-color: rgba(255, 255, 255, 0.1) !important;
-            }
+                .ant-table-tbody>tr:last-child>td {
+                    border-bottom: none !important;
+                }
 
-            .ant-table-tbody>tr:last-child>td {
-                border-bottom: none !important;
+                .ant-table-body {
+                    &::-webkit-scrollbar {
+                        width: 4px;
+                    }
+
+                    &::-webkit-scrollbar-track {
+                        background: rgba(255, 255, 255, 0.1);
+                        border-radius: 2px;
+                    }
+
+                    &::-webkit-scrollbar-thumb {
+                        background: rgba(255, 255, 255, 0.3);
+                        border-radius: 2px;
+
+                        &:hover {
+                            background: rgba(255, 255, 255, 0.5);
+                        }
+                    }
+
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+                }
             }
         }
     }
