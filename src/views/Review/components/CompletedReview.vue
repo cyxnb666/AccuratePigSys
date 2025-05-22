@@ -52,7 +52,7 @@
                                 record.auditStatus === 'AUDITING' || record.auditStatus === '待审核' ? 'processing' : 'error'">
                             {{ record.auditStatus === 'AUDITSUCC' ? '审核通过' :
                                 record.auditStatus === 'AUDITING' ? '待审核' :
-                                    record.auditStatus === 'AUDITFAIL' ? '审核驳回' : record.auditStatus }}
+                                    record.auditStatus === 'AUDITFAIL' ? '审核不通过' : record.auditStatus }}
                         </a-tag>
                     </template>
                     <template v-if="column.key === 'action'">
