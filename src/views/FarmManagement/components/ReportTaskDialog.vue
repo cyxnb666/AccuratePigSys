@@ -79,10 +79,11 @@ const rules = {
         { required: true, message: '请选择上报起止期', trigger: 'change' }
     ],
     stockChangeCount: [
-        { required: true, message: '请输入存栏变化数', trigger: 'blur' },
         { pattern: /^\d+$/, message: '请输入正整数', trigger: 'blur' },
         {
             validator: (rule, value) => {
+                if (!value) return Promise.resolve();
+                
                 const num = Number(value);
                 if (isNaN(num) || num < 0 || num > 10000 || !Number.isInteger(num)) {
                     return Promise.reject('请输入0-10000的整数');
@@ -92,10 +93,11 @@ const rules = {
         }
     ],
     stockChangeRatio: [
-        { required: true, message: '请输入存栏变化比例', trigger: 'blur' },
         { pattern: /^\d+(\.\d{0,2})?$/, message: '请输入最多保留两位小数的数字', trigger: 'blur' },
         {
             validator: (rule, value) => {
+                if (!value) return Promise.resolve();
+                
                 const num = Number(value);
                 if (isNaN(num) || num < 0 || num > 100) {
                     return Promise.reject('请输入0-100之间的数字');
