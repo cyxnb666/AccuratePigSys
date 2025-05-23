@@ -197,3 +197,16 @@ export function saveReportTaskConfig(configData: any) {
         }
     });
 }
+
+// 检查是否可以删除围栏
+export function checkCanRemoveFence(fenceId: string) {
+    return axios({
+        url: '/web/livestock/checkCanRmFence',
+        method: 'post',
+        data: {
+            condition: {
+                primaryKey: fenceId
+            }
+        }
+    });
+}

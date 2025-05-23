@@ -41,7 +41,7 @@
                 {{ selectedPolygon && selectedPolygon.isDisabled ? '地块恢复' : '地块失效' }}
             </a-button>
             <a-button type="primary" @click="toggleFullscreen" style="margin-left: 8px">{{ isFullscreen ? '退出全屏' : '全屏'
-                }}</a-button>
+            }}</a-button>
             <a-popover placement="top" title="操作指南" trigger="hover" :getPopupContainer="getContainer">
                 <template #content>
                     <p><b>1.</b> 点击"勾画"按钮开始地块勾画</p>
@@ -74,6 +74,7 @@
 import { onMounted, onUnmounted, ref, reactive, computed } from 'vue';
 import mapConfig from '@/utils/map-config';
 import { message, Modal } from 'ant-design-vue';
+import { checkCanRemoveFence } from '../api';
 
 let map = null;
 let polyEditor = null;
@@ -463,53 +464,76 @@ const deleteSelectedPolygon = () => {
         content: '确定要删除选中的地块吗？',
         okText: '确认',
         cancelText: '取消',
-        getContainer: () => container, // 指定弹窗挂载的位置
-        onOk: () => {
-            // 用户确认后执行删除操作
-            // 关闭编辑器
-            polyEditor.close();
-            polyEditor.setTarget(null);
+        getContainer: () => container,
+        onOk: async () => {
+            // 检查是否是编辑模式的围栏（以FENCE开头的id表示已存在的围栏）
+            const isExistingFence = selectedPolygon.value.__uid && selectedPolygon.value.__uid.toString().startsWith('FENCE');
 
-            // 查找关联的标签并删除
-            const associatedLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
-            if (associatedLabel && associatedLabel.labelMarker) {
-                map.remove(associatedLabel.labelMarker);
-                labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
-            }
-
-            // 所有删除方法
-            try {
-                selectedPolygon.value.remove();
-            } catch (e) {
-                console.error('删除多边形时出错:', e);
+            // 如果是已存在的围栏，需要先调用接口检查是否可以删除
+            if (isExistingFence) {
                 try {
-                    selectedPolygon.value.destroy();
-                } catch (e) {
-                    console.error('销毁多边形时出错:', e);
-                    try {
-                        map.remove([selectedPolygon.value]);
-                    } catch (e) {
-                        console.error('从地图移除多边形时出错:', e);
+                    const canDelete = await checkCanRemoveFence(selectedPolygon.value.__uid);
+
+                    if (!canDelete) {
+                        message.error('该围栏不能删除');
+                        return;
                     }
+                } catch (error) {
+                    console.error('检查围栏删除权限失败:', error);
+                    message.error('检查删除权限失败，请稍后重试');
+                    return;
                 }
             }
 
-            // 从数组中移除引用
-            polygons.value = polygons.value.filter(p => p !== selectedPolygon.value);
-
-            // 最后手动刷新地图
-            if (polygons.value.length > 0) {
-                map.setFitView(polygons.value);
-            }
-
-            console.log('多边形已删除');
-            console.log('剩余多边形数量:', polygons.value.length);
-
-            // 重置选中状态
-            selectedPolygon.value = null;
-            isEditing.value = false;
+            // 如果检查通过或者是新增的围栏，执行删除操作
+            performDeletePolygon();
         }
     });
+};
+
+const performDeletePolygon = () => {
+    // 关闭编辑器
+    polyEditor.close();
+    polyEditor.setTarget(null);
+
+    // 查找关联的标签并删除
+    const associatedLabel = labels.value.find(label => label.polygonId === selectedPolygon.value.__uid);
+    if (associatedLabel && associatedLabel.labelMarker) {
+        map.remove(associatedLabel.labelMarker);
+        labels.value = labels.value.filter(label => label.polygonId !== selectedPolygon.value.__uid);
+    }
+
+    // 所有删除方法
+    try {
+        selectedPolygon.value.remove();
+    } catch (e) {
+        console.error('删除多边形时出错:', e);
+        try {
+            selectedPolygon.value.destroy();
+        } catch (e) {
+            console.error('销毁多边形时出错:', e);
+            try {
+                map.remove([selectedPolygon.value]);
+            } catch (e) {
+                console.error('从地图移除多边形时出错:', e);
+            }
+        }
+    }
+
+    // 从数组中移除引用
+    polygons.value = polygons.value.filter(p => p !== selectedPolygon.value);
+
+    // 最后手动刷新地图
+    if (polygons.value.length > 0) {
+        map.setFitView(polygons.value);
+    }
+
+    console.log('多边形已删除');
+    console.log('剩余多边形数量:', polygons.value.length);
+
+    // 重置选中状态
+    selectedPolygon.value = null;
+    isEditing.value = false;
 };
 
 // 专门用于直接删除多边形，不显示确认对话框
