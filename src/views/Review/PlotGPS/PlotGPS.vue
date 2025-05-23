@@ -51,6 +51,27 @@ const initMap = () => {
             zoom: 15
         });
         
+        // 添加天地图图层。。。。。。。
+        const tiandituLayer = new AMap.TileLayer.WMTS({
+            url: 'https://t0.tianditu.gov.cn/img_w/wmts',
+            blend: false,
+            tileSize: 256,
+            params: {
+                SERVICE: 'WMTS',
+                VERSION: '1.0.0',
+                REQUEST: 'GetTile',
+                LAYER: 'vec',
+                STYLE: 'default',
+                TILEMATRIXSET: 'w',
+                FORMAT: 'tiles',
+                tk: '923b4e88535bce69174acdbc23bcc0bc', // 天地图token
+            }
+        });
+        
+        // 将天地图图层添加到地图并显示
+        tiandituLayer.setMap(map);
+        tiandituLayer.show();
+        
         mapInitialized.value = true;
         updateMapData();
     } catch (error) {

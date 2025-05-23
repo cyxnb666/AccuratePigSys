@@ -22,7 +22,7 @@
             <div class="scrollable-content" v-if="dataLoaded">
                 <!-- 基础信息部分 -->
                 <div class="info-section">
-                    <div class="section-header">
+                    <div class="section-header" style="margin-bottom: 12px;">
                         <div class="title">基础信息</div>
                     </div>
 
@@ -133,13 +133,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('PORKER')?.auditPersionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('PORKER')?.lastPersionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -210,13 +210,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('PIGLET')?.auditPersionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('PIGLET')?.lastPersionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -274,7 +274,7 @@
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.persionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
@@ -288,13 +288,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.auditPersionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.lastPersionalCheckCount
-                                                                }}</span>
+                                                            }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -1148,7 +1148,7 @@ onMounted(() => {
     .section-header {
         display: flex;
         align-items: center;
-        margin-bottom: 20px;
+        // margin-bottom: 12px;
 
         .title {
             font-size: 16px;
@@ -1237,6 +1237,10 @@ onMounted(() => {
         font-weight: bold;
     }
 
+    :deep(.ant-tabs-nav) {
+        margin-bottom: 0 !important;
+    }
+
     .navigation-list {
         height: 100%;
     }
@@ -1310,7 +1314,7 @@ onMounted(() => {
     }
 
     .video-placeholder {
-        width: 100%;
+        width: 50%;
         height: 300px;
         background-color: #000;
         color: #fff;
@@ -1321,9 +1325,8 @@ onMounted(() => {
     }
 
     .video-content {
-        width: 100%;
+        width: 50%;
         height: 300px;
-        /* 固定高度 */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1388,7 +1391,7 @@ onMounted(() => {
     }
 
     .form-actions {
-        padding: 16px;
+        padding: 12px;
         background-color: #f8f8f8;
         border-top: 1px solid #e8e8e8;
         position: sticky;
