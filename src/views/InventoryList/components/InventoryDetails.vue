@@ -282,8 +282,6 @@ watch(trendDateRange, (newValue) => {
         startDate = newValue[0] ? dayjs(newValue[0]).format('YYYY-MM-DD') : '';
         endDate = newValue[1] ? dayjs(newValue[1]).format('YYYY-MM-DD') : '';
     }
-
-    // 无论日期是否为空，都调用API
     fetchTrendData(startDate, endDate);
 }, { deep: true });
 
@@ -315,8 +313,6 @@ watch(mixedChartDateRange, (newValue) => {
         startMonth = newValue[0] ? dayjs(newValue[0]).format('YYYY-MM') : '';
         endMonth = newValue[1] ? dayjs(newValue[1]).format('YYYY-MM') : '';
     }
-
-    // 无论日期是否为空，都调用API
     fetchMixedData(startMonth, endMonth);
 }, { deep: true });
 

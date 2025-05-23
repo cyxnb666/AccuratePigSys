@@ -864,7 +864,6 @@ const setFenceList = (fenceData) => {
     }
     labels.value = [];
 
-    // 如果没有数据，直接返回
     if (!fenceData || fenceData.length === 0) return;
 
     // 创建并添加多边形

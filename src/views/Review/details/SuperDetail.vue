@@ -169,14 +169,13 @@ onMounted(async () => {
         return;
     }
     
-    // 如果没有加载完整的数据，直接从API加载
+    // 如果没有加载完整的数据
     if (!videoUrl.value || !sensorImageUrl.value || trackingData.value.length === 0) {
         try {
             console.log('Loading data from API for fence:', fenceRegistId);
             const fenceDetail = await getLeaveFence(fenceRegistId);
             
             if (fenceDetail) {
-                // 处理文件 - 直接使用API返回的fileUrl
                 if (fenceDetail.files && fenceDetail.files.length > 0) {
                     // 处理视频
                     const videoFile = fenceDetail.files.find(f => f.fileType === 'SENCE_AI');

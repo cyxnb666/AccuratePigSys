@@ -242,7 +242,7 @@ const deathTableData = computed(() => {
 const reviewerCounts = ref({});
 watch(() => props.modelValue, (visible) => {
     if (visible && props.record && props.record.breeds) {
-        // 重置计数器对象，初始化为API返回的每个breed的auditPersionalCheckCount
+        // 重置计数器对象
         const counts = {};
         props.record.breeds.forEach(breed => {
             counts[breed.breedDeadId] = breed.auditPersionalCheckCount || 0;

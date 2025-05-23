@@ -224,12 +224,11 @@ const handleReset = () => {
 // 切换状态
 const handleStatusChange = async (record) => {
   try {
-    // 仍然调用API来更新当前记录的状态
     await enableDistrict(record.areacode);
 
     message.success(`${record.enabled === '1' ? '禁用' : '启用'}行政区划成功`);
 
-    // 更新本地数据状态 - 递归函数，同时处理当前记录和其子记录
+    // 更新本地数据状态 - 递归，同时处理当前记录和其子记录
     const updateRecordAndChildren = (data, targetCode, newStatus) => {
       for (let i = 0; i < data.length; i++) {
         if (data[i].areacode === targetCode) {

@@ -123,7 +123,6 @@ const updateMapMarkers = (farms) => {
     infoWindow.close();
   });
   infoWindows = [];
-  // 转换API返回的养殖场数据为地图标记点格式
   if (farms && Array.isArray(farms)) {
     farmLocations.value = farms.map(farm => ({
       id: farm.farmId,

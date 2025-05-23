@@ -185,7 +185,6 @@ const viewTask = (record) => {
 };
 
 const handlePaginationChange = (page, pageSize) => {
-    // 如果正在加载，忽略此次调用
     if (isLoading.value) return;
 
     // 设置锁以防止重复请求
@@ -198,19 +197,6 @@ const handlePaginationChange = (page, pageSize) => {
     fetchWarnDetails().finally(() => {
         isLoading.value = false;
     });
-};
-
-// 页码变化处理
-const handlePageChange = (page, pageSize) => {
-    pagination.current = page;
-    fetchWarnDetails();
-};
-
-// 每页记录数变化处理
-const handleSizeChange = (current, size) => {
-    pagination.pageSize = size;
-    pagination.current = 1; // 切换每页条数时重置为第一页
-    fetchWarnDetails();
 };
 
 // 初始化加载数据

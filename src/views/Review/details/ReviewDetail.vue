@@ -738,7 +738,6 @@ const viewDeathDetail = async (record) => {
                 videos: []
             };
 
-            // 直接使用fileUrl，不再调用getFilePreview
             detailRes.files.forEach(file => {
                 // 根据文件后缀区分图片和视频
                 const isVideo = ['mp4', 'mov', 'avi', 'wmv'].includes(file.fileSuffix.toLowerCase());
@@ -810,11 +809,7 @@ const handleDeathDetailConfirm = async (reviewData) => {
                 auditData.value.leaveCount = leaveCountRes;
             }
         }
-
-        // API调用成功，关闭对话框
         deathDetailVisible.value = false;
-
-        // 显示成功消息
         message.success('死亡登记审核已保存');
 
         // 重新加载页面数据
@@ -929,8 +924,6 @@ const submitReview = async () => {
             leaveCount: auditData.value.leaveCount,
             registId: auditData.value.registId
         };
-
-        // 调用审核API
         await submitAudit(auditSubmitData);
 
         message.success('审核完成');
@@ -949,14 +942,13 @@ const loadData = async () => {
 
         // 如果是从 SuperDetail 页面返回，并且数据已经加载过，跳过重新加载
         if (fromSuperDetail === 'true' && dataLoaded.value) {
-            // 清除标记，以便下次正常加载
+            // 清除标记
             sessionStorage.removeItem(`from_super_detail_${auditId}`);
             return;
         }
         loading.value = true;
         dataLoaded.value = false;
         try {
-            // 调用API获取审核任务的详细数据
             const res = await getAuditDetail(auditId.toString());
 
             if (res) {
@@ -965,7 +957,6 @@ const loadData = async () => {
                 reviewData.comment = res.auditRemark || '';
 
                 if (props.isViewMode && res.auditStatus) {
-                    // 将API返回的状态映射到组件使用的值
                     reviewData.result = res.auditStatus === 'AUDITSUCC' ? 1 : 0;
                     reviewData.comment = res.auditRemark || '';
                 }
