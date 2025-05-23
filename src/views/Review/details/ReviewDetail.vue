@@ -1383,7 +1383,7 @@ onMounted(() => {
 
     .form-actions {
         padding: 12px;
-        background-color: #f8f8f8;
+        box-shadow: 0 -3px 5px rgba(194, 193, 193, 0.3);
         border-top: 1px solid #e8e8e8;
         position: sticky;
         bottom: 0;
