@@ -51,21 +51,27 @@ const initMap = () => {
             zoom: 15
         });
         
-        // 添加天地图图层。。。。。。。
-        const tiandituLayer = new AMap.TileLayer.WMTS({
-            url: 'https://t0.tianditu.gov.cn/img_w/wmts',
-            blend: false,
-            tileSize: 256,
-            params: {
-                SERVICE: 'WMTS',
-                VERSION: '1.0.0',
-                REQUEST: 'GetTile',
-                LAYER: 'vec',
-                STYLE: 'default',
-                TILEMATRIXSET: 'w',
-                FORMAT: 'tiles',
-                tk: '923b4e88535bce69174acdbc23bcc0bc', // 天地图token
-            }
+        // 使用瓦片方式添加的天地图图层
+        const tiandituLayer = new AMap.TileLayer.Flexible({
+            createTile: function(x, y, z, success, fail) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                // 天地图影像瓦片URL
+                const url = `https://t${(x + y) % 8}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX=${z}&TILEROW=${y}&TILECOL=${x}&tk=a1a21d2bd0571eb0160afff78a39319e`;
+                
+                img.onload = function() {
+                    success(img);
+                };
+                
+                img.onerror = function() {
+                    console.error('天地图瓦片加载失败:', url);
+                    fail();
+                };
+                
+                img.src = url;
+            },
+            tileSize: 256
         });
         
         // 将天地图图层添加到地图并显示
@@ -74,6 +80,8 @@ const initMap = () => {
         
         mapInitialized.value = true;
         updateMapData();
+        
+        console.log('PlotGPS地图初始化完成，天地图图层已加载');
     } catch (error) {
         console.error('Failed to initialize map:', error);
     }

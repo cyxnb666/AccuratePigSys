@@ -266,21 +266,26 @@ const initMap = () => {
 //     wmsLayer.value.hide();
 // };
 const initMapLayers = () => {
-    // 天地图图层
-    wmsLayer.value = new AMap.TileLayer.WMTS({
-        url: 'https://t0.tianditu.gov.cn/img_w/wmts',
-        blend: false,
-        tileSize: 256,
-        params: {
-            SERVICE: 'WMTS',
-            VERSION: '1.0.0',
-            REQUEST: 'GetTile',
-            LAYER: 'vec',
-            STYLE: 'default',
-            TILEMATRIXSET: 'w',
-            FORMAT: 'tiles',
-            tk: '923b4e88535bce69174acdbc23bcc0bc', // 天地图token
-        }
+    wmsLayer.value = new AMap.TileLayer.Flexible({
+        createTile: function(x, y, z, success, fail) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            // 天地图影像瓦片URL
+            const url = `https://t${(x + y) % 8}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX=${z}&TILEROW=${y}&TILECOL=${x}&tk=a1a21d2bd0571eb0160afff78a39319e`;
+            
+            img.onload = function() {
+                success(img);
+            };
+            
+            img.onerror = function() {
+                console.error('天地图瓦片加载失败:', url);
+                fail();
+            };
+            
+            img.src = url;
+        },
+        tileSize: 256
     });
 
     // 默认隐藏天地图图层
