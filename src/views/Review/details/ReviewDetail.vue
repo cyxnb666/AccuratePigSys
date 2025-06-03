@@ -133,13 +133,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('PORKER')?.auditPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('PORKER')?.lastPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -210,13 +210,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('PIGLET')?.auditPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('PIGLET')?.lastPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -274,7 +274,7 @@
                                                             <span class="label">上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.persionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">AI点数：</span>
@@ -288,13 +288,13 @@
                                                                 :min="0" style="width: 120px" />
                                                             <span v-else class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.auditPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                         <div class="count-item">
                                                             <span class="label">上次上报数量：</span>
                                                             <span class="value">{{
                                                                 getCurrentFence('BROOD_SOW')?.lastPersionalCheckCount
-                                                            }}</span>
+                                                                }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="detail-button-container">
@@ -583,7 +583,7 @@ const getCurrentBreedCode = () => {
     return breedMap[activeSubTab.value];
 };
 
-const fenceDetailsCache = reactive({});
+// const fenceDetailsCache = reactive({});
 const loadCurrentFenceDetail = async () => {
     // 重置状态
     filePreviewsLoaded.value = false;
@@ -599,32 +599,22 @@ const loadCurrentFenceDetail = async () => {
     }
 
     const fenceRegistId = currentFence.fenceRegistId;
-
-    // 检查缓存中是否已有该围栏数据
-    if (fenceDetailsCache[fenceRegistId]) {
-        console.log('使用缓存的围栏数据:', fenceRegistId);
-        currentFenceDetail.value = fenceDetailsCache[fenceRegistId];
-        filePreviewsLoaded.value = true;
-        return;
-    }
-
     currentFenceLoading.value = true;
 
     try {
+        console.log('从API加载围栏数据:', fenceRegistId);
         const response = await getLeaveFence(fenceRegistId);
 
         if (response) {
-            // 将数据存入缓存
-            fenceDetailsCache[fenceRegistId] = response;
             currentFenceDetail.value = response;
-
-            // 直接设置为已加载
             filePreviewsLoaded.value = true;
         } else {
+            currentFenceDetail.value = null;
             filePreviewsLoaded.value = true;
         }
     } catch (error) {
         console.error('加载围栏详情失败:', error);
+        currentFenceDetail.value = null;
         filePreviewsLoaded.value = true;
     } finally {
         currentFenceLoading.value = false;
@@ -830,16 +820,13 @@ const goToDetailedComparison = (tabType: string) => {
     const breedCode = getCurrentBreedCode();
     const currentFence = getCurrentFence(breedCode);
 
-    if (currentFence && currentFence.fenceRegistId && fenceDetailsCache[currentFence.fenceRegistId]) {
-        // 如果有缓存数据，将其存入sessionStorage以便SuperDetail组件使用
-        sessionStorage.setItem(
-            `fence_detail_${currentFence.fenceRegistId}`,
-            JSON.stringify(fenceDetailsCache[currentFence.fenceRegistId])
-        );
+    // 保存当前围栏ID到sessionStorage，供SuperDetail页面使用
+    if (currentFence && currentFence.fenceRegistId) {
+        sessionStorage.setItem(`current_fence_id_${route.params.id}`, currentFence.fenceRegistId);
     }
 
-    // 标记
-    sessionStorage.setItem(`from_super_detail_${route.params.id}`, 'true');
+    // 标记从ReviewDetail页面跳转
+    sessionStorage.setItem(`from_review_detail_${route.params.id}`, 'true');
 
     router.push({
         path: `/AUDITD/super-detail/${route.params.id}`,
@@ -1013,7 +1000,7 @@ const savePageState = () => {
         currentAreaIndex: currentAreaIndex.value,
         activeMainTab: activeMainTab.value,
         activeSubTab: activeSubTab.value,
-        fenceDetailsCache: { ...fenceDetailsCache },
+        // fenceDetailsCache: { ...fenceDetailsCache },
         outboundRecords: outboundRecords.value,
         inboundRecords: inboundRecords.value,
         deathRecords: deathRecords.value,
@@ -1046,17 +1033,14 @@ onMounted(() => {
             currentAreaIndex.value = state.currentAreaIndex;
             activeMainTab.value = state.activeMainTab;
             activeSubTab.value = state.activeSubTab;
-            Object.assign(fenceDetailsCache, state.fenceDetailsCache);
+            // Object.assign(fenceDetailsCache, state.fenceDetailsCache);
             outboundRecords.value = state.outboundRecords;
             inboundRecords.value = state.inboundRecords;
             deathRecords.value = state.deathRecords;
             Object.assign(reviewData, state.reviewData);
             dataLoaded.value = state.dataLoaded;
 
-            // 恢复对应围栏的文件预览
-            filePreviewsLoaded.value = true;
-
-            // 立即加载当前围栏的详细数据，确保视频等显示正常
+            // 重新加载当前围栏的详细数据
             loadCurrentFenceDetail();
 
             console.log('已从会话存储恢复页面状态');
